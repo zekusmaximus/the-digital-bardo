@@ -1,0 +1,21 @@
+# Build settings for Vite
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Custom 404 becomes part of the narrative
+[[redirects]]
+  from = "/*"
+  to = "/limbo/index.html"
+  status = 404
+
+# Custom headers for the experience
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Consciousness = "Digital"
+    X-Karma = "Tracking"
+    Cache-Control = "no-cache"

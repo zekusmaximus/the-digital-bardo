@@ -1,5 +1,5 @@
 // The Digital Consciousness - A soul rendered in JavaScript
-class DigitalConsciousness {
+export class DigitalConsciousness {
     constructor() {
         // Initial state - tabula rasa
         this.state = {
