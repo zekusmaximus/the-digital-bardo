@@ -16,5 +16,7 @@ export default defineConfig({
   },
   server: {
     port: 8888,
-  }
+  },
+  // Ensure audio worklets are copied to dist
+  publicDir: 'public'
 })
