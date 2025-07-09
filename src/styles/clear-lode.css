@@ -38,6 +38,12 @@ body.light-manifested {
     justify-content: center;
     opacity: 0;
     transition: opacity 3s ease-in;
+    background: radial-gradient(
+        circle at center, 
+        var(--current-white) 0%, 
+        transparent 100%
+    );
+    filter: blur(var(--blur-amount));
 }
 
 #clear-light.manifested {
@@ -60,9 +66,15 @@ body.light-manifested {
 .light-core {
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
-    filter: blur(20px);
-    /* GSAP handles rotation */
+    background: radial-gradient(
+        circle, 
+        rgba(255,255,255, var(--recognition-opacity)) 0%, 
+        rgba(255,255,255,0) 70%
+    );
+    filter: blur(calc(20px + var(--blur-amount)));
+    transform: scale(var(--recognition-scale));
+    box-shadow: 0 0 calc(50px * var(--recognition-glow)) var(--current-white);
+    animation: light-pulse var(--pulse-speed) ease-in-out infinite;
 }
 
 
@@ -72,9 +84,10 @@ body.light-manifested {
     font-size: 18px;
     color: #000;
     text-shadow: 
-        2px 2px 0 rgba(255,0,0,0.5),
-        -2px -2px 0 rgba(0,255,255,0.5);
+        var(--chromatic-aberration) var(--chromatic-aberration) 0 rgba(255,0,0,0.5),
+        calc(var(--chromatic-aberration) * -1) calc(var(--chromatic-aberration) * -1) 0 rgba(0,255,255,0.5);
     animation: glitch-skew 0.5s infinite;
+    transform: translateX(var(--glitch-intensity));
 }
 
 @keyframes glitch-skew {
@@ -89,7 +102,8 @@ body.light-manifested {
 .consciousness-fragment {
     position: absolute;
     font-size: 12px;
-    color: rgba(0,0,0,0.3);
+    opacity: var(--fragment-opacity);
+    color: rgba(0, 0, 0, var(--fragment-opacity));
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     pointer-events: none;
     /* GSAP will handle all animation */
@@ -108,7 +122,13 @@ body.light-manifested {
     text-align: center;
     white-space: nowrap;
     pointer-events: none;
-    transition: color 0.5s ease-in-out;
+    opacity: var(--hint-visibility);
+    transition: opacity 0.5s ease-in-out, color 0.5s ease-in-out;
+}
+
+.recognition-hint.visible {
+    --hint-visibility: 0.4;
+    color: rgba(0, 0, 0, 0.4);
 }
 
 .recognition-hint.visible {

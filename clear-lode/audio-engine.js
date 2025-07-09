@@ -6,7 +6,7 @@ export class ClearLodeAudio {
         this.gainNode = null;
         this.degradationLevel = 0;
         this.baseFrequency = 528; // "Love frequency" / DNA repair
-        
+
         // Track if worklet is available
         this.workletAvailable = false;
         this.noiseWorklet = null;
@@ -15,7 +15,7 @@ export class ClearLodeAudio {
         this.initializeWorklet();
     }
     
-    async initializeWorklet() {
+ async initializeWorklet() {
         try {
             // Check if AudioWorklet is supported
             if (this.audioContext.audioWorklet) {
@@ -28,65 +28,60 @@ export class ClearLodeAudio {
             this.workletAvailable = false;
         }
     }
-    
-    // ... existing methods (startPureTone, startDegradation, etc.) ...
-    
-    async completeDigitalStatic() {
-        // Replace pure tone with digital noise
-        if (this.oscillator) {
-            this.oscillator.stop();
-            this.oscillator = null;
-        }
+
+    startPureTone() {
+        // Create the pure sine wave
+        this.oscillator = this.audioContext.createOscillator();
+        this.gainNode = this.audioContext.createGain();
         
-        // Use worklet if available, otherwise fall back
-        if (this.workletAvailable) {
-            await this.createWorkletNoise();
-        } else {
-            this.createScriptProcessorNoise();
-        }
+        this.oscillator.type = 'sine';
+        this.oscillator.frequency.setValueAtTime(this.baseFrequency, this.audioContext.currentTime);
+        
+        this.gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+        this.gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 2);
+        
+        this.oscillator.connect(this.gainNode);
+        this.gainNode.connect(this.audioContext.destination);
+        
+        this.oscillator.start();
     }
     
-    async createWorkletNoise() {
-        try {
-            // Create noise using AudioWorklet (better performance)
-            this.noiseWorklet = new AudioWorkletNode(this.audioContext, 'noise-processor');
-            
-            // Create gain node for volume control
-            const noiseGain = this.audioContext.createGain();
-            noiseGain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-            
-            // Connect the nodes
-            this.noiseWorklet.connect(noiseGain);
-            noiseGain.connect(this.audioContext.destination);
-            
-            console.log('Digital static achieved through AudioWorklet');
-        } catch (error) {
-            console.error('Worklet noise failed, falling back:', error);
-            this.createScriptProcessorNoise();
-        }
-    }
-    
-    createScriptProcessorNoise() {
-        // Fallback to ScriptProcessor (deprecated but widely supported)
-        const bufferSize = 4096;
-        const noiseNode = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
-        
-        noiseNode.onaudioprocess = (e) => {
-            const output = e.outputBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = (Math.random() * 2 - 1) * 0.1;
+    startDegradation() {
+        if (!this.oscillator) return;
+
+        // Gradually introduce noise and frequency shifts
+        const degradeInterval = setInterval(() => {
+            this.degradationLevel += 0.05;
+
+            // Update CSS custom property for visual degradation
+            document.documentElement.style.setProperty('--degradation-level',
+                this.degradationLevel);
+
+            // Update body attribute for degradation state
+            const degradationState = this.getDegradationState();
+            document.body.setAttribute('data-degradation', degradationState);
+
+            // Frequency starts to waver
+            const frequencyShift = Math.sin(Date.now() * 0.001) * this.degradationLevel * 50;
+            this.oscillator.frequency.setValueAtTime(
+                this.baseFrequency + frequencyShift,
+                this.audioContext.currentTime
+            );
+
+            // Volume decreases
+            const newGain = Math.max(0.05, 0.3 - (this.degradationLevel * 0.1));
+            this.gainNode.gain.setValueAtTime(newGain, this.audioContext.currentTime);
+
+            // Add digital artifacts (create noise bursts)
+            if (Math.random() < this.degradationLevel * 0.1) {
+                this.createGlitchBurst();
             }
-        };
-        
-        // Create gain node for volume control
-        const noiseGain = this.audioContext.createGain();
-        noiseGain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-        
-        // Connect the nodes
-        noiseNode.connect(noiseGain);
-        noiseGain.connect(this.audioContext.destination);
-        
-        console.log('Digital static achieved through ScriptProcessor (legacy)');
+
+            if (this.degradationLevel >= 1) {
+                clearInterval(degradeInterval);
+                this.completeDigitalStatic();
+            }
+        }, 100);
     }
     
     // Enhanced glitch burst using worklet if available
@@ -95,13 +90,13 @@ export class ClearLodeAudio {
             // Create temporary worklet noise burst
             const burstWorklet = new AudioWorkletNode(this.audioContext, 'noise-processor');
             const burstGain = this.audioContext.createGain();
-            
+
             burstGain.gain.setValueAtTime(0.1 * this.degradationLevel, this.audioContext.currentTime);
             burstGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.05);
-            
+
             burstWorklet.connect(burstGain);
             burstGain.connect(this.audioContext.destination);
-            
+
             // Stop after burst
             setTimeout(() => {
                 burstWorklet.disconnect();
@@ -111,46 +106,142 @@ export class ClearLodeAudio {
             this.createBufferGlitchBurst();
         }
     }
-    
+
     createBufferGlitchBurst() {
         // Original implementation
         const noiseBuffer = this.audioContext.createBuffer(1, 4096, this.audioContext.sampleRate);
         const output = noiseBuffer.getChannelData(0);
-        
+
         for (let i = 0; i < 4096; i++) {
             output[i] = Math.random() * 2 - 1;
         }
-        
+
         const whiteNoise = this.audioContext.createBufferSource();
         const noiseGain = this.audioContext.createGain();
-        
+
         whiteNoise.buffer = noiseBuffer;
         noiseGain.gain.setValueAtTime(0.1 * this.degradationLevel, this.audioContext.currentTime);
-        
+
         whiteNoise.connect(noiseGain);
         noiseGain.connect(this.audioContext.destination);
-        
+
         whiteNoise.start();
         whiteNoise.stop(this.audioContext.currentTime + 0.05);
     }
     
+    async completeDigitalStatic() {
+        // Replace pure tone with digital noise
+        if (this.oscillator) {
+            this.oscillator.stop();
+            this.oscillator = null;
+        }
+
+        // Use worklet if available, otherwise fall back
+        if (this.workletAvailable) {
+            await this.createWorkletNoise();
+        } else {
+            this.createScriptProcessorNoise();
+        }
+    }
+
+    async createWorkletNoise() {
+        try {
+            // Create noise using AudioWorklet (better performance)
+            this.noiseWorklet = new AudioWorkletNode(this.audioContext, 'noise-processor');
+
+            // Create gain node for volume control
+            const noiseGain = this.audioContext.createGain();
+            noiseGain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+
+            // Connect the nodes
+            this.noiseWorklet.connect(noiseGain);
+            noiseGain.connect(this.audioContext.destination);
+
+            console.log('Digital static achieved through AudioWorklet');
+        } catch (error) {
+            console.error('Worklet noise failed, falling back:', error);
+            this.createScriptProcessorNoise();
+        }
+    }
+
+    createScriptProcessorNoise() {
+        // Fallback to ScriptProcessor (deprecated but widely supported)
+        const bufferSize = 4096;
+        const noiseNode = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+        noiseNode.onaudioprocess = (e) => {
+            const output = e.outputBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = (Math.random() * 2 - 1) * 0.1;
+            }
+        };
+
+        // Create gain node for volume control
+        const noiseGain = this.audioContext.createGain();
+        noiseGain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+
+        // Connect the nodes
+        noiseNode.connect(noiseGain);
+        noiseGain.connect(this.audioContext.destination);
+
+        console.log('Digital static achieved through ScriptProcessor (legacy)');
+    }
+    
+    achieveResonance() {
+        // Perfect recognition: the tone becomes a celestial chord
+        if (!this.oscillator) return;
+        
+        const chord = [528, 639, 741]; // Solfeggio frequencies
+        const oscillators = [];
+        
+        chord.forEach(freq => {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            
+            osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+            gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+            
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+            
+            osc.start();
+            oscillators.push(osc);
+        });
+        
+        // Fade out after 3 seconds
+        setTimeout(() => {
+            oscillators.forEach(osc => osc.stop());
+        }, 3000);
+    }
+    
+
+
+    getDegradationLevel() {
+        return this.degradationLevel;
+    }
+
+    getDegradationState() {
+        if (this.degradationLevel < 0.2) return 'minimal';
+        if (this.degradationLevel < 0.5) return 'moderate';
+        if (this.degradationLevel < 0.8) return 'severe';
+        return 'complete';
+    }
+
     // Add method to clean up audio resources
     cleanup() {
         if (this.oscillator) {
             this.oscillator.stop();
             this.oscillator = null;
         }
-        
+
         if (this.noiseWorklet) {
             this.noiseWorklet.disconnect();
             this.noiseWorklet = null;
         }
-        
+
         // Close audio context if needed
         if (this.audioContext.state !== 'closed') {
             this.audioContext.close();
         }
     }
-    
-    // ... rest of existing methods ...
 }

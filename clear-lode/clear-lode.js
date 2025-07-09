@@ -20,7 +20,17 @@ class ClearLode {
     }
     
     async init() {
-        // ... existing init code ...
+        // NEW: Set initial time factor based on performance
+        const loadTime = performance.now();
+        const timeFactor = Math.max(0.5, Math.min(2, 1000 / loadTime));
+        document.documentElement.style.setProperty('--time-factor', timeFactor);
+
+        // EXISTING CODE CONTINUES HERE...
+        // Record entry into Clear Lode
+        consciousness.recordEvent('clear_lode_entered', {
+            timestamp: Date.now(),
+            timeFactor: timeFactor
+        });
     }
     
     manifestLight() {
@@ -152,10 +162,15 @@ class ClearLode {
     
     achieveRecognition(method) {
         if (this.localState.recognized) return;
-        
+
         this.localState.recognized = true;
         const recognitionTime = Date.now() - this.localState.startTime;
-        
+
+        // NEW: Update recognition visual properties
+        document.documentElement.style.setProperty('--recognition-scale', '1.2');
+        document.documentElement.style.setProperty('--recognition-opacity', '1');
+
+        // EXISTING CODE CONTINUES HERE...
         // Update consciousness
         consciousness.state.recognitions.clear_light = true;
         consciousness.recordEvent('recognition_achieved', {

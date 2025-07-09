@@ -50,3 +50,71 @@ body[data-consciousness="awakening"] {
     50% { filter: brightness(2) contrast(0); }
     100% { filter: brightness(1) contrast(1); }
 }
+
+/* NEW: Dynamic theming properties */
+/* Degradation-based properties */
+:root {
+    --recognition-glow: calc(var(--karma-score) * 0.1);
+    --fragment-opacity: calc(1 - (var(--consciousness-integrity) / 100));
+    --glitch-intensity: calc(var(--degradation-level, 0) * 10px);
+    
+    --degradation-level: 0;
+    --static-amount: calc(var(--degradation-level) * 0.1);
+    --chromatic-aberration: calc(var(--degradation-level) * 2px);
+    --blur-amount: calc(var(--degradation-level) * 0.5px);
+    
+    /* Time-based properties */
+    --time-factor: 1;
+    --pulse-speed: calc(4s / var(--time-factor));
+    --rotation-speed: calc(20s / var(--time-factor));
+    
+    /* Karma-influenced colors */
+    --high-karma-white: #ffffff;
+    --medium-karma-white: #f0f0f0;
+    --low-karma-white: #cccccc;
+    --void-karma-white: #666666;
+    --current-white: var(--high-karma-white); /* Will be updated dynamically */
+    
+    /* Recognition states */
+    --recognition-scale: 1;
+    --recognition-opacity: 0.7;
+    --hint-visibility: 0;
+}
+
+/* Karma-based body states */
+body[data-karma="high"] {
+    --current-white: var(--high-karma-white);
+    --glitch-probability: 0;
+}
+
+body[data-karma="medium"] {
+    --current-white: var(--medium-karma-white);
+    --glitch-probability: 0.1;
+}
+
+body[data-karma="low"] {
+    --current-white: var(--low-karma-white);
+    --glitch-probability: 0.3;
+}
+
+body[data-karma="void"] {
+    --current-white: var(--void-karma-white);
+    --glitch-probability: 0.7;
+}
+
+/* Degradation states */
+body[data-degradation="minimal"] {
+    --degradation-level: 0.2;
+}
+
+body[data-degradation="moderate"] {
+    --degradation-level: 0.5;
+}
+
+body[data-degradation="severe"] {
+    --degradation-level: 0.8;
+}
+
+body[data-degradation="complete"] {
+    --degradation-level: 1;
+}

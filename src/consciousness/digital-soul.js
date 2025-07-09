@@ -139,11 +139,29 @@ export class DigitalConsciousness {
             }
         });
         
-        // Update CSS variables to reflect karmic state
-        const totalKarma = Object.values(this.state.karma).reduce((a, b) => a + b, 0);
+        // Calculate total karma and karma tier
+        const totalKarma = this.getTotalKarma();
+        const karmaTier = this.getKarmaTier(totalKarma);
+        
+        // Update CSS variables
         document.documentElement.style.setProperty('--karma-score', totalKarma);
         document.documentElement.style.setProperty('--consciousness-integrity', 
             Math.max(0, 100 - this.state.karma.void));
+        
+        // Update body data attributes for CSS selectors
+        document.body.setAttribute('data-karma', karmaTier);
+        
+        // Set recognition glow based on positive karma
+        const positiveKarma = Math.max(0, totalKarma);
+        document.documentElement.style.setProperty('--recognition-glow', 
+            Math.min(1, positiveKarma / 100));
+    }
+
+    getKarmaTier(totalKarma) {
+        if (totalKarma > 50) return 'high';
+        if (totalKarma > 0) return 'medium';
+        if (totalKarma > -50) return 'low';
+        return 'void';
     }
     
     updatePerformance(eventType, data) {
