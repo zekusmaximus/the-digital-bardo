@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Performance Monitoring Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        .test-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+        
+        .test-controls h3 {
+            margin-top: 0;
+            color: #88ff88;
+        }
+        
+        .test-controls button {
+            margin: 5px;
+            padding: 8px 12px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .test-controls button:hover {
+            background: #555;
+        }
+        
+        .monitoring-log {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 400px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            overflow-y: auto;
+            font-size: 11px;
+            border: 1px solid #333;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        
+        .log-entry.interval-change {
+            background: rgba(255, 255, 0, 0.1);
+            color: #ffff88;
+        }
+        
+        .log-entry.performance-change {
+            background: rgba(255, 100, 100, 0.1);
+            color: #ff8888;
+        }
+        
+        .log-entry.stability {
+            background: rgba(100, 255, 100, 0.1);
+            color: #88ff88;
+        }
+        
+        .fragment {
+            position: absolute;
+            pointer-events: none;
+            font-size: 14px;
+            opacity: 0.7;
+            transition: opacity 2s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h3>🎛️ Adaptive Monitoring Test</h3>
+        <div>
+            <button onclick="startTest()">Start Test</button>
+            <button onclick="stopTest()">Stop Test</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        <div>
+            <button onclick="simulateHighLoad()">Simulate High Load</button>
+            <button onclick="simulateStableLoad()">Simulate Stable Load</button>
+            <button onclick="simulateMemoryPressure()">Memory Pressure</button>
+        </div>
+        <div>
+            <button onclick="setSensitivity('low')">Low Sensitivity</button>
+            <button onclick="setSensitivity('normal')">Normal Sensitivity</button>
+            <button onclick="setSensitivity('high')">High Sensitivity</button>
+        </div>
+    </div>
+    
+    <div class="monitoring-log" id="monitoring-log">
+        <div style="color: #88ff88; font-weight: bold;">📊 Adaptive Monitoring Log</div>
+        <div style="font-size: 10px; color: #888; margin-bottom: 10px;">
+            Watch how monitoring frequency adapts to performance conditions
+        </div>
+    </div>
+
+    <!-- Include required dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script type="module">
+        // Mock consciousness object for testing
+        window.consciousness = {
+            recordEvent: function(eventType, data) {
+                logEvent(`Event: ${eventType}`, data);
+            }
+        };
+
+        // Import and initialize fragment generator
+        import { FragmentGenerator } from './fragment-generator.js';
+        
+        let fragmentGenerator;
+        let testInterval;
+        let loadSimulationInterval;
+        
+        window.startTest = function() {
+            if (fragmentGenerator) {
+                fragmentGenerator.destroy();
+            }
+            
+            fragmentGenerator = new FragmentGenerator();
+            
+            // Override console.log to capture monitoring messages
+            const originalLog = console.log;
+            console.log = function(...args) {
+                if (args[0] && typeof args[0] === 'string') {
+                    if (args[0].includes('monitoring frequency') || args[0].includes('Monitoring sensitivity')) {
+                        logEvent(args[0], 'interval-change');
+                    }
+                }
+                originalLog.apply(console, args);
+            };
+            
+            fragmentGenerator.startFragmentField();
+            logEvent('🚀 Adaptive monitoring test started', 'stability');
+            
+            // Start monitoring the monitoring system itself
+            testInterval = setInterval(() => {
+                const stats = fragmentGenerator.getPerformanceStats();
+                if (stats.adaptiveMonitoring) {
+                    const monitoring = stats.adaptiveMonitoring;
+                    logEvent(
+                        `📊 Interval: ${monitoring.currentInterval}ms, Efficiency: ${Math.round(monitoring.monitoringEfficiency * 100)}%, Stability: ${monitoring.stabilityCounter}`,
+                        'stability'
+                    );
+                }
+            }, 3000);
+        };
+        
+        window.stopTest = function() {
+            if (fragmentGenerator) {
+                fragmentGenerator.destroy();
+                fragmentGenerator = null;
+            }
+            if (testInterval) {
+                clearInterval(testInterval);
+            }
+            if (loadSimulationInterval) {
+                clearInterval(loadSimulationInterval);
+            }
+            logEvent('🛑 Test stopped', 'performance-change');
+        };
+        
+        window.simulateHighLoad = function() {
+            if (!fragmentGenerator) return;
+            
+            logEvent('⚡ Simulating high load...', 'performance-change');
+            
+            // Create many fragments rapidly to stress the system
+            loadSimulationInterval = setInterval(() => {
+                for (let i = 0; i < 5; i++) {
+                    fragmentGenerator.createEdgeFragment();
+                }
+            }, 100);
+            
+            // Stop after 10 seconds
+            setTimeout(() => {
+                if (loadSimulationInterval) {
+                    clearInterval(loadSimulationInterval);
+                    logEvent('✅ High load simulation ended', 'stability');
+                }
+            }, 10000);
+        };
+        
+        window.simulateStableLoad = function() {
+            if (!fragmentGenerator) return;
+            
+            logEvent('😌 Simulating stable conditions...', 'stability');
+            
+            // Stop any existing load simulation
+            if (loadSimulationInterval) {
+                clearInterval(loadSimulationInterval);
+            }
+            
+            // Create fragments at a very slow, stable rate
+            loadSimulationInterval = setInterval(() => {
+                fragmentGenerator.createEdgeFragment();
+            }, 2000);
+        };
+        
+        window.simulateMemoryPressure = function() {
+            if (!fragmentGenerator) return;
+            
+            logEvent('🧠 Simulating memory pressure...', 'performance-change');
+            
+            // Force performance mode to minimal to simulate memory pressure
+            fragmentGenerator.setPerformanceMode('minimal');
+        };
+        
+        window.setSensitivity = function(level) {
+            if (!fragmentGenerator) return;
+            
+            fragmentGenerator.setMonitoringSensitivity(level);
+            logEvent(`🎛️ Monitoring sensitivity set to: ${level}`, 'interval-change');
+        };
+        
+        window.clearLog = function() {
+            const log = document.getElementById('monitoring-log');
+            log.innerHTML = `
+                <div style="color: #88ff88; font-weight: bold;">📊 Adaptive Monitoring Log</div>
+                <div style="font-size: 10px; color: #888; margin-bottom: 10px;">
+                    Watch how monitoring frequency adapts to performance conditions
+                </div>
+            `;
+        };
+        
+        function logEvent(message, type = '') {
+            const log = document.getElementById('monitoring-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Auto-start the test
+        setTimeout(() => {
+            logEvent('🎯 Ready to test adaptive monitoring. Click "Start Test" to begin.', 'stability');
+        }, 1000);
+    </script>
+</body>
+</html>

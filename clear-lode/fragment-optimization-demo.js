@@ -59,10 +59,19 @@ class FragmentOptimizationDemo {
                 <div>Viewport Dissolved: <span id="dissolved-count">0</span></div>
                 <div>Memory Pressure: <span id="memory-pressure">0%</span></div>
                 <div>Avg Lifetime: <span id="avg-lifetime">0ms</span></div>
+                <hr style="margin: 10px 0; border: 1px solid #333;">
+                <div style="color: #88ff88;">Adaptive Monitoring:</div>
+                <div>Monitor Interval: <span id="monitoring-interval">2000ms</span></div>
+                <div>Efficiency: <span id="monitoring-efficiency">50%</span></div>
+                <div>Stability: <span id="stability-counter">0</span></div>
             </div>
             <div style="margin-top: 10px;">
                 <button id="force-minimal">Force Minimal Mode</button>
                 <button id="force-normal">Force Normal Mode</button>
+            </div>
+            <div style="margin-top: 10px;">
+                <button id="sensitivity-low">Low Sensitivity</button>
+                <button id="sensitivity-high">High Sensitivity</button>
             </div>
             <div style="margin-top: 10px;">
                 <button id="start-demo">Start Demo</button>
@@ -96,6 +105,17 @@ class FragmentOptimizationDemo {
         
         document.getElementById('intensify-demo').onclick = () => {
             this.fragmentGenerator.intensifyFragments();
+            this.updateStats();
+        };
+
+        // Bind sensitivity controls
+        document.getElementById('sensitivity-low').onclick = () => {
+            this.fragmentGenerator.setMonitoringSensitivity('low');
+            this.updateStats();
+        };
+
+        document.getElementById('sensitivity-high').onclick = () => {
+            this.fragmentGenerator.setMonitoringSensitivity('high');
             this.updateStats();
         };
     }
@@ -134,15 +154,33 @@ class FragmentOptimizationDemo {
     
     updateStats() {
         const stats = this.fragmentGenerator.getPerformanceStats();
-        
+
         document.getElementById('perf-mode').textContent = stats.performanceMode;
         document.getElementById('active-count').textContent = stats.activeFragments;
         document.getElementById('created-count').textContent = stats.fragmentsCreated;
         document.getElementById('dissolved-count').textContent = stats.fragmentsRemoved;
-        document.getElementById('memory-pressure').textContent = 
+        document.getElementById('memory-pressure').textContent =
             Math.round(stats.memoryPressure * 100) + '%';
-        document.getElementById('avg-lifetime').textContent = 
+        document.getElementById('avg-lifetime').textContent =
             Math.round(stats.averageLifetime) + 'ms';
+
+        // Update adaptive monitoring stats if elements exist
+        if (stats.adaptiveMonitoring) {
+            const monitoring = stats.adaptiveMonitoring;
+            const monitoringIntervalEl = document.getElementById('monitoring-interval');
+            const monitoringEfficiencyEl = document.getElementById('monitoring-efficiency');
+            const stabilityCounterEl = document.getElementById('stability-counter');
+
+            if (monitoringIntervalEl) {
+                monitoringIntervalEl.textContent = monitoring.currentInterval + 'ms';
+            }
+            if (monitoringEfficiencyEl) {
+                monitoringEfficiencyEl.textContent = Math.round(monitoring.monitoringEfficiency * 100) + '%';
+            }
+            if (stabilityCounterEl) {
+                stabilityCounterEl.textContent = monitoring.stabilityCounter;
+            }
+        }
     }
     
     // Demonstrate the IntersectionObserver optimization
@@ -185,7 +223,12 @@ class FragmentOptimizationDemo {
             currentPerformanceMode: stats.performanceMode,
             memoryPressure: (stats.memoryPressure * 100).toFixed(1),
             averageFragmentLifetime: Math.round(stats.averageLifetime),
-            activeFragments: stats.activeFragments
+            activeFragments: stats.activeFragments,
+            adaptiveMonitoring: stats.adaptiveMonitoring ? {
+                currentInterval: stats.adaptiveMonitoring.currentInterval,
+                monitoringEfficiency: (stats.adaptiveMonitoring.monitoringEfficiency * 100).toFixed(1) + '%',
+                stabilityCounter: stats.adaptiveMonitoring.stabilityCounter
+            } : null
         };
         
         console.log('📊 Fragment Optimization Report:', report);

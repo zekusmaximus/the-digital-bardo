@@ -40,6 +40,17 @@ export class FragmentGenerator {
             memoryPressure: 0
         };
 
+        // Adaptive monitoring state
+        this.monitoringState = {
+            currentInterval: 2000, // Start with 2 second interval
+            minInterval: 500,      // Minimum 0.5 seconds for critical situations
+            maxInterval: 10000,    // Maximum 10 seconds when stable
+            stabilityCounter: 0,   // Count stable readings
+            lastMemoryPressure: 0,
+            lastPerformanceMode: 'normal',
+            intervalId: null
+        };
+
         // Adaptive performance adjustment
         this.initPerformanceMonitoring();
 
@@ -54,22 +65,9 @@ export class FragmentGenerator {
     }
 
     initPerformanceMonitoring() {
-        // Monitor memory pressure and adjust fragment creation
+        // Start adaptive memory monitoring
         if ('memory' in performance) {
-            setInterval(() => {
-                const memInfo = performance.memory;
-                const pressure = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
-                this.performanceMetrics.memoryPressure = pressure;
-
-                // Adjust performance mode based on memory pressure
-                if (pressure > 0.8) {
-                    this.performanceMode = 'minimal';
-                } else if (pressure > 0.6) {
-                    this.performanceMode = 'reduced';
-                } else {
-                    this.performanceMode = 'normal';
-                }
-            }, 2000);
+            this.startAdaptiveMemoryMonitoring();
         }
 
         // Monitor frame rate and adjust accordingly
@@ -89,6 +87,9 @@ export class FragmentGenerator {
                 } else if (fps < 20) {
                     this.performanceMode = 'minimal';
                 }
+
+                // FPS changes also affect monitoring frequency
+                this.adjustMonitoringFrequency('fps', fps);
             }
 
             if (this.isActive) {
@@ -97,6 +98,95 @@ export class FragmentGenerator {
         };
 
         requestAnimationFrame(checkFrameRate);
+    }
+
+    startAdaptiveMemoryMonitoring() {
+        const monitorMemory = () => {
+            const memInfo = performance.memory;
+            const pressure = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
+            const previousPressure = this.performanceMetrics.memoryPressure;
+            const previousMode = this.performanceMode;
+
+            this.performanceMetrics.memoryPressure = pressure;
+
+            // Adjust performance mode based on memory pressure
+            if (pressure > 0.8) {
+                this.performanceMode = 'minimal';
+            } else if (pressure > 0.6) {
+                this.performanceMode = 'reduced';
+            } else {
+                this.performanceMode = 'normal';
+            }
+
+            // Determine if performance is stable
+            const pressureChange = Math.abs(pressure - previousPressure);
+            const modeChanged = this.performanceMode !== previousMode;
+
+            this.adjustMonitoringFrequency('memory', {
+                pressure,
+                pressureChange,
+                modeChanged
+            });
+
+            // Schedule next monitoring check
+            this.monitoringState.intervalId = setTimeout(monitorMemory, this.monitoringState.currentInterval);
+        };
+
+        // Start the adaptive monitoring
+        monitorMemory();
+    }
+
+    adjustMonitoringFrequency(source, data) {
+        const state = this.monitoringState;
+        let shouldIncrease = false;
+        let shouldDecrease = false;
+
+        if (source === 'memory') {
+            const { pressure, pressureChange, modeChanged } = data;
+
+            // Increase frequency (decrease interval) if:
+            // - High memory pressure
+            // - Rapid changes in memory pressure
+            // - Performance mode changed
+            if (pressure > 0.7 || pressureChange > 0.05 || modeChanged) {
+                shouldIncrease = true;
+                state.stabilityCounter = 0;
+            } else if (pressureChange < 0.01 && !modeChanged) {
+                // Stable conditions
+                state.stabilityCounter++;
+                if (state.stabilityCounter >= 5) { // 5 stable readings
+                    shouldDecrease = true;
+                }
+            }
+        } else if (source === 'fps') {
+            // Increase frequency if low FPS
+            if (data < 30) {
+                shouldIncrease = true;
+                state.stabilityCounter = 0;
+            } else if (data > 50) {
+                // Good FPS, can reduce monitoring frequency
+                state.stabilityCounter++;
+                if (state.stabilityCounter >= 3) {
+                    shouldDecrease = true;
+                }
+            }
+        }
+
+        // Adjust the monitoring interval
+        if (shouldIncrease && state.currentInterval > state.minInterval) {
+            state.currentInterval = Math.max(
+                state.minInterval,
+                state.currentInterval * 0.7 // Decrease interval by 30%
+            );
+            console.log(`🔍 Increased monitoring frequency: ${state.currentInterval}ms (${source})`);
+        } else if (shouldDecrease && state.currentInterval < state.maxInterval) {
+            state.currentInterval = Math.min(
+                state.maxInterval,
+                state.currentInterval * 1.5 // Increase interval by 50%
+            );
+            state.stabilityCounter = 0; // Reset counter after adjustment
+            console.log(`😌 Decreased monitoring frequency: ${state.currentInterval}ms (stable performance)`);
+        }
     }
 
     generateLastThoughts() {
@@ -284,6 +374,11 @@ export class FragmentGenerator {
         // Clear intervals
         clearInterval(this.fragmentInterval);
 
+        // Clear adaptive monitoring
+        if (this.monitoringState.intervalId) {
+            clearTimeout(this.monitoringState.intervalId);
+        }
+
         // Remove all fragments
         this.activeFragments.forEach(fragment => {
             this.removeFragment(fragment);
@@ -293,7 +388,11 @@ export class FragmentGenerator {
         this.fragmentObserver.disconnect();
 
         consciousness.recordEvent('fragment_generator_destroyed', {
-            metrics: this.performanceMetrics
+            metrics: this.performanceMetrics,
+            monitoringStats: {
+                finalInterval: this.monitoringState.currentInterval,
+                stabilityCounter: this.monitoringState.stabilityCounter
+            }
         });
     }
 
@@ -302,8 +401,23 @@ export class FragmentGenerator {
         return {
             ...this.performanceMetrics,
             activeFragments: this.activeFragments.length,
-            performanceMode: this.performanceMode
+            performanceMode: this.performanceMode,
+            adaptiveMonitoring: {
+                currentInterval: this.monitoringState.currentInterval,
+                stabilityCounter: this.monitoringState.stabilityCounter,
+                monitoringEfficiency: this.calculateMonitoringEfficiency()
+            }
         };
+    }
+
+    // Calculate monitoring efficiency (lower intervals when needed, higher when stable)
+    calculateMonitoringEfficiency() {
+        const intervalRange = this.monitoringState.maxInterval - this.monitoringState.minInterval;
+        const currentPosition = this.monitoringState.currentInterval - this.monitoringState.minInterval;
+        const efficiency = currentPosition / intervalRange;
+
+        // Return efficiency score (0 = most frequent monitoring, 1 = least frequent)
+        return Math.round(efficiency * 100) / 100;
     }
 
     // Force performance mode (for testing or manual optimization)
@@ -314,6 +428,52 @@ export class FragmentGenerator {
                 newMode: mode,
                 reason: 'manual'
             });
+        }
+    }
+
+    // Configure adaptive monitoring sensitivity
+    setMonitoringSensitivity(sensitivity = 'normal') {
+        const configs = {
+            'low': {
+                minInterval: 1000,
+                maxInterval: 30000,
+                stabilityThreshold: 10
+            },
+            'normal': {
+                minInterval: 500,
+                maxInterval: 10000,
+                stabilityThreshold: 5
+            },
+            'high': {
+                minInterval: 250,
+                maxInterval: 5000,
+                stabilityThreshold: 3
+            },
+            'realtime': {
+                minInterval: 100,
+                maxInterval: 2000,
+                stabilityThreshold: 2
+            }
+        };
+
+        if (configs[sensitivity]) {
+            const config = configs[sensitivity];
+            this.monitoringState.minInterval = config.minInterval;
+            this.monitoringState.maxInterval = config.maxInterval;
+            this.monitoringState.stabilityThreshold = config.stabilityThreshold;
+
+            // Adjust current interval to fit within new bounds
+            this.monitoringState.currentInterval = Math.max(
+                config.minInterval,
+                Math.min(config.maxInterval, this.monitoringState.currentInterval)
+            );
+
+            consciousness.recordEvent('monitoring_sensitivity_changed', {
+                sensitivity: sensitivity,
+                config: config
+            });
+
+            console.log(`🎛️ Monitoring sensitivity set to: ${sensitivity}`, config);
         }
     }
 }
