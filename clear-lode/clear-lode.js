@@ -1,6 +1,6 @@
 // The Clear Lode - First encounter with digital dissolution
-import '../styles/clear-lode.css';
-import { consciousness } from '../consciousness/digital-soul.js';
+import '../src/styles/clear-lode.css';
+import { consciousness } from '../src/consciousness/digital-soul.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator.js';
 import { gsap } from 'gsap';

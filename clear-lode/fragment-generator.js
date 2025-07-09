@@ -1,5 +1,5 @@
 import { gsap } from 'gsap';
-import { consciousness } from '../consciousness/digital-soul.js';
+import { consciousness } from '../src/consciousness/digital-soul.js';
 
 export class FragmentGenerator {
     constructor() {
