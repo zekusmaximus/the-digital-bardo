@@ -7,16 +7,147 @@ import { gsap } from 'gsap';
 
 class ClearLode {
     constructor() {
-        // ... existing config ...
-        
+        // Core configuration
+        this.config = {
+            recognitionWindow: {
+                start: 3000,  // 3 seconds after light manifestation
+                end: 15000    // 15 seconds total window
+            },
+            hints: [
+                "Look deeper...",
+                "What do you see?",
+                "Recognition is possible...",
+                "The source reveals itself...",
+                "Click to recognize..."
+            ],
+            hintDelay: 2000,
+            hintFadeTime: 1500,
+            glitchPrompts: [
+                "CONTINUE TO NEXT LIFE? Y/N",
+                "继续下一世？是/否",
+                "次の人生へ？はい/いいえ",
+                "СЛЕДУЮЩАЯ ЖИЗНЬ? ДА/НЕТ",
+                "CONTINUER VERS LA VIE SUIVANTE? O/N"
+            ]
+        };
+
+        // Local state tracking
+        this.localState = {
+            startTime: Date.now(),
+            lightManifested: false,
+            recognitionAvailable: false,
+            recognized: false,
+            degradationStarted: false,
+            hintsShown: 0,
+            recognitionAttempts: 0
+        };
+
         // GSAP timelines for complex animations
         this.timelines = {
             manifestation: null,
             recognition: null,
             degradation: null
         };
-        
-        // ... rest of constructor
+
+        // Initialize subsystems with optimized fragment generator
+        this.audio = new ClearLodeAudio();
+        this.fragments = new FragmentGenerator();
+
+        // Bind event handlers
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        // Recognition click handler
+        document.addEventListener('click', (e) => {
+            if (this.localState.recognitionAvailable && !this.localState.recognized) {
+                this.achieveRecognition('click');
+            } else if (!this.localState.recognitionAvailable) {
+                this.recordAttachment('premature_click', {
+                    target: e.target.tagName,
+                    timeFromStart: Date.now() - this.localState.startTime
+                });
+            }
+        });
+
+        // Keyboard recognition
+        document.addEventListener('keydown', (e) => {
+            if (this.localState.recognitionAvailable && !this.localState.recognized) {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    this.achieveRecognition('keyboard');
+                }
+            }
+        });
+
+        // Mouse movement tracking for attachment detection
+        document.addEventListener('mousemove', (e) => {
+            if (this.localState.recognitionAvailable && !this.localState.recognized) {
+                // Track excessive mouse movement as attachment
+                if (!this.lastMouseMove) {
+                    this.lastMouseMove = Date.now();
+                    this.mouseMovements = 0;
+                }
+
+                this.mouseMovements++;
+
+                if (Date.now() - this.lastMouseMove > 1000) {
+                    if (this.mouseMovements > 50) {
+                        this.recordAttachment('excessive_movement', {
+                            movements: this.mouseMovements
+                        });
+                    }
+                    this.lastMouseMove = Date.now();
+                    this.mouseMovements = 0;
+                }
+            }
+        });
+
+        // Window focus/blur for attachment tracking
+        window.addEventListener('blur', () => {
+            if (this.localState.recognitionAvailable && !this.localState.recognized) {
+                this.recordAttachment('distraction', {
+                    type: 'window_blur'
+                });
+            }
+        });
+    }
+
+    formatHint(hint) {
+        return hint;
+    }
+
+    wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    closeRecognitionWindow() {
+        this.localState.recognitionAvailable = false;
+
+        // Animate recognition zone deactivation
+        gsap.to('.recognition-zone', {
+            scale: 1,
+            duration: 0.3,
+            ease: 'power2.in',
+            onStart: () => {
+                document.querySelector('.recognition-zone').setAttribute('data-active', 'false');
+            }
+        });
+
+        // Begin degradation if not recognized
+        if (!this.localState.recognized) {
+            gsap.delayedCall(1, () => {
+                this.beginDegradation();
+            });
+        }
+    }
+
+    getEnlightenmentMessage(method) {
+        const messages = {
+            click: "Recognition achieved through direct perception",
+            keyboard: "Recognition achieved through intentional action",
+            default: "Recognition achieved"
+        };
+        return messages[method] || messages.default;
     }
     
     async init() {
@@ -316,17 +447,12 @@ class ClearLode {
     
     animateGlitchText() {
         const glitchText = document.querySelector('.glitching-text');
-        const prompts = this.config.glitchPrompts || [
-            "CONTINUE TO NEXT LIFE? Y/N",
-            "继续下一世？是/否",
-            "次の人生へ？はい/いいえ",
-            // ... other prompts
-        ];
-        
+        const prompts = this.config.glitchPrompts;
+
         // Create a timeline for text glitching
         const textGlitch = gsap.timeline({ repeat: -1 });
-        
-        prompts.forEach((prompt, index) => {
+
+        prompts.forEach((prompt) => {
             textGlitch.to(glitchText, {
                 duration: 0.1,
                 text: prompt,
@@ -334,7 +460,7 @@ class ClearLode {
                 delay: 0.5
             });
         });
-        
+
         // Add random glitch spikes
         gsap.to(glitchText, {
             skewX: () => Math.random() * 4 - 2,
@@ -346,6 +472,37 @@ class ClearLode {
             ease: 'steps(2)'
         });
     }
-    
-    // ... rest of the class remains the same
+
+    // Clean shutdown method
+    destroy() {
+        // Stop all timelines
+        Object.values(this.timelines).forEach(timeline => {
+            if (timeline) timeline.kill();
+        });
+
+        // Destroy subsystems
+        this.fragments.destroy();
+
+        // Clear any remaining intervals
+        clearInterval(this.fragmentInterval);
+
+        consciousness.recordEvent('clear_lode_destroyed', {
+            finalState: this.localState,
+            fragmentStats: this.fragments.getPerformanceStats()
+        });
+    }
 }
+
+// Initialize and start the Clear Lode experience
+document.addEventListener('DOMContentLoaded', async () => {
+    const clearLode = new ClearLode();
+    await clearLode.init();
+
+    // Auto-start light manifestation after brief delay
+    setTimeout(() => {
+        clearLode.manifestLight();
+    }, 2000);
+
+    // Store instance globally for debugging
+    window.clearLode = clearLode;
+});
