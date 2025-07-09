@@ -1,5 +1,9 @@
 import { gsap } from 'gsap';
+import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
+
+// Register GSAP plugins
+gsap.registerPlugin(TextPlugin);
 
 export class FragmentGenerator {
     constructor() {
@@ -18,13 +22,15 @@ export class FragmentGenerator {
         // Initialize viewport detection optimization with error handling
         this.initializeIntersectionObserver();
 
-        // Performance monitoring
+        // Performance monitoring with browser compatibility checks
         this.performanceMetrics = {
             fragmentsCreated: 0,
             fragmentsRemoved: 0,
             averageLifetime: 0,
             memoryPressure: 0
         };
+
+
 
         // Adaptive monitoring state
         this.monitoringState = {
@@ -376,9 +382,14 @@ export class FragmentGenerator {
     startFragmentField() {
         this.isActive = true;
 
-        // Initial fragment creation based on performance mode
-        const initialDelay = this.performanceMode === 'minimal' ? 3000 :
-                           this.performanceMode === 'reduced' ? 2000 : 1500;
+        // Initial fragment creation based on performance mode (slower, more contemplative)
+        const initialDelay = this.performanceMode === 'minimal' ? 4000 :
+                           this.performanceMode === 'reduced' ? 3000 : 2000;
+
+        // Create an immediate test fragment
+        setTimeout(() => {
+            this.createEdgeFragment();
+        }, 100);
 
         this.fragmentInterval = setInterval(() => {
             this.createEdgeFragment();
@@ -419,10 +430,10 @@ export class FragmentGenerator {
             this.fragmentObserver.observe(fragment);
         }
 
-        // Animate with GSAP (optimized for performance mode)
+        // Animate with GSAP (optimized for performance mode) - slowed down
         const drift = this.calculateDrift(edge);
-        const animationDuration = this.performanceMode === 'minimal' ? 6 :
-                                this.performanceMode === 'reduced' ? 7 : 8;
+        const animationDuration = this.performanceMode === 'minimal' ? 12 :
+                                this.performanceMode === 'reduced' ? 15 : 20;
 
         gsap.timeline()
             .fromTo(fragment,
@@ -431,18 +442,24 @@ export class FragmentGenerator {
                     scale: 0.8
                 },
                 {
-                    opacity: 0.3,
+                    opacity: 0.8,
                     scale: 1,
                     duration: 1,
                     ease: 'power2.out'
                 }
             )
             .to(fragment, {
+                x: drift.x * 0.3, // Reduce drift distance
+                y: drift.y * 0.3,
+                duration: animationDuration * 0.7, // Most of the time at full opacity
+                ease: 'none'
+            })
+            .to(fragment, {
                 x: drift.x,
                 y: drift.y,
                 opacity: 0,
-                duration: animationDuration,
-                ease: 'none',
+                duration: animationDuration * 0.3, // Quick fade at the end
+                ease: 'power2.in',
                 onComplete: () => {
                     // Only remove if still in DOM (might have been removed by observer)
                     if (fragment.parentNode) {
@@ -487,30 +504,43 @@ export class FragmentGenerator {
     }
 
     positionFragment(fragment, edge, offset) {
+        // Add some margin from the very edge to avoid bunching
+        const edgeMargin = 5; // 5% margin from screen edge
+        const usableSpace = 100 - (edgeMargin * 2); // 90% of screen space
+        const adjustedOffset = edgeMargin + (offset * usableSpace / 100);
+
+        const positions = {
+            0: { top: '0px', left: `${adjustedOffset}%`, right: 'auto', bottom: 'auto' }, // Top edge
+            1: { top: `${adjustedOffset}%`, left: 'auto', right: '0px', bottom: 'auto' }, // Right edge
+            2: { top: 'auto', left: `${adjustedOffset}%`, right: 'auto', bottom: '0px' }, // Bottom edge
+            3: { top: `${adjustedOffset}%`, left: '0px', right: 'auto', bottom: 'auto' }  // Left edge
+        };
+
+        const pos = positions[edge];
+
         gsap.set(fragment, {
             position: 'absolute',
-            top: edge === 0 ? '0' : edge === 2 ? 'auto' : `${offset}%`,
-            bottom: edge === 2 ? '0' : 'auto',
-            left: edge === 3 ? '0' : edge === 1 ? 'auto' : `${offset}%`,
-            right: edge === 1 ? '0' : 'auto'
+            ...pos
         });
     }
 
     calculateDrift(edge) {
-        // Adjust drift distance based on performance mode
-        const baseDistance = this.performanceMode === 'minimal' ? 30 :
-                           this.performanceMode === 'reduced' ? 40 : 50;
-        const distance = baseDistance + Math.random() * 50;
-        const spread = (Math.random() - 0.5) * 100;
+        // Adjust drift distance based on performance mode - move more toward center
+        const baseDistance = this.performanceMode === 'minimal' ? 80 :
+                           this.performanceMode === 'reduced' ? 120 : 150;
+        const distance = baseDistance + Math.random() * 100;
+
+        // Reduce spread to avoid fragments going too far off-screen
+        const spread = (Math.random() - 0.5) * 60; // Reduced from 100 to 60
 
         switch(edge) {
-            case 0: // Top
+            case 0: // Top - drift toward center and down
                 return { x: spread, y: distance };
-            case 1: // Right
+            case 1: // Right - drift toward center and left
                 return { x: -distance, y: spread };
-            case 2: // Bottom
+            case 2: // Bottom - drift toward center and up
                 return { x: spread, y: -distance };
-            case 3: // Left
+            case 3: // Left - drift toward center and right
                 return { x: distance, y: spread };
         }
     }

@@ -1,24 +1,73 @@
 // Audio subsystem for the Clear Lode
 export class ClearLodeAudio {
     constructor() {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.audioContext = null;
         this.oscillator = null;
         this.gainNode = null;
         this.degradationLevel = 0;
         this.baseFrequency = 528; // "Love frequency" / DNA repair
+        this.audioInitialized = false;
+        this.userGestureReceived = false;
+        this.pendingPureTone = false;
 
         // Track if worklet is available
         this.workletAvailable = false;
         this.noiseWorklet = null;
-        
-        // Initialize worklet support
-        this.initializeWorklet();
+
+        // Set up user gesture listener
+        this.setupUserGestureListener();
+    }
+
+    setupUserGestureListener() {
+        const initAudio = async () => {
+            if (!this.userGestureReceived) {
+                this.userGestureReceived = true;
+                await this.initializeAudioContext();
+
+                // Remove listeners after first gesture
+                document.removeEventListener('click', initAudio);
+                document.removeEventListener('keydown', initAudio);
+                document.removeEventListener('touchstart', initAudio);
+            }
+        };
+
+        // Listen for any user gesture
+        document.addEventListener('click', initAudio);
+        document.addEventListener('keydown', initAudio);
+        document.addEventListener('touchstart', initAudio);
+    }
+
+    async initializeAudioContext() {
+        try {
+            // Handle browser compatibility
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            this.audioContext = new AudioContextClass();
+
+            // Resume context if suspended
+            if (this.audioContext.state === 'suspended') {
+                await this.audioContext.resume();
+            }
+
+            this.audioInitialized = true;
+            console.log('AudioContext initialized successfully');
+
+            // Initialize worklet support
+            await this.initializeWorklet();
+
+            // Start pure tone if it was requested before audio was ready
+            if (this.pendingPureTone) {
+                await this.startPureTone();
+            }
+        } catch (error) {
+            console.warn('AudioContext initialization failed:', error);
+            this.audioInitialized = false;
+        }
     }
     
  async initializeWorklet() {
         try {
-            // Check if AudioWorklet is supported
-            if (this.audioContext.audioWorklet) {
+            // Check if AudioWorklet is supported and context is available
+            if (this.audioContext && this.audioContext.audioWorklet) {
                 await this.audioContext.audioWorklet.addModule('/audio-worklets/noise-processor.js');
                 this.workletAvailable = true;
                 console.log('AudioWorklet initialized - enhanced performance available');
@@ -29,25 +78,38 @@ export class ClearLodeAudio {
         }
     }
 
-    startPureTone() {
-        // Create the pure sine wave
-        this.oscillator = this.audioContext.createOscillator();
-        this.gainNode = this.audioContext.createGain();
-        
-        this.oscillator.type = 'sine';
-        this.oscillator.frequency.setValueAtTime(this.baseFrequency, this.audioContext.currentTime);
-        
-        this.gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-        this.gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 2);
-        
-        this.oscillator.connect(this.gainNode);
-        this.gainNode.connect(this.audioContext.destination);
-        
-        this.oscillator.start();
+    async startPureTone() {
+        // If audio isn't initialized yet, queue the start for later
+        if (!this.audioInitialized) {
+            console.log('Audio not initialized - queueing pure tone start');
+            this.pendingPureTone = true;
+            return;
+        }
+
+        try {
+            // Create the pure sine wave
+            this.oscillator = this.audioContext.createOscillator();
+            this.gainNode = this.audioContext.createGain();
+
+            this.oscillator.type = 'sine';
+            this.oscillator.frequency.setValueAtTime(this.baseFrequency, this.audioContext.currentTime);
+
+            this.gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+            this.gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 2);
+
+            this.oscillator.connect(this.gainNode);
+            this.gainNode.connect(this.audioContext.destination);
+
+            this.oscillator.start();
+            this.pendingPureTone = false;
+            console.log('Pure tone started');
+        } catch (error) {
+            console.warn('Failed to start pure tone:', error);
+        }
     }
     
     startDegradation() {
-        if (!this.oscillator) return;
+        if (!this.oscillator || !this.audioInitialized) return;
 
         // Gradually introduce noise and frequency shifts
         const degradeInterval = setInterval(() => {
@@ -61,12 +123,18 @@ export class ClearLodeAudio {
             const degradationState = this.getDegradationState();
             document.body.setAttribute('data-degradation', degradationState);
 
-            // Frequency starts to waver
-            const frequencyShift = Math.sin(Date.now() * 0.001) * this.degradationLevel * 50;
-            this.oscillator.frequency.setValueAtTime(
-                this.baseFrequency + frequencyShift,
-                this.audioContext.currentTime
-            );
+            // Frequency starts to waver (only if audio is available)
+            if (this.oscillator && this.audioContext) {
+                try {
+                    const frequencyShift = Math.sin(Date.now() * 0.001) * this.degradationLevel * 50;
+                    this.oscillator.frequency.setValueAtTime(
+                        this.baseFrequency + frequencyShift,
+                        this.audioContext.currentTime
+                    );
+                } catch (error) {
+                    console.warn('Audio degradation failed:', error);
+                }
+            }
 
             // Volume decreases
             const newGain = Math.max(0.05, 0.3 - (this.degradationLevel * 0.1));
@@ -86,21 +154,34 @@ export class ClearLodeAudio {
     
     // Enhanced glitch burst using worklet if available
     async createGlitchBurst() {
-        if (this.workletAvailable) {
-            // Create temporary worklet noise burst
-            const burstWorklet = new AudioWorkletNode(this.audioContext, 'noise-processor');
-            const burstGain = this.audioContext.createGain();
+        if (!this.audioInitialized) return;
 
-            burstGain.gain.setValueAtTime(0.1 * this.degradationLevel, this.audioContext.currentTime);
-            burstGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.05);
+        if (this.workletAvailable && this.audioContext) {
+            try {
+                // Create temporary worklet noise burst
+                const burstWorklet = new AudioWorkletNode(this.audioContext, 'noise-processor');
+                const burstGain = this.audioContext.createGain();
 
-            burstWorklet.connect(burstGain);
-            burstGain.connect(this.audioContext.destination);
+                // Send degradation level to worklet
+                burstWorklet.port.postMessage({
+                    type: 'setDegradationLevel',
+                    value: this.degradationLevel
+                });
 
-            // Stop after burst
-            setTimeout(() => {
-                burstWorklet.disconnect();
-            }, 50);
+                burstGain.gain.setValueAtTime(0.1 * this.degradationLevel, this.audioContext.currentTime);
+                burstGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.05);
+
+                burstWorklet.connect(burstGain);
+                burstGain.connect(this.audioContext.destination);
+
+                // Stop after burst
+                setTimeout(() => {
+                    burstWorklet.disconnect();
+                }, 50);
+            } catch (error) {
+                console.warn('AudioWorklet glitch burst failed:', error);
+                this.createBufferGlitchBurst();
+            }
         } else {
             // Use existing buffer-based approach
             this.createBufferGlitchBurst();
@@ -145,9 +226,22 @@ export class ClearLodeAudio {
     }
 
     async createWorkletNoise() {
+        if (!this.audioInitialized || !this.audioContext) return;
+
         try {
             // Create noise using AudioWorklet (better performance)
             this.noiseWorklet = new AudioWorkletNode(this.audioContext, 'noise-processor');
+
+            // Send initial parameters to worklet
+            this.noiseWorklet.port.postMessage({
+                type: 'setNoiseLevel',
+                value: 0.1
+            });
+
+            this.noiseWorklet.port.postMessage({
+                type: 'setDegradationLevel',
+                value: this.degradationLevel
+            });
 
             // Create gain node for volume control
             const noiseGain = this.audioContext.createGain();
@@ -165,26 +259,42 @@ export class ClearLodeAudio {
     }
 
     createScriptProcessorNoise() {
-        // Fallback to ScriptProcessor (deprecated but widely supported)
-        const bufferSize = 4096;
-        const noiseNode = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
+        if (!this.audioInitialized || !this.audioContext) return;
 
-        noiseNode.onaudioprocess = (e) => {
-            const output = e.outputBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = (Math.random() * 2 - 1) * 0.1;
-            }
-        };
+        try {
+            // Fallback to ScriptProcessor (deprecated but widely supported)
+            const bufferSize = 4096;
+            const noiseNode = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
 
-        // Create gain node for volume control
-        const noiseGain = this.audioContext.createGain();
-        noiseGain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+            noiseNode.onaudioprocess = (e) => {
+                const output = e.outputBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    let noise = (Math.random() * 2 - 1) * 0.1;
 
-        // Connect the nodes
-        noiseNode.connect(noiseGain);
-        noiseGain.connect(this.audioContext.destination);
+                    // Apply degradation effects
+                    if (this.degradationLevel > 0) {
+                        const glitchChance = this.degradationLevel * 0.01;
+                        if (Math.random() < glitchChance) {
+                            noise *= (1 + this.degradationLevel * 5);
+                        }
+                    }
 
-        console.log('Digital static achieved through ScriptProcessor (legacy)');
+                    output[i] = noise;
+                }
+            };
+
+            // Create gain node for volume control
+            const noiseGain = this.audioContext.createGain();
+            noiseGain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+
+            // Connect the nodes
+            noiseNode.connect(noiseGain);
+            noiseGain.connect(this.audioContext.destination);
+
+            console.log('Digital static achieved through ScriptProcessor (legacy)');
+        } catch (error) {
+            console.warn('ScriptProcessor noise failed:', error);
+        }
     }
     
     achieveResonance() {
@@ -218,6 +328,20 @@ export class ClearLodeAudio {
 
     getDegradationLevel() {
         return this.degradationLevel;
+    }
+
+    accelerateDegradation(amount = 0.1) {
+        this.degradationLevel += amount;
+        this.degradationLevel = Math.min(1.0, this.degradationLevel); // Cap at 1.0
+
+        // Update visual degradation
+        document.documentElement.style.setProperty('--degradation-level', this.degradationLevel);
+
+        // Update body attribute for degradation state
+        const degradationState = this.getDegradationState();
+        document.body.setAttribute('data-degradation', degradationState);
+
+        console.log(`Degradation accelerated to ${this.degradationLevel.toFixed(2)}`);
     }
 
     getDegradationState() {

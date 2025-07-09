@@ -1,3 +1,82 @@
+/* CSS Variables for Clear Lode */
+:root {
+    --fragment-opacity: 0.7;
+    --degradation-level: 0;
+    --current-white: #ffffff;
+    --blur-amount: 0px;
+    --time-factor: 1;
+}
+
+/* Begin prompt for immediate engagement */
+#begin-prompt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.begin-content {
+    text-align: center;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    max-width: 500px;
+    padding: 2rem;
+}
+
+.begin-content h1 {
+    font-size: 2.5rem;
+    margin: 0 0 1rem 0;
+    font-weight: 300;
+    letter-spacing: 2px;
+    background: linear-gradient(45deg, #ffffff, #cccccc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.begin-content p {
+    font-size: 1.2rem;
+    margin: 0 0 2rem 0;
+    opacity: 0.8;
+    line-height: 1.6;
+}
+
+.begin-button {
+    background: linear-gradient(45deg, #333333, #555555);
+    border: 2px solid #666666;
+    color: #ffffff;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    margin-bottom: 1rem;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.begin-button:hover {
+    background: linear-gradient(45deg, #555555, #777777);
+    border-color: #888888;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.begin-content small {
+    font-size: 0.9rem;
+    opacity: 0.6;
+    display: block;
+    margin-top: 1rem;
+}
+
 /* The transition from void to overwhelming light */
 body.approaching-light {
     background: #000000;
@@ -6,8 +85,10 @@ body.approaching-light {
     transition: background 3s ease-in-out;
 }
 
+
+
 body.light-manifested {
-    background: radial-gradient(circle at center, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
+    /* Background will be set by GSAP animation */
     animation: light-pulse 4s ease-in-out infinite;
 }
 
@@ -51,11 +132,13 @@ body.light-manifested {
 }
 
 .recognition-zone {
-    width: 300px;
-    height: 300px;
+    width: 100vw;
+    height: 100vh;
     position: relative;
     cursor: default;
     transition: all 0.3s ease;
+    /* Ensure it's properly centered */
+    margin: 0 auto;
 }
 
 .recognition-zone[data-active="true"] {
@@ -66,46 +149,82 @@ body.light-manifested {
 .light-core {
     width: 100%;
     height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
     background: radial-gradient(
-        circle, 
-        rgba(255,255,255, var(--recognition-opacity)) 0%, 
-        rgba(255,255,255,0) 70%
+        circle at center,
+        rgba(255,255,255,1) 0%,
+        rgba(255,255,255,0.9) 20%,
+        rgba(255,255,255,0.7) 40%,
+        rgba(255,255,255,0.4) 60%,
+        rgba(255,255,255,0.2) 80%,
+        rgba(255,255,255,0) 100%
     );
-    filter: blur(calc(20px + var(--blur-amount)));
-    transform: scale(var(--recognition-scale));
-    box-shadow: 0 0 calc(50px * var(--recognition-glow)) var(--current-white);
-    animation: light-pulse var(--pulse-speed) ease-in-out infinite;
+    filter: blur(40px);
+    box-shadow:
+        0 0 100px rgba(255,255,255,1),
+        0 0 200px rgba(255,255,255,0.8),
+        0 0 400px rgba(255,255,255,0.6),
+        0 0 800px rgba(255,255,255,0.4);
+    animation: light-pulse 4s ease-in-out infinite;
+    transform-origin: center center;
 }
 
+
+/* The degrading prompt container */
+#choice-prompt {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+}
 
 /* The glitching Y/N prompt */
 .glitching-text {
     font-family: 'Courier New', monospace;
     font-size: 18px;
     color: #000;
-    text-shadow: 
+    text-shadow:
         var(--chromatic-aberration) var(--chromatic-aberration) 0 rgba(255,0,0,0.5),
         calc(var(--chromatic-aberration) * -1) calc(var(--chromatic-aberration) * -1) 0 rgba(0,255,255,0.5);
-    animation: glitch-skew 0.5s infinite;
+    animation: glitch-skew 2s infinite; /* Slowed down from 0.5s to 2s */
     transform: translateX(var(--glitch-intensity));
 }
 
 @keyframes glitch-skew {
     0%, 100% { transform: skew(0deg); }
-    20% { transform: skew(-2deg); }
-    40% { transform: skew(1deg); }
-    60% { transform: skew(-1deg); }
-    80% { transform: skew(2deg); }
+    10% { transform: skew(-1deg); }
+    25% { transform: skew(0.5deg); }
+    40% { transform: skew(-0.5deg); }
+    60% { transform: skew(1deg); }
+    80% { transform: skew(-0.5deg); }
+    90% { transform: skew(0.5deg); }
+}
+
+/* Fragment field container */
+#fragment-field {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 10;
 }
 
 /* Consciousness fragments at screen edges */
 .consciousness-fragment {
     position: absolute;
-    font-size: 12px;
-    opacity: var(--fragment-opacity);
-    color: rgba(0, 0, 0, var(--fragment-opacity));
+    font-size: 14px;
+    opacity: var(--fragment-opacity, 0.9);
+    color: rgba(0, 0, 0, var(--fragment-opacity, 0.9));
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     pointer-events: none;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 4px;
+    border-radius: 2px;
     /* GSAP will handle all animation */
 }
 

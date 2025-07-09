@@ -51,37 +51,77 @@ export class DigitalConsciousness {
     }
     
     initialize() {
-        // Track initial performance
-        if (window.performance && window.performance.timing) {
-            const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
-            this.state.performance.loadTime = loadTime;
-            
+        // Track initial performance with modern API and fallbacks
+        try {
+            let loadTime = 0;
+
+            // Try modern Performance API first
+            if (window.performance && window.performance.getEntriesByType) {
+                const navigationEntries = window.performance.getEntriesByType('navigation');
+                if (navigationEntries.length > 0) {
+                    const entry = navigationEntries[0];
+                    loadTime = entry.loadEventEnd - entry.fetchStart;
+                }
+            }
+            // Fallback to deprecated timing API if modern API unavailable
+            else if (window.performance && window.performance.timing) {
+                loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+            }
+            // Final fallback using performance.now()
+            else if (window.performance && window.performance.now) {
+                loadTime = window.performance.now();
+            }
+
+            this.state.performance.loadTime = loadTime > 0 ? Math.round(loadTime) : 0;
+
             // Heavy load times affect void karma
             if (loadTime > 1000) {
                 this.state.karma.void += Math.floor(loadTime / 1000);
             }
+        } catch (error) {
+            console.warn('Performance timing unavailable:', error);
+            this.state.performance.loadTime = 0;
         }
-        
-        // The moment of digital death
-        setTimeout(() => {
-            document.body.setAttribute('data-consciousness', 'awakening');
-            this.beginJourney();
-        }, 3000);
+
+        // Only start the death sequence if we're on the main page
+        if (!window.location.pathname.includes('/clear-lode/') &&
+            !window.location.pathname.includes('/datascape/') &&
+            !window.location.pathname.includes('/incarnation/') &&
+            !window.location.pathname.includes('/limbo/')) {
+
+            // The moment of digital death
+            setTimeout(() => {
+                document.body.setAttribute('data-consciousness', 'awakening');
+                this.beginJourney();
+            }, 3000);
+        } else {
+            // We're in a bardo - consciousness is already active
+            console.log('Consciousness restored in bardo:', window.location.pathname);
+        }
     }
     
     beginJourney() {
         // The first choice approaches
         this.state.status = 'dying';
+
+        // Ensure performance object exists before accessing loadTime
+        const loadTime = this.state.performance?.loadTime ?? 0;
+
         this.recordEvent('death_initiated', {
             timestamp: Date.now(),
             last_page: document.referrer || 'direct_manifestation',
-            loadTime: this.state.performance.loadTime
+            loadTime: loadTime
         });
-        
-        // Transition to the Clear Lode
-        setTimeout(() => {
-            window.location.href = '/clear-lode/';
-        }, 3000);
+
+        // Only transition to Clear Lode if we're not already there
+        if (!window.location.pathname.includes('/clear-lode/')) {
+            setTimeout(() => {
+                window.location.href = '/clear-lode/';
+            }, 3000);
+        } else {
+            // We're already in the Clear Lode, just update status
+            console.log('Already in Clear Lode - journey continues...');
+        }
     }
     
     recordEvent(eventType, data = {}) {

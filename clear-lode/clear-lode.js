@@ -4,14 +4,18 @@ import { consciousness } from '../src/consciousness/digital-soul.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator.js';
 import { gsap } from 'gsap';
+import { TextPlugin } from 'gsap/TextPlugin';
+
+// Register GSAP plugins
+gsap.registerPlugin(TextPlugin);
 
 class ClearLode {
     constructor() {
         // Core configuration
         this.config = {
             recognitionWindow: {
-                start: 3000,  // 3 seconds after light manifestation
-                end: 15000    // 15 seconds total window
+                start: 3500,  // 3.5 seconds after light manifestation (after light is visible)
+                end: 6500     // 6.5 seconds total window (3 seconds to recognize)
             },
             hints: [
                 "Look deeper...",
@@ -20,8 +24,8 @@ class ClearLode {
                 "The source reveals itself...",
                 "Click to recognize..."
             ],
-            hintDelay: 2000,
-            hintFadeTime: 1500,
+            hintDelay: 800,   // Faster hints
+            hintFadeTime: 600, // Quicker fade
             glitchPrompts: [
                 "CONTINUE TO NEXT LIFE? Y/N",
                 "继续下一世？是/否",
@@ -149,79 +153,153 @@ class ClearLode {
         };
         return messages[method] || messages.default;
     }
-    
+
+    showBeginPrompt() {
+        // Show an immediate, engaging prompt instead of long black screen
+        const beginPrompt = document.createElement('div');
+        beginPrompt.id = 'begin-prompt';
+        beginPrompt.innerHTML = `
+            <div class="begin-content">
+                <h1>The Digital Bardo</h1>
+                <p>A journey through consciousness and dissolution</p>
+                <button class="begin-button">Begin Experience</button>
+                <small>Click to enable audio and start</small>
+            </div>
+        `;
+        document.body.appendChild(beginPrompt);
+
+        // Handle begin click
+        const beginButton = beginPrompt.querySelector('.begin-button');
+        beginButton.addEventListener('click', async () => {
+            // Initialize audio first
+            await this.audio.initializeAudioContext();
+
+            // Remove prompt
+            gsap.to(beginPrompt, {
+                opacity: 0,
+                duration: 0.5,
+                onComplete: () => {
+                    beginPrompt.remove();
+                    // Start the actual experience immediately
+                    this.manifestLight();
+                }
+            });
+        });
+    }
+
     async init() {
-        // NEW: Set initial time factor based on performance
+        // Set initial time factor based on performance
         const loadTime = performance.now();
         const timeFactor = Math.max(0.5, Math.min(2, 1000 / loadTime));
         document.documentElement.style.setProperty('--time-factor', timeFactor);
 
-        // EXISTING CODE CONTINUES HERE...
+        // Audio will be initialized through the begin prompt
+
         // Record entry into Clear Lode
         consciousness.recordEvent('clear_lode_entered', {
             timestamp: Date.now(),
             timeFactor: timeFactor
         });
     }
+
+    showAudioPromptIfNeeded() {
+        if (!this.audio.audioInitialized) {
+            const audioPrompt = document.getElementById('audio-prompt');
+            audioPrompt.classList.remove('hidden');
+
+            // Handle click to initialize audio
+            const handleAudioInit = async () => {
+                audioPrompt.classList.add('hidden');
+                // Audio will be initialized by the gesture listener in audio-engine.js
+                audioPrompt.removeEventListener('click', handleAudioInit);
+            };
+
+            audioPrompt.addEventListener('click', handleAudioInit);
+
+            // Auto-hide the prompt after 5 seconds to not block the experience
+            setTimeout(() => {
+                if (!this.audio.audioInitialized) {
+                    audioPrompt.classList.add('hidden');
+                    console.log('Audio prompt auto-hidden - continuing without audio');
+                }
+            }, 5000);
+        }
+    }
     
     manifestLight() {
+        console.log('🌟 Starting light manifestation...');
         this.localState.lightManifested = true;
-        
+
         // Create GSAP timeline for light manifestation
         this.timelines.manifestation = gsap.timeline({
             onComplete: () => {
-                console.log('Light fully manifested');
+                console.log('✨ Light fully manifested');
             }
         });
         
-        // Orchestrate the transition with GSAP
+        // Orchestrate the transition with GSAP - keep background dark while light grows
         this.timelines.manifestation
-            // Fade out the void
+            // Fade out the void first
             .to('#pre-light', {
                 opacity: 0,
-                duration: 2,
+                duration: 0.5,
                 ease: 'power2.inOut',
                 onComplete: () => {
                     document.getElementById('pre-light').classList.add('hidden');
                 }
             })
-            // Prepare clear light
+            // Immediately show the light container but invisible
             .set('#clear-light', {
-                opacity: 0,
-                scale: 0.8,
                 display: 'block',
+                opacity: 1,
                 onComplete: () => {
                     document.getElementById('clear-light').classList.remove('hidden');
                 }
             })
-            // Manifest the light
-            .to('#clear-light', {
-                opacity: 1,
-                scale: 1,
-                duration: 3,
-                ease: 'power1.in'
+            // Start with light core at center, very small
+            .set('.light-core', {
+                scale: 0,
+                opacity: 0
             })
-            // Animate the light core
+            // Grow the light from center outward FIRST (much slower)
+            .to('.light-core', {
+                scale: 1,
+                opacity: 1,
+                duration: 3,
+                ease: 'power2.out'
+            })
+            // THEN transition background to white (after light is visible, much later)
+            .to('body', {
+                backgroundColor: '#ffffff',
+                duration: 2,
+                ease: 'power2.inOut',
+                onStart: () => {
+                    document.body.classList.remove('approaching-light');
+                    // Don't add light-manifested class immediately - it changes background
+                }
+            }, '-=1')
+            // Add the light-manifested class after background transition
+            .call(() => {
+                document.body.classList.add('light-manifested');
+            })
+            // Start the gentle rotation
             .to('.light-core', {
                 rotation: 360,
                 duration: 20,
                 repeat: -1,
                 ease: 'none'
-            }, '-=3')
-            // Body background transition
-            .to('body', {
-                backgroundColor: '#ffffff',
-                duration: 3,
-                ease: 'power2.inOut',
-                onStart: () => {
-                    document.body.classList.remove('approaching-light');
-                    document.body.classList.add('light-manifested');
-                }
-            }, '-=3');
+            }, '-=0.8');
         
-        // Start audio and fragments
-        this.audio.startPureTone();
-        this.fragments.startFragmentField();
+        // Only start audio if user has already interacted (audio initialized)
+        if (this.audio.audioInitialized) {
+            console.log('🎵 Starting audio...');
+            this.audio.startPureTone();
+        }
+
+        // Start fragments after light is fully visible (4 seconds to ensure light is established)
+        gsap.delayedCall(4, () => {
+            this.fragments.startFragmentField();
+        });
         
         // Enable recognition window with GSAP delay
         gsap.delayedCall(this.config.recognitionWindow.start / 1000, () => {
@@ -449,27 +527,28 @@ class ClearLode {
         const glitchText = document.querySelector('.glitching-text');
         const prompts = this.config.glitchPrompts;
 
-        // Create a timeline for text glitching
+        // Create a timeline for text glitching (much slower)
         const textGlitch = gsap.timeline({ repeat: -1 });
 
         prompts.forEach((prompt) => {
             textGlitch.to(glitchText, {
-                duration: 0.1,
+                duration: 0.3, // Increased from 0.1 to 0.3
                 text: prompt,
                 ease: 'none',
-                delay: 0.5
+                delay: 2.5    // Increased from 0.5 to 2.5 seconds between changes
             });
         });
 
-        // Add random glitch spikes
+        // Add random glitch spikes (less frequent)
         gsap.to(glitchText, {
-            skewX: () => Math.random() * 4 - 2,
-            skewY: () => Math.random() * 2 - 1,
-            x: () => Math.random() * 4 - 2,
-            duration: 0.1,
+            skewX: () => Math.random() * 2 - 1, // Reduced intensity
+            skewY: () => Math.random() * 1 - 0.5,
+            x: () => Math.random() * 2 - 1,
+            duration: 0.3, // Slower glitch spikes
             repeat: -1,
             yoyo: true,
-            ease: 'steps(2)'
+            ease: 'steps(2)',
+            delay: 1 // Add delay between glitch spikes
         });
     }
 
@@ -498,10 +577,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clearLode = new ClearLode();
     await clearLode.init();
 
-    // Auto-start light manifestation after brief delay
-    setTimeout(() => {
-        clearLode.manifestLight();
-    }, 2000);
+    // Start immediately with a click-to-begin prompt instead of long black screen
+    clearLode.showBeginPrompt();
 
     // Store instance globally for debugging
     window.clearLode = clearLode;
