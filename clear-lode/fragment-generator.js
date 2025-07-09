@@ -8,29 +8,15 @@ export class FragmentGenerator {
         this.isActive = false;
         this.performanceMode = 'normal'; // 'normal', 'reduced', 'minimal'
 
-        // Viewport detection optimization
-        this.fragmentObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) {
-                    // Fragment has drifted beyond perception
-                    const fragment = entry.target;
-                    const content = fragment.textContent;
+        // Feature availability flags
+        this.features = {
+            intersectionObserver: false,
+            performanceMemory: false,
+            requestAnimationFrame: false
+        };
 
-                    // Record the dissolution event
-                    consciousness.recordEvent('memory_dissolved', {
-                        content: content,
-                        timeVisible: Date.now() - (fragment.dataset.birthTime || Date.now()),
-                        naturalDissolution: true
-                    });
-
-                    // Clean removal
-                    this.removeFragment(fragment);
-                }
-            });
-        }, {
-            rootMargin: '50px',
-            threshold: 0
-        });
+        // Initialize viewport detection optimization with error handling
+        this.initializeIntersectionObserver();
 
         // Performance monitoring
         this.performanceMetrics = {
@@ -54,6 +40,9 @@ export class FragmentGenerator {
         // Adaptive performance adjustment
         this.initPerformanceMonitoring();
 
+        // Log browser compatibility on initialization
+        console.log('🔧 Fragment Generator Browser Compatibility:', this.getBrowserCompatibility());
+
         // Last thoughts database
         this.thoughtFragments = [
             "I remember...", "Was I ever...", "The light...", "Mother's voice...",
@@ -64,72 +53,257 @@ export class FragmentGenerator {
         ];
     }
 
-    initPerformanceMonitoring() {
-        // Start adaptive memory monitoring
-        if ('memory' in performance) {
-            this.startAdaptiveMemoryMonitoring();
+    initializeIntersectionObserver() {
+        try {
+            if ('IntersectionObserver' in window) {
+                this.fragmentObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) {
+                            // Fragment has drifted beyond perception
+                            const fragment = entry.target;
+                            const content = fragment.textContent;
+
+                            // Record the dissolution event
+                            consciousness.recordEvent('memory_dissolved', {
+                                content: content,
+                                timeVisible: Date.now() - (fragment.dataset.birthTime || Date.now()),
+                                naturalDissolution: true
+                            });
+
+                            // Clean removal
+                            this.removeFragment(fragment);
+                        }
+                    });
+                }, {
+                    rootMargin: '50px',
+                    threshold: 0
+                });
+
+                this.features.intersectionObserver = true;
+                console.log('IntersectionObserver initialized - viewport optimization available');
+            } else {
+                console.log('IntersectionObserver not available, using fallback cleanup method');
+                this.features.intersectionObserver = false;
+                // Fallback: use timer-based cleanup
+                this.initializeFallbackCleanup();
+            }
+        } catch (error) {
+            console.log('IntersectionObserver initialization failed, falling back to timer cleanup:', error.message);
+            this.features.intersectionObserver = false;
+            this.initializeFallbackCleanup();
         }
+    }
 
-        // Monitor frame rate and adjust accordingly
-        let lastTime = performance.now();
+    initializeFallbackCleanup() {
+        // Fallback cleanup method for browsers without IntersectionObserver
+        setInterval(() => {
+            if (!this.isActive) return;
+
+            this.activeFragments.forEach(fragment => {
+                if (fragment.parentNode) {
+                    const rect = fragment.getBoundingClientRect();
+                    const isVisible = rect.top < window.innerHeight &&
+                                    rect.bottom > 0 &&
+                                    rect.left < window.innerWidth &&
+                                    rect.right > 0;
+
+                    if (!isVisible) {
+                        consciousness.recordEvent('memory_dissolved', {
+                            content: fragment.textContent,
+                            timeVisible: Date.now() - (fragment.dataset.birthTime || Date.now()),
+                            naturalDissolution: true,
+                            fallbackCleanup: true
+                        });
+                        this.removeFragment(fragment);
+                    }
+                }
+            });
+        }, 2000); // Check every 2 seconds
+    }
+
+    initPerformanceMonitoring() {
+        // Check for performance.memory availability with error handling
+        this.initializeMemoryMonitoring();
+
+        // Check for requestAnimationFrame availability and monitor frame rate
+        this.initializeFrameRateMonitoring();
+    }
+
+    initializeMemoryMonitoring() {
+        try {
+            if ('memory' in performance && performance.memory) {
+                // Test if we can actually access memory properties
+                const testMemory = performance.memory.usedJSHeapSize;
+                if (typeof testMemory === 'number') {
+                    this.features.performanceMemory = true;
+                    this.startAdaptiveMemoryMonitoring();
+                    console.log('Performance.memory monitoring initialized - memory optimization available');
+                } else {
+                    throw new Error('Memory properties not accessible');
+                }
+            } else {
+                throw new Error('Performance.memory not available');
+            }
+        } catch (error) {
+            console.log('Performance.memory not available, using simplified performance monitoring:', error.message);
+            this.features.performanceMemory = false;
+            // Fallback: use basic performance monitoring without memory metrics
+            this.startBasicPerformanceMonitoring();
+        }
+    }
+
+    initializeFrameRateMonitoring() {
+        try {
+            if ('requestAnimationFrame' in window) {
+                this.features.requestAnimationFrame = true;
+
+                // Monitor frame rate and adjust accordingly
+                let lastTime = performance.now();
+                let frameCount = 0;
+
+                const checkFrameRate = (currentTime) => {
+                    frameCount++;
+                    if (currentTime - lastTime >= 1000) {
+                        const fps = frameCount;
+                        frameCount = 0;
+                        lastTime = currentTime;
+
+                        // Adjust performance mode based on FPS
+                        if (fps < 30 && this.performanceMode === 'normal') {
+                            this.performanceMode = 'reduced';
+                        } else if (fps < 20) {
+                            this.performanceMode = 'minimal';
+                        }
+
+                        // FPS changes also affect monitoring frequency
+                        this.adjustMonitoringFrequency('fps', fps);
+                    }
+
+                    if (this.isActive) {
+                        requestAnimationFrame(checkFrameRate);
+                    }
+                };
+
+                requestAnimationFrame(checkFrameRate);
+                console.log('RequestAnimationFrame monitoring initialized - smooth performance tracking available');
+            } else {
+                throw new Error('RequestAnimationFrame not available');
+            }
+        } catch (error) {
+            console.log('RequestAnimationFrame not available, using timer-based monitoring:', error.message);
+            this.features.requestAnimationFrame = false;
+            // Fallback: use setInterval for basic performance monitoring
+            this.startTimerBasedMonitoring();
+        }
+    }
+
+    startBasicPerformanceMonitoring() {
+        // Simplified performance monitoring without memory metrics
+        console.log('Using basic performance monitoring without memory metrics');
+
+        // Use a simple timer to periodically check performance
+        setInterval(() => {
+            if (!this.isActive) return;
+
+            // Basic heuristics based on fragment count and timing
+            const fragmentCount = this.activeFragments.length;
+            const maxFragments = 15; // Conservative limit
+
+            if (fragmentCount > maxFragments * 0.8) {
+                this.performanceMode = 'reduced';
+            } else if (fragmentCount > maxFragments * 0.6) {
+                this.performanceMode = 'normal';
+            }
+
+            consciousness.recordEvent('basic_performance_check', {
+                fragmentCount,
+                performanceMode: this.performanceMode
+            });
+        }, 3000); // Check every 3 seconds
+    }
+
+    startTimerBasedMonitoring() {
+        // Fallback monitoring using setInterval instead of requestAnimationFrame
+        console.log('Using timer-based performance monitoring');
+
         let frameCount = 0;
+        let lastTime = Date.now();
 
-        const checkFrameRate = (currentTime) => {
+        const checkPerformance = () => {
             frameCount++;
+            const currentTime = Date.now();
+
             if (currentTime - lastTime >= 1000) {
-                const fps = frameCount;
+                // Estimate "FPS" based on timer frequency
+                const estimatedFPS = frameCount;
                 frameCount = 0;
                 lastTime = currentTime;
 
-                // Adjust performance mode based on FPS
-                if (fps < 30 && this.performanceMode === 'normal') {
+                // Adjust performance mode based on estimated performance
+                if (estimatedFPS < 30 && this.performanceMode === 'normal') {
                     this.performanceMode = 'reduced';
-                } else if (fps < 20) {
+                } else if (estimatedFPS < 20) {
                     this.performanceMode = 'minimal';
                 }
 
-                // FPS changes also affect monitoring frequency
-                this.adjustMonitoringFrequency('fps', fps);
+                consciousness.recordEvent('timer_performance_check', {
+                    estimatedFPS,
+                    performanceMode: this.performanceMode
+                });
             }
 
             if (this.isActive) {
-                requestAnimationFrame(checkFrameRate);
+                setTimeout(checkPerformance, 16); // ~60fps equivalent
             }
         };
 
-        requestAnimationFrame(checkFrameRate);
+        setTimeout(checkPerformance, 16);
     }
 
     startAdaptiveMemoryMonitoring() {
         const monitorMemory = () => {
-            const memInfo = performance.memory;
-            const pressure = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
-            const previousPressure = this.performanceMetrics.memoryPressure;
-            const previousMode = this.performanceMode;
+            try {
+                const memInfo = performance.memory;
 
-            this.performanceMetrics.memoryPressure = pressure;
+                // Safely access memory properties with additional checks
+                if (!memInfo || typeof memInfo.usedJSHeapSize !== 'number' || typeof memInfo.jsHeapSizeLimit !== 'number') {
+                    throw new Error('Memory properties not accessible');
+                }
 
-            // Adjust performance mode based on memory pressure
-            if (pressure > 0.8) {
-                this.performanceMode = 'minimal';
-            } else if (pressure > 0.6) {
-                this.performanceMode = 'reduced';
-            } else {
-                this.performanceMode = 'normal';
+                const pressure = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
+                const previousPressure = this.performanceMetrics.memoryPressure;
+                const previousMode = this.performanceMode;
+
+                this.performanceMetrics.memoryPressure = pressure;
+
+                // Adjust performance mode based on memory pressure
+                if (pressure > 0.8) {
+                    this.performanceMode = 'minimal';
+                } else if (pressure > 0.6) {
+                    this.performanceMode = 'reduced';
+                } else {
+                    this.performanceMode = 'normal';
+                }
+
+                // Determine if performance is stable
+                const pressureChange = Math.abs(pressure - previousPressure);
+                const modeChanged = this.performanceMode !== previousMode;
+
+                this.adjustMonitoringFrequency('memory', {
+                    pressure,
+                    pressureChange,
+                    modeChanged
+                });
+
+                // Schedule next monitoring check
+                this.monitoringState.intervalId = setTimeout(monitorMemory, this.monitoringState.currentInterval);
+
+            } catch (error) {
+                console.log('Memory monitoring failed, falling back to basic monitoring:', error.message);
+                this.features.performanceMemory = false;
+                // Switch to basic monitoring
+                this.startBasicPerformanceMonitoring();
             }
-
-            // Determine if performance is stable
-            const pressureChange = Math.abs(pressure - previousPressure);
-            const modeChanged = this.performanceMode !== previousMode;
-
-            this.adjustMonitoringFrequency('memory', {
-                pressure,
-                pressureChange,
-                modeChanged
-            });
-
-            // Schedule next monitoring check
-            this.monitoringState.intervalId = setTimeout(monitorMemory, this.monitoringState.currentInterval);
         };
 
         // Start the adaptive monitoring
@@ -240,8 +414,10 @@ export class FragmentGenerator {
         document.getElementById('fragment-field').appendChild(fragment);
         this.activeFragments.push(fragment);
 
-        // Start observing for viewport exit
-        this.fragmentObserver.observe(fragment);
+        // Start observing for viewport exit (if available)
+        if (this.features.intersectionObserver && this.fragmentObserver) {
+            this.fragmentObserver.observe(fragment);
+        }
 
         // Animate with GSAP (optimized for performance mode)
         const drift = this.calculateDrift(edge);
@@ -286,8 +462,10 @@ export class FragmentGenerator {
     }
 
     removeFragment(fragment) {
-        // Stop observing
-        this.fragmentObserver.unobserve(fragment);
+        // Stop observing (if available)
+        if (this.features.intersectionObserver && this.fragmentObserver) {
+            this.fragmentObserver.unobserve(fragment);
+        }
 
         // Remove from active list
         this.activeFragments = this.activeFragments.filter(f => f !== fragment);
@@ -384,8 +562,10 @@ export class FragmentGenerator {
             this.removeFragment(fragment);
         });
 
-        // Disconnect observer
-        this.fragmentObserver.disconnect();
+        // Disconnect observer (if available)
+        if (this.features.intersectionObserver && this.fragmentObserver) {
+            this.fragmentObserver.disconnect();
+        }
 
         consciousness.recordEvent('fragment_generator_destroyed', {
             metrics: this.performanceMetrics,
@@ -402,6 +582,7 @@ export class FragmentGenerator {
             ...this.performanceMetrics,
             activeFragments: this.activeFragments.length,
             performanceMode: this.performanceMode,
+            features: this.features,
             adaptiveMonitoring: {
                 currentInterval: this.monitoringState.currentInterval,
                 stabilityCounter: this.monitoringState.stabilityCounter,
@@ -475,5 +656,52 @@ export class FragmentGenerator {
 
             console.log(`🎛️ Monitoring sensitivity set to: ${sensitivity}`, config);
         }
+    }
+
+    // Get browser compatibility information
+    getBrowserCompatibility() {
+        return {
+            features: this.features,
+            capabilities: {
+                viewportOptimization: this.features.intersectionObserver ? 'IntersectionObserver' : 'Timer-based fallback',
+                memoryMonitoring: this.features.performanceMemory ? 'Performance.memory API' : 'Basic heuristics',
+                frameRateMonitoring: this.features.requestAnimationFrame ? 'RequestAnimationFrame' : 'Timer-based',
+                overallCompatibility: this.calculateCompatibilityScore()
+            },
+            recommendations: this.getCompatibilityRecommendations()
+        };
+    }
+
+    calculateCompatibilityScore() {
+        const featureCount = Object.values(this.features).filter(Boolean).length;
+        const totalFeatures = Object.keys(this.features).length;
+        const score = (featureCount / totalFeatures) * 100;
+
+        if (score >= 100) return 'Excellent';
+        if (score >= 66) return 'Good';
+        if (score >= 33) return 'Limited';
+        return 'Basic';
+    }
+
+    getCompatibilityRecommendations() {
+        const recommendations = [];
+
+        if (!this.features.intersectionObserver) {
+            recommendations.push('Consider updating browser for better viewport optimization');
+        }
+
+        if (!this.features.performanceMemory) {
+            recommendations.push('Memory monitoring unavailable - performance adjustments will be basic');
+        }
+
+        if (!this.features.requestAnimationFrame) {
+            recommendations.push('Frame rate monitoring will be less accurate');
+        }
+
+        if (recommendations.length === 0) {
+            recommendations.push('All features available - optimal performance expected');
+        }
+
+        return recommendations;
     }
 }
