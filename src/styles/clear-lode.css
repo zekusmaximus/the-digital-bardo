@@ -62,13 +62,9 @@ body.light-manifested {
     height: 100%;
     background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
     filter: blur(20px);
-    animation: core-rotation 20s linear infinite;
+    /* GSAP handles rotation */
 }
 
-@keyframes core-rotation {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
 
 /* The glitching Y/N prompt */
 .glitching-text {
@@ -96,21 +92,9 @@ body.light-manifested {
     color: rgba(0,0,0,0.3);
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     pointer-events: none;
-    animation: fragment-drift 10s linear infinite;
+    /* GSAP will handle all animation */
 }
 
-@keyframes fragment-drift {
-    from { 
-        opacity: 0;
-        transform: translateX(0) translateY(0);
-    }
-    10% { opacity: 0.3; }
-    90% { opacity: 0.3; }
-    to { 
-        opacity: 0;
-        transform: translateX(var(--drift-x)) translateY(var(--drift-y));
-    }
-}
 
 /* Recognition hints system */
 .recognition-hint {

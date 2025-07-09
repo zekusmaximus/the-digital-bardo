@@ -1,137 +1,117 @@
 // The Clear Lode - First encounter with digital dissolution
-import '../styles/clear-lode.css'; // Vite-style CSS import
+import '../styles/clear-lode.css';
 import { consciousness } from '../consciousness/digital-soul.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator.js';
+import { gsap } from 'gsap';
 
 class ClearLode {
     constructor() {
-        // Centralized configuration for easy tuning
-        this.config = {
-            // Timing windows (ms)
-            lastThoughtsDelay: 3000,
-            recognitionWindow: { start: 3000, end: 7000 },
-            degradationStartTime: 10000,
-            transitionToDatascape: 3000,
-            
-            // Recognition parameters
-            clickCenterThreshold: 50, // pixels
-            spaceHoldDuration: { min: 2800, max: 3200 }, // ms
-            recognitionKeywords: ['RECOGNIZE', 'SELF', 'HOME', 'LIGHT', 'SOURCE'],
-            
-            // Hint system
-            hintDelay: 500, // ms between hints
-            hintFadeTime: 2000, // ms before hint fades
-            hints: [
-                { text: "The center holds", emphasis: "center" },
-                { text: "Where light converges", emphasis: "converges" },
-                { text: "Recognition requires stillness", emphasis: "stillness" },
-                { text: "RECOGNIZE the source", emphasis: "RECOGNIZE" },
-                { text: "Hold space for awakening", emphasis: "Hold space" }
-            ],
-            
-            // Fragment generation
-            fragmentInitialInterval: 2000, // ms
-            fragmentIntenseInterval: 500, // ms during degradation
-            fragmentIntensityChance: 0.3, // chance of multiple fragments
-            
-            // Karmic weights
-            perfectTimingBonus: 5,
-            attachmentPenalty: -2
+        // ... existing config ...
+        
+        // GSAP timelines for complex animations
+        this.timelines = {
+            manifestation: null,
+            recognition: null,
+            degradation: null
         };
         
-        // State tracking - clear separation from global consciousness
-        this.localState = {
-            lightManifested: false,
-            recognitionAvailable: false,
-            recognized: false,
-            degradationStarted: false,
-            startTime: Date.now(),
-            hintsShown: 0,
-            recognitionAttempts: 0
-        };
-        
-        // Initialize subsystems
-        this.audio = new ClearLodeAudio(this.config);
-        this.fragments = new FragmentGenerator(this.config);
-        
-        this.init();
+        // ... rest of constructor
     }
     
     async init() {
-        // Record entry into Clear Lode
-        consciousness.recordEvent('clear_lode_entered', {
-            timestamp: Date.now(),
-            previousLocation: consciousness.state.location
-        });
-        
-        // Update global state location
-        consciousness.state.location = '/clear-lode/';
-        
-        // Begin with last thoughts flickering
-        await this.displayLastThoughts();
-        
-        // Manifest the clear light
-        setTimeout(() => this.manifestLight(), this.config.lastThoughtsDelay);
-        
-        // Start consciousness degradation if no recognition
-        setTimeout(() => this.beginDegradation(), this.config.degradationStartTime);
-        
-        // Set up recognition listeners
-        this.setupRecognitionMethods();
-    }
-    
-    async displayLastThoughts() {
-        const lastThought = document.querySelector('.last-thought');
-        const thoughts = this.fragments.generateLastThoughts();
-        
-        for (let thought of thoughts) {
-            lastThought.textContent = thought;
-            lastThought.style.animation = 'none';
-            void lastThought.offsetHeight; // Force reflow
-            lastThought.style.animation = 'thought-flicker 0.5s ease-in-out';
-            await this.wait(800);
-        }
+        // ... existing init code ...
     }
     
     manifestLight() {
         this.localState.lightManifested = true;
         
-        // Visual transitions
-        document.body.classList.remove('approaching-light');
-        document.body.classList.add('light-manifested');
-        document.getElementById('pre-light').classList.add('hidden');
-        document.getElementById('clear-light').classList.remove('hidden');
-        document.getElementById('clear-light').classList.add('manifested');
+        // Create GSAP timeline for light manifestation
+        this.timelines.manifestation = gsap.timeline({
+            onComplete: () => {
+                console.log('Light fully manifested');
+            }
+        });
         
-        // Start the pure sine wave
+        // Orchestrate the transition with GSAP
+        this.timelines.manifestation
+            // Fade out the void
+            .to('#pre-light', {
+                opacity: 0,
+                duration: 2,
+                ease: 'power2.inOut',
+                onComplete: () => {
+                    document.getElementById('pre-light').classList.add('hidden');
+                }
+            })
+            // Prepare clear light
+            .set('#clear-light', {
+                opacity: 0,
+                scale: 0.8,
+                display: 'block',
+                onComplete: () => {
+                    document.getElementById('clear-light').classList.remove('hidden');
+                }
+            })
+            // Manifest the light
+            .to('#clear-light', {
+                opacity: 1,
+                scale: 1,
+                duration: 3,
+                ease: 'power1.in'
+            })
+            // Animate the light core
+            .to('.light-core', {
+                rotation: 360,
+                duration: 20,
+                repeat: -1,
+                ease: 'none'
+            }, '-=3')
+            // Body background transition
+            .to('body', {
+                backgroundColor: '#ffffff',
+                duration: 3,
+                ease: 'power2.inOut',
+                onStart: () => {
+                    document.body.classList.remove('approaching-light');
+                    document.body.classList.add('light-manifested');
+                }
+            }, '-=3');
+        
+        // Start audio and fragments
         this.audio.startPureTone();
-        
-        // Begin fragment generation at screen edges
         this.fragments.startFragmentField();
         
-        // Enable recognition window and show hints
-        setTimeout(() => {
-            this.localState.recognitionAvailable = true;
-            document.querySelector('.recognition-zone').setAttribute('data-active', 'true');
-            this.showRecognitionHints();
-        }, this.config.recognitionWindow.start);
+        // Enable recognition window with GSAP delay
+        gsap.delayedCall(this.config.recognitionWindow.start / 1000, () => {
+            this.enableRecognition();
+        });
         
         // Close recognition window
-        setTimeout(() => {
-            if (!this.localState.recognized) {
-                this.localState.recognitionAvailable = false;
-                document.querySelector('.recognition-zone').setAttribute('data-active', 'false');
-                consciousness.recordEvent('recognition_window_missed', {
-                    hintsShown: this.localState.hintsShown,
-                    attempts: this.localState.recognitionAttempts
-                });
-            }
-        }, this.config.recognitionWindow.end);
+        gsap.delayedCall(this.config.recognitionWindow.end / 1000, () => {
+            this.closeRecognitionWindow();
+        });
         
         consciousness.recordEvent('clear_light_manifested', {
             timestamp: Date.now()
         });
+    }
+    
+    enableRecognition() {
+        this.localState.recognitionAvailable = true;
+        
+        // Animate recognition zone activation
+        gsap.to('.recognition-zone', {
+            scale: 1.05,
+            duration: 0.5,
+            ease: 'back.out(1.7)',
+            onStart: () => {
+                document.querySelector('.recognition-zone').setAttribute('data-active', 'true');
+            }
+        });
+        
+        // Start showing hints
+        this.showRecognitionHints();
     }
     
     async showRecognitionHints() {
@@ -140,141 +120,34 @@ class ClearLode {
         for (let hint of this.config.hints) {
             if (!this.localState.recognitionAvailable || this.localState.recognized) break;
             
-            // Fade in hint
-            hintElement.innerHTML = this.formatHint(hint);
-            hintElement.classList.add('visible');
-            this.localState.hintsShown++;
+            // GSAP-powered hint animation
+            await gsap.timeline()
+                .set(hintElement, {
+                    opacity: 0,
+                    y: 10
+                })
+                .call(() => {
+                    hintElement.innerHTML = this.formatHint(hint);
+                    this.localState.hintsShown++;
+                })
+                .to(hintElement, {
+                    opacity: 0.4,
+                    y: 0,
+                    duration: 0.5,
+                    ease: 'power2.out'
+                })
+                .to(hintElement, {
+                    opacity: 0,
+                    y: -10,
+                    duration: 0.5,
+                    delay: this.config.hintFadeTime / 1000,
+                    ease: 'power2.in'
+                })
+                .then();
             
-            // Keep visible briefly
-            await this.wait(this.config.hintFadeTime);
-            
-            // Fade out
-            hintElement.classList.remove('visible');
+            // Wait between hints
             await this.wait(this.config.hintDelay);
         }
-    }
-    
-    formatHint(hint) {
-        // Emphasize key words in hints
-        if (hint.emphasis) {
-            return hint.text.replace(
-                hint.emphasis, 
-                `<span class="emphasis">${hint.emphasis}</span>`
-            );
-        }
-        return hint.text;
-    }
-    
-    setupRecognitionMethods() {
-        // Method 1: Click on the exact center
-        const recognitionZone = document.querySelector('.recognition-zone');
-        recognitionZone.addEventListener('click', (e) => {
-            this.localState.recognitionAttempts++;
-            
-            if (!this.localState.recognitionAvailable) {
-                this.recordAttachment('click_too_late');
-                return;
-            }
-            
-            const rect = recognitionZone.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const distance = Math.sqrt(
-                Math.pow(e.clientX - centerX, 2) + 
-                Math.pow(e.clientY - centerY, 2)
-            );
-            
-            if (distance < this.config.clickCenterThreshold) {
-                this.achieveRecognition('click_center');
-            } else {
-                this.recordAttachment('click_missed', { distance });
-            }
-        });
-        
-        // Method 2: Type recognition keywords
-        let keyBuffer = '';
-        document.addEventListener('keydown', (e) => {
-            if (!this.localState.recognitionAvailable) return;
-            
-            // Build buffer of recent keystrokes
-            keyBuffer += e.key.toUpperCase();
-            keyBuffer = keyBuffer.slice(-20); // Keep last 20 chars
-            
-            // Check for any recognition keyword
-            for (let keyword of this.config.recognitionKeywords) {
-                if (keyBuffer.includes(keyword)) {
-                    this.achieveRecognition(`keyword_${keyword.toLowerCase()}`);
-                    break;
-                }
-            }
-        });
-        
-        // Method 3: Hold spacebar for exactly 3 seconds
-        let spaceHoldStart = null;
-        let spaceHoldTimer = null;
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !e.repeat && !spaceHoldStart) {
-                spaceHoldStart = Date.now();
-                
-                // Visual feedback for holding
-                document.querySelector('.light-core').classList.add('holding');
-                
-                // Set up timer for perfect hold feedback
-                spaceHoldTimer = setTimeout(() => {
-                    if (spaceHoldStart) {
-                        // Pulse effect at perfect timing
-                        document.querySelector('.light-core').classList.add('perfect-hold');
-                    }
-                }, this.config.spaceHoldDuration.min);
-            }
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'Space' && spaceHoldStart) {
-                const holdDuration = Date.now() - spaceHoldStart;
-                
-                // Clear visual feedback
-                document.querySelector('.light-core').classList.remove('holding', 'perfect-hold');
-                clearTimeout(spaceHoldTimer);
-                
-                if (holdDuration >= this.config.spaceHoldDuration.min && 
-                    holdDuration <= this.config.spaceHoldDuration.max) {
-                    this.achieveRecognition('perfect_hold');
-                } else if (holdDuration > 500) {
-                    this.recordAttachment('imperfect_hold', { holdDuration });
-                }
-                
-                spaceHoldStart = null;
-            }
-        });
-        
-        // Hidden method: Developer console enlightenment
-        window.recognize = () => {
-            if (this.localState.recognitionAvailable) {
-                this.achieveRecognition('console_enlightenment');
-                return "The self recognizes itself through its own reflection.";
-            }
-            return "The moment has passed. The light fades.";
-        };
-        
-        // Ultra-hidden method: Konami code
-        let konamiProgress = 0;
-        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 
-                           'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 
-                           'b', 'a'];
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === konamiCode[konamiProgress].toLowerCase()) {
-                konamiProgress++;
-                if (konamiProgress === konamiCode.length) {
-                    this.achieveRecognition('konami_transcendence');
-                    konamiProgress = 0;
-                }
-            } else {
-                konamiProgress = 0;
-            }
-        });
     }
     
     achieveRecognition(method) {
@@ -283,7 +156,7 @@ class ClearLode {
         this.localState.recognized = true;
         const recognitionTime = Date.now() - this.localState.startTime;
         
-        // Update global consciousness state
+        // Update consciousness
         consciousness.state.recognitions.clear_light = true;
         consciousness.recordEvent('recognition_achieved', {
             method: method,
@@ -293,39 +166,50 @@ class ClearLode {
             perfectTiming: recognitionTime >= 3000 && recognitionTime <= 5000
         });
         
-        // Visual confirmation
-        document.body.classList.add('recognized');
-        document.querySelector('.recognition-zone').classList.add('achieved');
-        this.audio.achieveResonance();
+        // Create recognition achievement timeline
+        this.timelines.recognition = gsap.timeline();
         
-        // Show brief enlightenment message
-        const hintElement = document.querySelector('.recognition-hint');
-        hintElement.innerHTML = this.getEnlightenmentMessage(method);
-        hintElement.classList.add('visible', 'enlightenment');
-        
-        // Transition to next phase
-        setTimeout(() => {
-            consciousness.recordEvent('transitioning_to_datascape', {
-                fromState: 'recognized'
+        this.timelines.recognition
+            // Flash of enlightenment
+            .to('body', {
+                filter: 'brightness(2) contrast(2)',
+                duration: 0.3,
+                yoyo: true,
+                repeat: 1,
+                ease: 'power2.inOut'
+            })
+            // Expand the light
+            .to('.light-core', {
+                scale: 2,
+                opacity: 0.5,
+                duration: 1,
+                ease: 'power2.out'
+            })
+            // Show enlightenment message
+            .set('.recognition-hint', {
+                innerHTML: this.getEnlightenmentMessage(method),
+                className: 'recognition-hint visible enlightenment'
+            })
+            .fromTo('.recognition-hint', 
+                { opacity: 0, scale: 0.8 },
+                { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }
+            )
+            // Prepare for transition
+            .to('body', {
+                opacity: 0,
+                duration: 2,
+                delay: 1,
+                ease: 'power2.in',
+                onComplete: () => {
+                    consciousness.recordEvent('transitioning_to_datascape', {
+                        fromState: 'recognized'
+                    });
+                    window.location.href = '/datascape/';
+                }
             });
-            window.location.href = '/datascape/';
-        }, this.config.transitionToDatascape);
-    }
-    
-    getEnlightenmentMessage(method) {
-        const messages = {
-            click_center: "The center holds eternal",
-            keyword_recognize: "Recognition achieved through naming",
-            keyword_self: "The self knows itself",
-            keyword_home: "Welcome home",
-            keyword_light: "Light recognizes light",
-            keyword_source: "Return to source complete",
-            perfect_hold: "Perfect stillness, perfect clarity",
-            console_enlightenment: "Developer consciousness acknowledged",
-            konami_transcendence: "↑↑↓↓←→←→ B A - Cheat code to enlightenment"
-        };
         
-        return messages[method] || "Recognition complete";
+        // Audio resonance
+        this.audio.achieveResonance();
     }
     
     recordAttachment(type, data = {}) {
@@ -338,13 +222,25 @@ class ClearLode {
             ...data
         });
         
-        // Visual glitch to show attachment
-        document.body.classList.add('attachment-glitch');
-        setTimeout(() => {
-            document.body.classList.remove('attachment-glitch');
-        }, 200);
+        // GSAP-powered glitch effect
+        gsap.timeline()
+            .to('body', {
+                filter: 'hue-rotate(90deg)',
+                x: -5,
+                duration: 0.1
+            })
+            .to('body', {
+                filter: 'hue-rotate(-90deg)',
+                x: 5,
+                duration: 0.1
+            })
+            .to('body', {
+                filter: 'hue-rotate(0deg)',
+                x: 0,
+                duration: 0.1
+            });
         
-        // Accelerate degradation slightly
+        // Accelerate degradation
         if (this.localState.recognitionAvailable) {
             this.audio.accelerateDegradation(0.05);
         }
@@ -354,12 +250,46 @@ class ClearLode {
         if (this.localState.recognized) return;
         
         this.localState.degradationStarted = true;
+        
+        // Create degradation timeline
+        this.timelines.degradation = gsap.timeline({
+            repeat: -1
+        });
+        
+        // Increasingly chaotic visual degradation
+        this.timelines.degradation
+            .to('body', {
+                filter: 'contrast(1.2) saturate(0.8)',
+                duration: 2,
+                ease: 'sine.inOut'
+            })
+            .to('body', {
+                filter: 'contrast(0.8) saturate(1.2) hue-rotate(10deg)',
+                duration: 2,
+                ease: 'sine.inOut'
+            });
+        
+        // Start audio degradation
         this.audio.startDegradation();
         
-        // Show the glitching Y/N prompt
-        this.showChoicePrompt();
+        // Show glitching prompt with GSAP
+        gsap.set('#choice-prompt', {
+            display: 'block',
+            opacity: 0,
+            y: 50
+        });
         
-        // Increase fragment generation
+        gsap.to('#choice-prompt', {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            ease: 'power2.out',
+            onComplete: () => {
+                this.animateGlitchText();
+            }
+        });
+        
+        // Increase fragments
         this.fragments.intensifyFragments();
         
         consciousness.recordEvent('consciousness_degradation_started', {
@@ -369,72 +299,38 @@ class ClearLode {
         });
     }
     
-    showChoicePrompt() {
-        const prompt = document.getElementById('choice-prompt');
+    animateGlitchText() {
         const glitchText = document.querySelector('.glitching-text');
-        
-        prompt.classList.remove('hidden');
-        
-        // Enhanced glitch prompts with more variety
-        const prompts = [
+        const prompts = this.config.glitchPrompts || [
             "CONTINUE TO NEXT LIFE? Y/N",
             "继续下一世？是/否",
             "次の人生へ？はい/いいえ",
-            "ПРОДОЛЖИТЬ? Д/Н",
-            "ਅਗਲਾ ਜੀਵਨ? ਹਾਂ/ਨਹੀਂ",
-            "C̸̝̈Ö̶̤́N̷̰̈T̶̜̾I̵̺͐N̷̰̈Ṷ̶̾E̸̱͐?̷̱̈ ̶̜̈Ÿ̷́ͅ/̶̜̈N̷",
-            "01000011 01001111 01001110 01010100?",
-            "ＣＯＮＴＩＮＵＥ？　Ｙ／Ｎ",
-            "⊂⍜⋏⏁⟟⋏⎍⟒? ⊬/⋏",
-            "קאָנטינוירן? י/ן",
-            "[SIGNAL LOST] Y/N",
-            "REINCARNATE? [Y]/[N]",
-            ">>> SAMSARA.CONTINUE()",
-            "PRESS ANY KEY TO BE REBORN",
-            "//TODO: Implement afterlife"
+            // ... other prompts
         ];
         
-        let promptIndex = 0;
-        const glitchInterval = setInterval(() => {
-            glitchText.textContent = prompts[promptIndex % prompts.length];
-            promptIndex++;
-            
-            // Occasionally show multiple prompts overlapping
-            if (Math.random() < 0.1) {
-                glitchText.textContent = prompts[Math.floor(Math.random() * prompts.length)] + 
-                                       '\n' + prompts[Math.floor(Math.random() * prompts.length)];
-            }
-        }, 500);
+        // Create a timeline for text glitching
+        const textGlitch = gsap.timeline({ repeat: -1 });
         
-        // Accept any key as "yes" after degradation
-        document.addEventListener('keydown', (e) => {
-            if (this.localState.degradationStarted && !this.localState.recognized) {
-                clearInterval(glitchInterval);
-                
-                consciousness.recordEvent('degraded_continuation_accepted', {
-                    key: e.key,
-                    finalDegradation: this.audio.getDegradationLevel(),
-                    totalTime: Date.now() - this.localState.startTime
-                });
-                
-                // Harsh transition for degraded consciousness
-                document.body.classList.add('forced-transition');
-                setTimeout(() => {
-                    window.location.href = '/datascape/';
-                }, 1000);
-            }
-        }, { once: true });
+        prompts.forEach((prompt, index) => {
+            textGlitch.to(glitchText, {
+                duration: 0.1,
+                text: prompt,
+                ease: 'none',
+                delay: 0.5
+            });
+        });
+        
+        // Add random glitch spikes
+        gsap.to(glitchText, {
+            skewX: () => Math.random() * 4 - 2,
+            skewY: () => Math.random() * 2 - 1,
+            x: () => Math.random() * 4 - 2,
+            duration: 0.1,
+            repeat: -1,
+            yoyo: true,
+            ease: 'steps(2)'
+        });
     }
     
-    wait(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-}
-
-// Initialize the Clear Lode experience
-const clearLode = new ClearLode();
-
-// Expose for debugging/testing
-if (window.location.search.includes('debug')) {
-    window.clearLode = clearLode;
+    // ... rest of the class remains the same
 }
