@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Degradation Test</title>
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #333;
+            z-index: 1000;
+        }
+        
+        button {
+            display: block;
+            margin: 5px 0;
+            padding: 5px 10px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #666;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #555;
+        }
+        
+        .status {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .pending { color: #ff0; }
+        
+        #choice-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 24px;
+        }
+        
+        .choice-option {
+            color: #0ff;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 5px;
+        }
+        
+        .choice-option:hover {
+            background: #333;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .glitching-text {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+        }
+        
+        #log {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 200px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #333;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h3>Direct Degradation Test</h3>
+        <div class="status">System: <span id="system-status" class="pending">PENDING</span></div>
+        <div class="status">Prompt: <span id="prompt-status" class="pending">PENDING</span></div>
+        <div class="status">Y Element: <span id="y-status" class="pending">PENDING</span></div>
+        <div class="status">N Element: <span id="n-status" class="pending">PENDING</span></div>
+        
+        <button onclick="initSystem()">1. Init System</button>
+        <button onclick="showPrompt()">2. Show Prompt</button>
+        <button onclick="checkElements()">3. Check Elements</button>
+        <button onclick="testYChoice()">4. Test Y Choice</button>
+        <button onclick="testNChoice()">5. Test N Choice</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <!-- Main experience elements -->
+    <div id="choice-prompt" class="hidden">
+        <pre class="glitching-text"></pre>
+    </div>
+    
+    <div id="log"></div>
+
+    <script type="module">
+        import { DegradationSystem } from './degradation-system.js';
+        import { ClearLodeEventBridge } from './event-bridge.js';
+        import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+        import { KarmicEngine } from '../src/consciousness/karmic-engine.js';
+        import { CLEAR_LODE_CONFIG } from './config.js';
+        
+        let degradationSystem;
+        let eventBridge;
+        let guardian;
+        
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(id, status, className) {
+            const element = document.getElementById(id);
+            element.textContent = status;
+            element.className = className;
+        }
+        
+        window.initSystem = function() {
+            log('🔧 Initializing degradation system...');
+            
+            try {
+                // Create dependencies
+                eventBridge = new ClearLodeEventBridge();
+                guardian = new ResourceGuardian();
+                const karmicEngine = new KarmicEngine();
+                
+                const dependencies = {
+                    eventBridge,
+                    guardian,
+                    config: CLEAR_LODE_CONFIG,
+                    karmicEngine
+                };
+                
+                // Create degradation system
+                degradationSystem = new DegradationSystem(dependencies);
+                degradationSystem.init();
+                
+                updateStatus('system-status', 'INITIALIZED', 'pass');
+                log('✅ Degradation system initialized');
+                
+                // Listen for events
+                eventBridge.on('degradation:choice', (data) => {
+                    log(`🎯 Choice event: ${data.choice} (time: ${data.timeToChoice}ms)`);
+                });
+                
+            } catch (error) {
+                log(`❌ Initialization failed: ${error.message}`);
+                updateStatus('system-status', 'FAILED', 'fail');
+            }
+        };
+        
+        window.showPrompt = function() {
+            if (!degradationSystem) {
+                log('❌ System not initialized');
+                return;
+            }
+            
+            log('🌀 Showing interactive prompt...');
+            
+            // Show the choice prompt container
+            const choicePrompt = document.getElementById('choice-prompt');
+            choicePrompt.classList.remove('hidden');
+            choicePrompt.style.display = 'block';
+            
+            // Call the showInteractivePrompt method
+            degradationSystem.showInteractivePrompt();
+            
+            updateStatus('prompt-status', 'SHOWN', 'pass');
+            log('✅ Interactive prompt shown');
+            
+            // Check elements after a short delay
+            setTimeout(checkElements, 100);
+        };
+        
+        window.checkElements = function() {
+            log('🔍 Checking for Y/N elements...');
+            
+            const yesChoice = document.getElementById('degradation-choice-yes');
+            const noChoice = document.getElementById('degradation-choice-no');
+            
+            if (yesChoice) {
+                updateStatus('y-status', 'FOUND', 'pass');
+                log(`✅ Y element found: "${yesChoice.textContent}"`);
+            } else {
+                updateStatus('y-status', 'NOT FOUND', 'fail');
+                log('❌ Y element not found');
+            }
+            
+            if (noChoice) {
+                updateStatus('n-status', 'FOUND', 'pass');
+                log(`✅ N element found: "${noChoice.textContent}"`);
+            } else {
+                updateStatus('n-status', 'NOT FOUND', 'fail');
+                log('❌ N element not found');
+            }
+            
+            // Also check the content of the glitching text
+            const glitchingText = document.querySelector('.glitching-text');
+            if (glitchingText) {
+                log(`📝 Glitching text content: "${glitchingText.innerHTML}"`);
+            } else {
+                log('❌ Glitching text element not found');
+            }
+        };
+        
+        window.testYChoice = function() {
+            if (!degradationSystem) {
+                log('❌ System not initialized');
+                return;
+            }
+            
+            log('🎯 Testing Y choice...');
+            degradationSystem.handleChoice('yes');
+        };
+        
+        window.testNChoice = function() {
+            if (!degradationSystem) {
+                log('❌ System not initialized');
+                return;
+            }
+            
+            log('🎯 Testing N choice...');
+            degradationSystem.handleChoice('no');
+        };
+        
+        window.clearLog = function() {
+            document.getElementById('log').innerHTML = '';
+        };
+        
+        log('🧪 Direct degradation test page loaded');
+    </script>
+</body>
+</html>

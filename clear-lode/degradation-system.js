@@ -57,6 +57,11 @@ export class DegradationSystem {
         console.log('[DegradationSystem] Initializing...');
         this.eventBridge.on('state:recognitionFailed', () => this.beginDegradation());
         this.guardian.registerCleanup(() => this.eventBridge.off('state:recognitionFailed', () => this.beginDegradation()));
+
+        // Listen for white noise starting to trigger degradation (alternative trigger)
+        this.eventBridge.on('audio:whiteNoiseStarted', () => this.beginDegradation());
+        this.guardian.registerCleanup(() => this.eventBridge.off('audio:whiteNoiseStarted', () => this.beginDegradation()));
+
         console.log('[DegradationSystem] Initialized.');
     }
     
@@ -81,7 +86,7 @@ export class DegradationSystem {
             y: 0,
             duration: 1,
             ease: 'power2.out',
-            onComplete: () => this.startGlitchSequence()
+            onComplete: () => this.showInteractivePrompt()
         });
         
         consciousness.recordEvent('consciousness_degradation_started', {
@@ -160,6 +165,63 @@ export class DegradationSystem {
     }
 
     /**
+     * Creates interactive Y/N prompt elements and sets up event listeners.
+     * This method creates the clickable elements that tests expect to find.
+     */
+    showInteractivePrompt() {
+        console.log('🌀 [DegradationSystem] Showing interactive Y/N prompt...');
+
+        // Create the interactive choice elements
+        const choicePrompt = document.getElementById('choice-prompt');
+        if (!choicePrompt) {
+            console.error('choice-prompt element not found');
+            return;
+        }
+
+        // Clear existing content and add interactive elements
+        const glitchingText = choicePrompt.querySelector('.glitching-text');
+        if (glitchingText) {
+            glitchingText.innerHTML = `
+                CONTINUE TO NEXT LIFE?
+                <span id="degradation-choice-yes" class="choice-option" data-choice="yes">Y</span>/
+                <span id="degradation-choice-no" class="choice-option" data-choice="no">N</span>
+            `;
+        }
+
+        // Set up click listeners for the choice elements
+        const yesChoice = document.getElementById('degradation-choice-yes');
+        const noChoice = document.getElementById('degradation-choice-no');
+
+        if (yesChoice && noChoice) {
+            this.yesClickListener = () => this.handleChoiceSelection('yes');
+            this.noClickListener = () => this.handleChoiceSelection('no');
+
+            this.guardian.registerEventListener(yesChoice, 'click', this.yesClickListener);
+            this.guardian.registerEventListener(noChoice, 'click', this.noClickListener);
+
+            // Add visual feedback on hover
+            yesChoice.style.cursor = 'pointer';
+            noChoice.style.cursor = 'pointer';
+        }
+
+        // Set up keyboard listener as well
+        this.setupChoiceListener();
+
+        // Mark prompt as active and record start time
+        this.promptActive = true;
+        this.choiceStartTime = Date.now();
+
+        // Start the timeout timer (30 seconds as per memory)
+        this.timeoutTimer = setTimeout(() => {
+            if (!this.choiceMade) {
+                console.log('🕳️ [DegradationSystem] Choice timeout - defaulting to void');
+                this.handleChoiceSelection('timeout');
+            }
+        }, 30000);
+        this.guardian.registerTimer(this.timeoutTimer);
+    }
+
+    /**
      * Sets up a single, unified keyboard listener for handling multilingual choices.
      */
     setupChoiceListener() {
@@ -184,12 +246,27 @@ export class DegradationSystem {
     }
 
     /**
+     * Public method for handling choice selection (used by tests and external calls).
+     * @param {string} choice - The choice ('yes', 'no', or 'timeout').
+     */
+    handleChoice(choice) {
+        this.handleChoiceSelection(choice);
+    }
+
+    /**
      * Handles the final choice selection, calculates karma, and stops the sequence.
-     * @param {string} choice - The unified choice ('yes' or 'no').
+     * @param {string} choice - The unified choice ('yes', 'no', or 'timeout').
      */
     handleChoiceSelection(choice) {
         if (this.choiceMade) return;
         this.choiceMade = true;
+        this.promptActive = false;
+
+        // Clear timeout timer
+        if (this.timeoutTimer) {
+            clearTimeout(this.timeoutTimer);
+            this.timeoutTimer = null;
+        }
 
         // Stop the sequence
         clearInterval(this.glitchSequenceInterval);
@@ -199,13 +276,27 @@ export class DegradationSystem {
             this.choiceListener = null;
         }
 
-        console.log(`User selected: ${choice} (mapped from multilingual input)`);
-        
-        // Calculate Karma
-        const karmaImpact = this.karmicEngine.calculateImpact('degradation_choice', { choice });
+        // Calculate time to choice for karma
+        const timeToChoice = this.choiceStartTime ? Date.now() - this.choiceStartTime : 0;
 
-        consciousness.recordEvent('degradation_choice', {
+        console.log(`User selected: ${choice} (time: ${timeToChoice}ms)`);
+
+        // Calculate Karma based on choice type
+        let eventType = 'degradation_choice';
+        if (choice === 'timeout') {
+            eventType = 'degradation_timeout';
+        } else {
+            eventType = `degradation_choice_${choice}`;
+        }
+
+        const karmaImpact = this.karmicEngine.calculateImpact(eventType, {
+            choice,
+            timeToChoice
+        });
+
+        consciousness.recordEvent(eventType, {
             choice: choice,
+            timeToChoice: timeToChoice,
             promptLanguage: this.activePrompt,
             corruptionLevel: this.corruptionLevel,
             karmaImpact: karmaImpact
@@ -213,6 +304,7 @@ export class DegradationSystem {
 
         this.eventBridge.emit('degradation:choice', {
             choice,
+            timeToChoice,
             karmaImpact,
             degradationLevel: (consciousness.getState('clearLode.degradationLevel') || 0) + 1
         });
@@ -226,8 +318,21 @@ export class DegradationSystem {
         const promptElement = document.querySelector('.glitching-text');
         if (!promptElement) return;
 
-        let feedbackText = choice === 'yes' ? '...CONTINUING...' : '...DISSOLVING...';
-        
+        let feedbackText;
+        switch (choice) {
+            case 'yes':
+                feedbackText = '...CONTINUING...';
+                break;
+            case 'no':
+                feedbackText = '...DISSOLVING...';
+                break;
+            case 'timeout':
+                feedbackText = '...VOID CLAIMS YOU...';
+                break;
+            default:
+                feedbackText = '...UNKNOWN...';
+        }
+
         AnimationGuardian.safeAnimate(promptElement, {
             duration: 0.5,
             text: { value: feedbackText, speed: 0.5 },

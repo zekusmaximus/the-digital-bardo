@@ -264,6 +264,8 @@ export class ClearLodeAudio {
     }
 
     async startWhiteNoise() {
+        console.log('🎵 [AudioEngine] White noise started - triggering degradation');
+
         // Ensure the noise worklet is running so it can respond to karma changes
         if (!this.noiseWorklet) {
             if (this.workletAvailable) {
@@ -272,6 +274,9 @@ export class ClearLodeAudio {
                 this.createScriptProcessorNoise();
             }
         }
+
+        // Emit event to trigger degradation system
+        this.eventBridge.emit('audio:whiteNoiseStarted');
     }
 
     async createWorkletNoise() {

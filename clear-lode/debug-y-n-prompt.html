@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Y/N Prompt</title>
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #333;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .status {
+            margin: 5px 0;
+        }
+        
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .pending { color: #ff0; }
+        
+        #choice-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 24px;
+        }
+        
+        .choice-option {
+            color: #0ff;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .choice-option:hover {
+            background: #333;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .glitching-text {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info">
+        <h3>Debug Y/N Prompt</h3>
+        <div class="status">Audio Engine: <span id="audio-status" class="pending">PENDING</span></div>
+        <div class="status">White Noise: <span id="noise-status" class="pending">PENDING</span></div>
+        <div class="status">Degradation: <span id="degradation-status" class="pending">PENDING</span></div>
+        <div class="status">Y/N Prompt: <span id="prompt-status" class="pending">PENDING</span></div>
+        <div class="status">Y Element: <span id="y-element-status" class="pending">PENDING</span></div>
+        <div class="status">N Element: <span id="n-element-status" class="pending">PENDING</span></div>
+        <button onclick="startTest()">Start Test</button>
+        <button onclick="triggerWhiteNoise()">Trigger White Noise</button>
+        <button onclick="checkElements()">Check Elements</button>
+    </div>
+
+    <!-- Main experience elements -->
+    <div id="choice-prompt" class="hidden">
+        <pre class="glitching-text"></pre>
+    </div>
+
+    <script type="module">
+        import { ClearLodeOrchestrator } from './orchestrator.js';
+        
+        let orchestrator;
+        
+        function updateStatus(id, status, className) {
+            const element = document.getElementById(id);
+            element.textContent = status;
+            element.className = className;
+        }
+        
+        window.startTest = async function() {
+            console.log('🧪 Starting debug test...');
+            updateStatus('audio-status', 'INITIALIZING', 'pending');
+            
+            try {
+                orchestrator = new ClearLodeOrchestrator();
+                await orchestrator.init();
+                updateStatus('audio-status', 'INITIALIZED', 'pass');
+                
+                // Listen for events
+                orchestrator.eventBridge.on('audio:whiteNoiseStarted', () => {
+                    console.log('🎵 White noise started event received');
+                    updateStatus('noise-status', 'STARTED', 'pass');
+                });
+                
+                orchestrator.eventBridge.on('degradation:started', () => {
+                    console.log('🌀 Degradation started event received');
+                    updateStatus('degradation-status', 'STARTED', 'pass');
+                });
+                
+                // Start the experience
+                orchestrator.showBeginPrompt();
+                
+                // Auto-click begin after 2 seconds
+                setTimeout(() => {
+                    const beginButton = document.querySelector('.begin-button');
+                    if (beginButton) {
+                        beginButton.click();
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Test failed:', error);
+                updateStatus('audio-status', 'FAILED', 'fail');
+            }
+        };
+        
+        window.triggerWhiteNoise = function() {
+            if (orchestrator && orchestrator.audio) {
+                console.log('🎵 Manually triggering white noise...');
+                orchestrator.audio.startWhiteNoise();
+            } else {
+                console.log('❌ No orchestrator or audio engine available');
+            }
+        };
+        
+        window.checkElements = function() {
+            console.log('🔍 Checking for Y/N elements...');
+            
+            const yesChoice = document.getElementById('degradation-choice-yes');
+            const noChoice = document.getElementById('degradation-choice-no');
+            
+            if (yesChoice) {
+                updateStatus('y-element-status', 'FOUND', 'pass');
+                console.log('✅ Y element found:', yesChoice);
+            } else {
+                updateStatus('y-element-status', 'NOT FOUND', 'fail');
+                console.log('❌ Y element not found');
+            }
+            
+            if (noChoice) {
+                updateStatus('n-element-status', 'FOUND', 'pass');
+                console.log('✅ N element found:', noChoice);
+            } else {
+                updateStatus('n-element-status', 'NOT FOUND', 'fail');
+                console.log('❌ N element not found');
+            }
+            
+            if (yesChoice && noChoice) {
+                updateStatus('prompt-status', 'VISIBLE', 'pass');
+            } else {
+                updateStatus('prompt-status', 'MISSING', 'fail');
+            }
+        };
+        
+        // Monitor for Y/N prompt appearance
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    checkElements();
+                }
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        
+        console.log('🧪 Debug test page loaded');
+    </script>
+</body>
+</html>
