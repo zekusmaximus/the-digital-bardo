@@ -74,6 +74,7 @@ export class ClearLodeOrchestrator {
         // Resource tracking for cleanup
         this.eventListeners = new Map();
         this.timers = new Set();
+        this.windowEventListeners = new Map(); // Track window lifecycle listeners
 
         // Expose sanitization methods for use throughout the orchestrator
         this.sanitizeText = sanitizeText;
@@ -93,13 +94,14 @@ export class ClearLodeOrchestrator {
             this.degradation = new DegradationSystem(this);
             
             this.setupEventListeners();
-            
+            this.setupWindowLifecycleListeners();
+
             // Record entry into Clear Lode (migrated from clear-lode.js)
             consciousness.recordEvent('clear_lode_entered', {
                 timestamp: Date.now(),
                 timeFactor: timeFactor
             });
-            
+
             console.log('Orchestrator initialized - ready for experience start');
         } catch (error) {
             console.error('Karmic imbalance during initialization:', error);
@@ -116,11 +118,31 @@ export class ClearLodeOrchestrator {
             ['degradation:choice', this.handleDegradationChoice.bind(this)],
             ['light:manifestation:complete', this.handleLightManifested.bind(this)]
         ];
-        
+
         events.forEach(([event, handler]) => {
             window.addEventListener(event, handler);
             this.eventListeners.set(event, handler);
         });
+    }
+
+    setupWindowLifecycleListeners() {
+        // Set up automatic cleanup on page unload/navigation
+        const beforeUnloadHandler = () => {
+            console.log('Page unloading - triggering cleanup...');
+            this.destroy();
+        };
+
+        const pageHideHandler = () => {
+            console.log('Page hiding (iOS compatibility) - triggering cleanup...');
+            this.destroy();
+        };
+
+        window.addEventListener('beforeunload', beforeUnloadHandler);
+        window.addEventListener('pagehide', pageHideHandler);
+
+        // Store for cleanup in destroy method
+        this.windowEventListeners.set('beforeunload', beforeUnloadHandler);
+        this.windowEventListeners.set('pagehide', pageHideHandler);
     }
 
     handleRecognitionSuccess(e) {
@@ -699,28 +721,88 @@ export class ClearLodeOrchestrator {
     destroy() {
         console.log('Releasing attachments to prevent karmic recycling...');
 
-        // Stop all timelines
+        // Prevent multiple destroy calls
+        if (this._destroyed) {
+            console.warn('Orchestrator already destroyed, skipping cleanup');
+            return;
+        }
+        this._destroyed = true;
+
+        // Stop all GSAP timelines
         Object.values(this.timelines).forEach(timeline => {
-            if (timeline) timeline.kill();
+            if (timeline) {
+                timeline.kill();
+                timeline = null;
+            }
         });
 
+        // Kill any global GSAP animations that might be running
+        if (window.gsap) {
+            window.gsap.killTweensOf('body');
+            window.gsap.killTweensOf('.recognition-zone');
+            window.gsap.killTweensOf('#choice-prompt');
+        }
+
+        // Remove custom event listeners
         this.eventListeners.forEach((handler, event) => window.removeEventListener(event, handler));
         this.eventListeners.clear();
 
-        this.timers.forEach(id => { clearTimeout(id); clearInterval(id); });
+        // Remove window lifecycle listeners
+        this.windowEventListeners.forEach((handler, event) => window.removeEventListener(event, handler));
+        this.windowEventListeners.clear();
+
+        // Clear all timers
+        this.timers.forEach(id => {
+            clearTimeout(id);
+            clearInterval(id);
+        });
         this.timers.clear();
 
-        // Destroy subsystems
-        [this.recognition, this.degradation, this.fragments, this.audio].forEach(system => system?.destroy());
-
-        consciousness.recordEvent('clear_lode_destroyed', {
-            finalState: this.localState,
-            fragmentStats: this.fragments.getPerformanceStats()
+        // Destroy subsystems in reverse order of creation
+        [this.recognition, this.degradation, this.fragments, this.audio].forEach(system => {
+            if (system && typeof system.destroy === 'function') {
+                try {
+                    system.destroy();
+                } catch (error) {
+                    console.warn('Error destroying subsystem:', error);
+                }
+            }
         });
 
+        // Remove DOM elements created by orchestrator
+        const elementsToRemove = ['clear-light', 'begin-prompt'];
+        elementsToRemove.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.remove();
+            }
+        });
+
+        // Record final state before nullifying
+        if (consciousness && typeof consciousness.recordEvent === 'function') {
+            try {
+                consciousness.recordEvent('clear_lode_destroyed', {
+                    finalState: this.localState,
+                    fragmentStats: this.fragments?.getPerformanceStats?.() || null
+                });
+            } catch (error) {
+                console.warn('Error recording destruction event:', error);
+            }
+        }
+
+        // Nullify all major properties to break references
         this.recognition = null;
         this.degradation = null;
         this.fragments = null;
         this.audio = null;
+        this.karmicEngine = null;
+        this.timelines = null;
+        this.localState = null;
+        this.config = null;
+        this.eventListeners = null;
+        this.windowEventListeners = null;
+        this.timers = null;
+        this.sanitizeText = null;
+        this.sanitizeHTML = null;
     }
 }

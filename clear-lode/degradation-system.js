@@ -386,6 +386,13 @@ export class DegradationSystem {
     destroy() {
         console.log('Dissolving degradation system...');
 
+        // Prevent multiple destroy calls
+        if (this._destroyed) {
+            console.warn('Degradation system already destroyed, skipping cleanup');
+            return;
+        }
+        this._destroyed = true;
+
         // Clean up interactive prompt if active
         if (this.promptActive) {
             this.promptActive = false;
@@ -398,13 +405,54 @@ export class DegradationSystem {
             this.glitchTimeline = null;
         }
 
-        // Clean up any visual effects
-        const choicePrompt = document.getElementById('choice-prompt');
-        if (choicePrompt) {
-            choicePrompt.style.display = 'none';
+        // Kill any GSAP animations on degradation elements
+        if (window.gsap) {
+            window.gsap.killTweensOf('#choice-prompt');
+            window.gsap.killTweensOf('.glitch-text');
+            window.gsap.killTweensOf('body'); // For screen shake and filter effects
         }
 
+        // Kill degradation timeline from orchestrator if it exists
+        if (this.orchestrator && this.orchestrator.timelines && this.orchestrator.timelines.degradation) {
+            this.orchestrator.timelines.degradation.kill();
+            this.orchestrator.timelines.degradation = null;
+        }
+
+        // Clear any remaining timeouts
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+
+        if (this.bufferClearTimeout) {
+            clearTimeout(this.bufferClearTimeout);
+            this.bufferClearTimeout = null;
+        }
+
+        // Remove DOM elements created by degradation system
+        const choicePrompt = document.getElementById('choice-prompt');
+        if (choicePrompt) {
+            choicePrompt.remove();
+        }
+
+        // Clean up any remaining event listeners (safety check)
+        this.inputListeners.forEach(({ element, event, handler }) => {
+            try {
+                element.removeEventListener(event, handler);
+            } catch (error) {
+                console.warn('Error removing event listener:', error);
+            }
+        });
+
+        // Nullify all properties to break references
         this.degradationActive = false;
         this.orchestrator = null;
+        this.glitchTimeline = null;
+        this.promptActive = false;
+        this.promptStartTime = null;
+        this.typingBuffer = '';
+        this.timeoutId = null;
+        this.bufferClearTimeout = null;
+        this.inputListeners = null;
     }
 }

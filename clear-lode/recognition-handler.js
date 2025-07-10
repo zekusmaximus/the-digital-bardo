@@ -38,6 +38,9 @@ export class RecognitionHandler {
         this.progressCircle = null;
         this.progressAnimation = null;
 
+        // Animation frame tracking for cleanup
+        this.animationFrameIds = new Set();
+
         // Resize handler for center point updates
         this.handleResize = this.debounce(this.updateCenterPoint.bind(this), 200);
     }
@@ -87,14 +90,27 @@ export class RecognitionHandler {
         });
         this.listeners = [];
 
-        // Clean up UI elements
-        this.cleanupUI();
+        // Cancel any pending animation frames
+        this.animationFrameIds.forEach(id => {
+            cancelAnimationFrame(id);
+        });
+        this.animationFrameIds.clear();
 
-        // Kill any active animations
+        // Kill any active GSAP animations
         if (this.progressAnimation) {
             this.progressAnimation.kill();
             this.progressAnimation = null;
         }
+
+        // Kill any GSAP animations on recognition elements
+        if (window.gsap) {
+            window.gsap.killTweensOf('#recognition-typing');
+            window.gsap.killTweensOf('#progress-circle');
+            window.gsap.killTweensOf('.recognition-ripple');
+        }
+
+        // Clean up UI elements
+        this.cleanupUI();
     }
     
     // === LEGACY HANDLERS (Migrated to new specific methods) ===
@@ -191,11 +207,48 @@ export class RecognitionHandler {
     }
     
     destroy() {
+        console.log('Destroying recognition handler...');
+
+        // Prevent multiple destroy calls
+        if (this._destroyed) {
+            console.warn('Recognition handler already destroyed, skipping cleanup');
+            return;
+        }
+        this._destroyed = true;
+
+        // Stop listening and clean up resources
         this.stopListening();
         this.cleanupUI();
+
+        // Cancel any remaining animation frames
+        this.animationFrameIds.forEach(id => {
+            cancelAnimationFrame(id);
+        });
+        this.animationFrameIds.clear();
+
+        // Clear any remaining timers
+        if (this.typingTimeout) {
+            clearTimeout(this.typingTimeout);
+            this.typingTimeout = null;
+        }
+
+        // Nullify all properties to break references
         this.orchestrator = null;
         this.lastMouseMove = null;
         this.mouseMovements = 0;
+        this.listeners = null;
+        this.recognitionWindowActive = false;
+        this.windowStartTime = null;
+        this.methodsEnabled = false;
+        this.recognitionAchieved = false;
+        this.centerPoint = null;
+        this.typedBuffer = '';
+        this.lastKeyTime = 0;
+        this.spacebarDownTime = null;
+        this.progressCircle = null;
+        this.progressAnimation = null;
+        this.animationFrameIds = null;
+        this.handleResize = null;
     }
 
     // === NEW RECOGNITION METHODS ===
@@ -264,7 +317,7 @@ export class RecognitionHandler {
      * Create visual ripple effect for near-miss clicks
      */
     createRipple(point) {
-        requestAnimationFrame(() => {
+        const frameId = requestAnimationFrame(() => {
             const ripple = document.createElement('span');
             ripple.className = 'recognition-ripple';
             ripple.style.cssText = `
@@ -282,7 +335,13 @@ export class RecognitionHandler {
             `;
             document.body.appendChild(ripple);
             ripple.addEventListener('animationend', () => ripple.remove());
+
+            // Remove from tracking set once executed
+            this.animationFrameIds.delete(frameId);
         });
+
+        // Track animation frame for cleanup
+        this.animationFrameIds.add(frameId);
     }
 
     /**
@@ -517,10 +576,17 @@ export class RecognitionHandler {
         const progressSvg = document.getElementById('progress-circle');
         if (progressSvg) progressSvg.remove();
 
+        // Remove any lingering ripple effects
+        const ripples = document.querySelectorAll('.recognition-ripple');
+        ripples.forEach(ripple => ripple.remove());
+
         // Clear typing timeout
         if (this.typingTimeout) {
             clearTimeout(this.typingTimeout);
             this.typingTimeout = null;
         }
+
+        // Reset progress circle reference
+        this.progressCircle = null;
     }
 }

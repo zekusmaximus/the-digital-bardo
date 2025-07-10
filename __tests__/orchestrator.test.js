@@ -158,3 +158,59 @@ describe('ClearLodeOrchestrator', () => {
         expect(orchestrator.localState.recognized).toBe(false);
     });
 });
+
+/**
+ * Placeholder for Jest tests. To run, install Jest and configure the environment.
+ *
+ * test('Orchestrator cleans up all resources on destroy', () => {
+ * // 1. Instantiate Orchestrator and initialize it.
+ * // 2. Call the destroy() method.
+ * // 3. Assert that GSAP timelines are empty (gsap.globalTimeline.getChildren().length === 0).
+ * // 4. Assert that all event listeners have been removed.
+ * // 5. Assert that all subsystem references are null.
+ * });
+ */
+console.log("Placeholder: Install Jest and run 'npm test' to execute this test suite.");
+
+/**
+ * Test Suite: Orchestrator Memory Leak Prevention
+ *
+ * This test suite should verify that the ClearLodeOrchestrator properly cleans up
+ * all resources to prevent memory leaks. Key areas to test:
+ *
+ * 1. GSAP Timeline Cleanup:
+ *    - Verify all timelines in this.timelines are killed
+ *    - Check that global GSAP animations are stopped
+ *    - Ensure no orphaned tweens remain
+ *
+ * 2. Event Listener Cleanup:
+ *    - Custom event listeners (recognition:*, degradation:*, etc.)
+ *    - Window lifecycle listeners (beforeunload, pagehide)
+ *    - Subsystem event listeners
+ *
+ * 3. Timer Cleanup:
+ *    - setTimeout and setInterval timers
+ *    - GSAP delayedCall timers
+ *    - Animation frame requests
+ *
+ * 4. DOM Element Cleanup:
+ *    - Remove 'clear-light' container
+ *    - Remove 'begin-prompt' container
+ *    - Clean up any dynamically created elements
+ *
+ * 5. Subsystem Destruction:
+ *    - RecognitionHandler.destroy() called
+ *    - DegradationSystem.destroy() called
+ *    - FragmentGenerator.destroy() called
+ *    - ClearLodeAudio.destroy() called
+ *
+ * 6. Reference Nullification:
+ *    - All major properties set to null
+ *    - Circular references broken
+ *    - Memory can be garbage collected
+ *
+ * 7. Multiple Destroy Calls:
+ *    - Verify destroy() is idempotent
+ *    - No errors on subsequent calls
+ *    - Proper _destroyed flag handling
+ */
