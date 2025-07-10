@@ -179,7 +179,7 @@ export class ClearLodeAudio {
     
     // Enhanced glitch burst using worklet if available
     async createGlitchBurst() {
-        if (!this.audioInitialized) return;
+        if (!this.isInitialized) return;
 
         if (this.workletAvailable && this.audioContext) {
             try {
@@ -236,12 +236,34 @@ export class ClearLodeAudio {
     }
     
     async completeDigitalStatic() {
-        // Replace pure tone with digital noise
-        if (this.oscillator) {
-            this.oscillator.stop();
-            this.oscillator = null;
-        }
+        console.log('🎵 [AudioEngine] Starting tone decay sequence...');
 
+        // First, decay the pure tone over 2 seconds
+        if (this.oscillator) {
+            const gainNode = this.audioContext.createGain();
+            this.oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            // Decay the tone over 2 seconds
+            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 2);
+
+            // Stop the oscillator after decay
+            setTimeout(() => {
+                if (this.oscillator) {
+                    this.oscillator.stop();
+                    this.oscillator = null;
+                }
+                console.log('🎵 [AudioEngine] Tone decay complete, starting white noise...');
+                this.startWhiteNoise();
+            }, 2000);
+        } else {
+            // If no oscillator, go directly to white noise
+            this.startWhiteNoise();
+        }
+    }
+
+    async startWhiteNoise() {
         // Ensure the noise worklet is running so it can respond to karma changes
         if (!this.noiseWorklet) {
             if (this.workletAvailable) {
@@ -253,7 +275,7 @@ export class ClearLodeAudio {
     }
 
     async createWorkletNoise() {
-        if (!this.audioInitialized || !this.audioContext) return;
+        if (!this.isInitialized || !this.audioContext) return;
 
         try {
             // Create noise using AudioWorklet (better performance)
@@ -286,7 +308,7 @@ export class ClearLodeAudio {
     }
 
     createScriptProcessorNoise() {
-        if (!this.audioInitialized || !this.audioContext) return;
+        if (!this.isInitialized || !this.audioContext) return;
 
         try {
             // Fallback to ScriptProcessor (deprecated but widely supported)
@@ -407,7 +429,7 @@ export class ClearLodeAudio {
      * @param {object} karmaState - The full karma object from the consciousness.
      */
     updateAudioFromKarma(karmaState) {
-        if (!this.audioInitialized || !this.oscillator) return;
+        if (!this.isInitialized || !this.oscillator) return;
 
         // 1. Computational Karma -> Pitch Stability
         // Higher computational karma = more pitch instability (vibrato/detune)
@@ -483,7 +505,7 @@ export class ClearLodeAudio {
      * @param {object} event - The event object from the consciousness.
      */
     respondToKarmaEvent(event) {
-        if (!this.audioInitialized) return;
+        if (!this.isInitialized) return;
 
         switch (event.name) {
             case 'recognition_achieved':

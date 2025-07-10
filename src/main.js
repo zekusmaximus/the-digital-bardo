@@ -1,11 +1,13 @@
+// Test if JavaScript is working at all
+console.log('[Main] JavaScript is loading!');
+alert('JavaScript is working!');
+
 // Import CSS - Vite will bundle it
-import './styles/reality.css'
+import './styles/reality.css';
+console.log('[Main] CSS imported successfully');
 
-// Import the consciousness system
-import { DigitalConsciousness } from './consciousness/digital-soul.js'
-
-// Initialize the core logic
-const consciousness = new DigitalConsciousness()
-window.consciousness = consciousness // Expose for debugging
-
-console.log('Digital Consciousness Initialized. Seed:', consciousness.state.incarnation_seed)
+// Import consciousness module
+import { consciousness } from './consciousness/digital-soul.js';
+console.log('[Main] Consciousness module imported successfully');
+console.log('[Main] Digital Consciousness Initialized. Seed:', consciousness.state.incarnation_seed);
+console.log('[Main] Current consciousness state:', consciousness.state);

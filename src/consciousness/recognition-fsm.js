@@ -34,10 +34,11 @@ class RecognitionFSM {
     constructor() {
         // The FSM's current state is stored and managed by the central consciousness.
         // This ensures the FSM state is part of the application's single source of truth.
-        this.currentState = consciousness.getState('clearLode.recognitionFSMState') || 'dormant';
-        if (!consciousness.getState('clearLode.recognitionFSMState')) {
-            consciousness.setState('clearLode.recognitionFSMState', this.currentState);
-        }
+
+        // Always start fresh in Clear Lode - reset any previous session state
+        this.currentState = 'dormant';
+        consciousness.setState('clearLode.recognitionFSMState', this.currentState);
+        console.log('[RecognitionFSM] Initialized in dormant state');
     }
 
     /**

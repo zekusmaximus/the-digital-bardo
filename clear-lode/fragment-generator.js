@@ -3,8 +3,8 @@ import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
 import { manifestElement } from '../src/security/consciousness-purification.js';
 import { createKarmicValidator, thoughtFragmentSchema } from '../src/security/karmic-validation.js';
-import { ResourceGuardian } from '../consciousness/resource-guardian.js';
-import { AnimationGuardian } from '../utils/animation-guardian.js';
+import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+import { AnimationGuardian } from '../src/utils/animation-guardian.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);

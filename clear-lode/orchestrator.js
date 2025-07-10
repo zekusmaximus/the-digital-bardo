@@ -156,23 +156,27 @@ export class ClearLodeOrchestrator {
        console.log('✨ [Orchestrator] Light manifested. Starting subsystems.');
 
        // Start audio if it was successfully initialized
-       if (this.audio.isInitialized()) {
+       if (this.audio.isInitialized) {
            this.audio.startPureTone();
        }
 
        // Start generating background fragments
        this.fragments.startFragmentField();
 
-       // Tell the StateManager to start the recognition process
-       this.stateManager.startExperience();
-       
-       // Set a timeout to enforce the recognition window duration
-       const recognitionWindowDuration = this.config.recognitionWindow.end - this.config.recognitionWindow.start;
-       const timerId = setTimeout(
-           () => this.stateManager.triggerTimeout(),
-           recognitionWindowDuration
-       );
-       this.guardian.registerTimer(timerId);
+       // Schedule the recognition window to start after the configured delay
+       const recognitionStartTimerId = setTimeout(() => {
+           console.log('🌟 [Orchestrator] Starting recognition window...');
+           this.stateManager.startExperience();
+       }, this.config.recognitionWindow.start);
+
+       // Schedule the recognition window to end
+       const recognitionEndTimerId = setTimeout(() => {
+           console.log('⏰ [Orchestrator] Recognition window timeout...');
+           this.stateManager.triggerTimeout();
+       }, this.config.recognitionWindow.end);
+
+       this.guardian.registerTimer(recognitionStartTimerId);
+       this.guardian.registerTimer(recognitionEndTimerId);
 
        consciousness.recordEvent('clear_light_manifested', { timestamp: Date.now() });
    }

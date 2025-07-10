@@ -31,6 +31,14 @@ export class ResourceGuardian {
     }
 
     /**
+     * Registers a cleanup function without a specific resource object.
+     * @param {function} cleanupFn - The function to call during cleanup.
+     */
+    registerCleanup(cleanupFn) {
+        this.register(null, () => cleanupFn());
+    }
+
+    /**
      * Registers an event listener and ensures it's cleaned up.
      * @param {EventTarget} element - The DOM element.
      * @param {string} event - The event name.

@@ -207,6 +207,9 @@ export class ClearLodeTransitionController {
      * @private
      */
     onRecognitionFailed() {
+        console.log('💫 [TC] Recognition failed, fading out light...');
+
+        // Scale down the recognition zone
         AnimationGuardian.safeAnimate('.recognition-zone', {
             scale: 1,
             duration: 0.3,
@@ -214,6 +217,24 @@ export class ClearLodeTransitionController {
             onStart: () => {
                 document.querySelector('.recognition-zone').setAttribute('data-active', 'false');
             }
+        });
+
+        // Fade out the spinning light core
+        AnimationGuardian.safeAnimate('.light-core', {
+            opacity: 0,
+            scale: 0.8,
+            duration: 2,
+            ease: 'power2.out',
+            onComplete: () => {
+                console.log('💫 [TC] Light core faded out');
+            }
+        });
+
+        // Fade the clear light container
+        AnimationGuardian.safeAnimate('#clear-light', {
+            opacity: 0,
+            duration: 2.5,
+            ease: 'power2.out'
         });
     }
 

@@ -12,11 +12,18 @@ export class ConsciousnessCompatibility {
             intersectionObserver: 'IntersectionObserver' in window,
             es6: (() => {
                 try {
-                    // Simple ES6 feature check
-                    // eslint-disable-next-line no-new-func
-                    new Function('(a = 0) => a');
-                    return true;
+                    // Simple ES6 feature checks that don't require eval
+                    // Check if arrow functions are supported by testing syntax
+                    const testArrow = () => true;
+                    // Check if const/let are supported
+                    const testConst = 1;
+                    let testLet = 2;
+                    // Check if template literals work
+                    const testTemplate = `test ${testConst + testLet}`;
+
+                    return testArrow() && testConst === 1 && testLet === 2 && testTemplate === 'test 3';
                 } catch (e) {
+                    console.warn('[Compatibility] ES6 check failed:', e);
                     return false;
                 }
             })()

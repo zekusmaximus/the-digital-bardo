@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import { resolve } from 'path'
-import { randomBytes } from 'crypto'
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+import { randomBytes } from 'crypto';
 
 // Plugin to apply a nonce-based CSP during development
 const cspNoncePlugin = () => {
@@ -9,9 +9,10 @@ const cspNoncePlugin = () => {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const nonce = randomBytes(16).toString('base64');
-        // Make nonce available to the HTML transformer
-        res.locals = res.locals || {};
+        // Make nonce available on res.locals and attach res to req for later access
+        if (!res.locals) res.locals = {};
         res.locals.cspNonce = nonce;
+        req.res = res;
         
         // Set CSP header for development
         res.setHeader(
@@ -21,11 +22,16 @@ const cspNoncePlugin = () => {
         next();
       });
     },
-    transformIndexHtml(html, { res }) {
-       const nonce = res.locals.cspNonce;
-       // Add nonce to all script tags.
-       // Vite injects its own script tags, so we need to ensure they get the nonce.
-       return html.replace(/<script/g, `<script nonce="${nonce}"`);
+    transformIndexHtml(html, ctx) {
+      const nonce = ctx.req?.res?.locals?.cspNonce;
+
+      if (!nonce) {
+        return html;
+      }
+
+      // Add nonce to all script tags.
+      // Vite injects its own script tags, so we need to ensure they get the nonce.
+      return html.replace(/<script/g, `<script nonce="${nonce}"`);
     }
   }
 }
@@ -46,8 +52,17 @@ export default defineConfig({
   },
   server: {
     port: 8888,
+    // Add rewrites to direct all paths to the root index.html for SPA routing
+    rewrites: [
+      { from: /^\/$/, to: '/index.html' },
+      { from: /^\/void\/$/, to: '/void/index.html' },
+      { from: /^\/clear-lode\/$/, to: '/clear-lode/index.html' },
+      { from: /^\/datascape\/$/, to: '/datascape/index.html' },
+      { from: /^\/incarnation\/$/, to: '/incarnation/index.html' },
+      { from: /^\/limbo\/$/, to: '/limbo/index.html' }
+    ]
   },
   // Ensure audio worklets are copied to dist
   publicDir: 'public',
   plugins: [cspNoncePlugin()]
-})
+});

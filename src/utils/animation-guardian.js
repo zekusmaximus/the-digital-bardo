@@ -26,7 +26,10 @@ export class AnimationGuardian {
             const animationProps = {
                 ...properties,
                 onError: (e) => {
-                    console.error('GSAP animation error:', e);
+                    // Only log if it's a meaningful error (not just 0)
+                    if (e && e !== 0) {
+                        console.warn('GSAP animation error:', e, 'Target:', target, 'Props:', properties);
+                    }
                     // Optionally, add more robust error reporting here
                     if (properties.onError) {
                         properties.onError(e);

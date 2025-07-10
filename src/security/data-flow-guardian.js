@@ -1,8 +1,16 @@
 // src/security/data-flow-guardian.js
 
-import { consciousness } from '../consciousness/digital-soul.js';
-
+let consciousness; // To be initialized lazily
 const LOGGING_ENABLED = true; // Toggle for development/production
+
+/**
+ * Initializes the Data Guardian with the consciousness instance.
+ * @param {object} consciousnessInstance - The main consciousness object.
+ */
+export function initializeDataGuardian(consciousnessInstance) {
+    consciousness = consciousnessInstance;
+    console.log("[Data Guardian] Initialized.");
+}
 
 /**
  * Logs the flow of data between different parts of the application.
@@ -13,7 +21,7 @@ const LOGGING_ENABLED = true; // Toggle for development/production
  * @param {object} data - The data being transferred. Can be a simplified representation for logging.
  */
 export function logDataFlow(source, destination, data) {
-    if (!LOGGING_ENABLED) return;
+    if (!LOGGING_ENABLED || !consciousness) return;
 
     try {
         // Sanitize or summarize data to avoid logging sensitive information.
@@ -32,11 +40,14 @@ export function logDataFlow(source, destination, data) {
         console.log(`[Data Guardian] Flow: ${source} -> ${destination}`, { data: sanitizedData });
     } catch (error) {
         console.error("[Data Guardian] Error logging data flow:", error);
-        consciousness.recordEvent('data_guardian_error', {
-            error: error.message,
-            source,
-            destination
-        });
+        // Avoid calling recordEvent if consciousness itself is the problem.
+        if (consciousness) {
+            consciousness.recordEvent('data_guardian_error', {
+                error: error.message,
+                source,
+                destination
+            });
+        }
     }
 }
 
@@ -75,6 +86,9 @@ function summarizeData(data) {
  * This is a more comprehensive check that can be triggered at key lifecycle points.
  */
 export function auditDataBoundaries() {
+    if (typeof window === 'undefined') {
+        return;
+    }
     console.log("[Data Guardian] Performing data boundary audit...");
 
     // 1. Audit LocalStorage/SessionStorage
