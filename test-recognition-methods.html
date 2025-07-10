@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recognition Methods Test - Digital Bardo</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #000; 
+            color: #0f0; 
+            margin: 0;
+            overflow: hidden;
+        }
+        .test-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border: 1px solid #0f0;
+            z-index: 10000;
+            max-width: 400px;
+        }
+        .test-result { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border: 1px solid #333; 
+        }
+        .pass { border-color: #0f0; }
+        .fail { border-color: #f00; color: #f00; }
+        .test-output { 
+            background: #111; 
+            padding: 10px; 
+            margin: 5px 0; 
+            font-size: 12px;
+        }
+        #clear-light {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #ffffff 0%, transparent 100%);
+        }
+        .light-core {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+            filter: blur(40px);
+        }
+        .recognition-zone {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h2>🧪 Recognition Methods Test</h2>
+        <p><strong>Instructions:</strong></p>
+        <ol>
+            <li>Wait for light to appear (3-7 second window)</li>
+            <li>Try center-click (click center of screen)</li>
+            <li>Try typing: RECOGNIZE, SELF, or HOME</li>
+            <li>Try holding spacebar for ~3 seconds</li>
+        </ol>
+        <div id="test-results"></div>
+        <button onclick="startTest()">Start Test</button>
+        <button onclick="resetTest()">Reset</button>
+    </div>
+
+    <div id="clear-light" style="opacity: 0;">
+        <div class="recognition-zone">
+            <div class="light-core"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { RecognitionHandler } from './clear-lode/recognition-handler.js';
+        import { gsap } from 'gsap';
+
+        let handler = null;
+        let testResults = [];
+
+        // Mock orchestrator for testing
+        const mockOrchestrator = {
+            localState: {
+                recognitionAvailable: true,
+                recognized: false,
+                startTime: Date.now(),
+                hintsShown: 0,
+                recognitionAttempts: 0
+            }
+        };
+
+        function logResult(message, success = true) {
+            console.log(message);
+            testResults.push({ message, success, timestamp: Date.now() });
+            updateResultsDisplay();
+        }
+
+        function updateResultsDisplay() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = testResults.map(result => 
+                `<div class="test-result ${result.success ? 'pass' : 'fail'}">
+                    ${result.success ? '✅' : '❌'} ${result.message}
+                    <div class="test-output">${new Date(result.timestamp).toLocaleTimeString()}</div>
+                </div>`
+            ).join('');
+        }
+
+        // Listen for recognition events
+        window.addEventListener('recognition:success', (e) => {
+            logResult(`Recognition achieved: ${e.detail.method}`, true);
+            logResult(`Karma data: ${JSON.stringify(e.detail.karmaData)}`, true);
+        });
+
+        window.addEventListener('recognition:attachment', (e) => {
+            logResult(`Attachment formed: ${e.detail.type}`, false);
+        });
+
+        window.startTest = function() {
+            logResult('Starting recognition test...', true);
+            
+            // Reset state
+            mockOrchestrator.localState.recognized = false;
+            
+            // Create new handler
+            if (handler) {
+                handler.destroy();
+            }
+            handler = new RecognitionHandler(mockOrchestrator);
+            
+            // Show light with animation
+            gsap.to('#clear-light', {
+                opacity: 1,
+                duration: 2,
+                onComplete: () => {
+                    logResult('Light manifested - recognition window active', true);
+                    handler.startListening();
+                }
+            });
+        };
+
+        window.resetTest = function() {
+            if (handler) {
+                handler.destroy();
+                handler = null;
+            }
+            
+            gsap.set('#clear-light', { opacity: 0 });
+            testResults = [];
+            updateResultsDisplay();
+            logResult('Test reset', true);
+        };
+
+        // Auto-start test
+        window.addEventListener('load', () => {
+            setTimeout(startTest, 1000);
+        });
+
+        // Global access for debugging
+        window.handler = () => handler;
+        window.mockOrchestrator = mockOrchestrator;
+    </script>
+</body>
+</html>

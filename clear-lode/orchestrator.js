@@ -117,8 +117,8 @@ export class ClearLodeOrchestrator {
 
     handleRecognitionSuccess(e) {
         console.log('Recognition success:', e.detail);
-        const { method, recognitionTime } = e.detail;
-        
+        const { method, karmaData } = e.detail;
+
         if (this.localState.recognized) return;
 
         this.localState.recognized = true;
@@ -127,16 +127,19 @@ export class ClearLodeOrchestrator {
         document.documentElement.style.setProperty('--recognition-scale', '1.2');
         document.documentElement.style.setProperty('--recognition-opacity', '1');
 
-        // Update consciousness (migrated from clear-lode.js)
+        // Update consciousness with karma data
         consciousness.state.recognitions.clear_light = true;
         consciousness.recordEvent('recognition_achieved', {
             method: method,
-            timeToRecognize: recognitionTime,
+            timeToRecognize: karmaData?.elapsedTime || 0,
             hintsNeeded: this.localState.hintsShown,
             attempts: this.localState.recognitionAttempts,
-            perfectTiming: recognitionTime >= 3000 && recognitionTime <= 5000
+            perfectTiming: karmaData?.perfectTimingBonus > 0,
+            karmaData: karmaData // Store full karma data for future use
         });
-        
+
+        console.log('Karma data received:', karmaData); // Placeholder for later karma calculations
+
         this.executeRecognitionSequence(method);
     }
     
