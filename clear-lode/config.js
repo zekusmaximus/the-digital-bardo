@@ -35,12 +35,17 @@ export const CLEAR_LODE_CONFIG = {
 
     /**
      * Multilingual prompts for the degradation sequence choice.
+     * These cycle as consciousness fractures across linguistic boundaries.
      */
     glitchPrompts: [
-        "CONTINUE TO NEXT LIFE? Y/N",
-        "继续下一世？是/否",
-        "次の人生へ？はい/いいえ",
-        "СЛЕДУЮЩАЯ ЖИЗНЬ? ДА/НЕТ",
-        "CONTINUER VERS LA VIE SUIVANTE? O/N"
+        'Do you wish to continue? [Y/N]',            // English
+        '¿Deseas continuar? [S/N]',                  // Spanish
+        'Voulez-vous continuer? [O/N]',              // French
+        'Möchten Sie fortfahren? [J/N]',             // German
+        '続けますか？[はい/いいえ]',                   // Japanese
+        'Хотите продолжить? [Д/Н]',                 // Russian
+        'هل تريد المتابعة؟ [ن/ل]',                    // Arabic
+        '01000011 01101111 01101110 01110100 01101001 01101110 01110101 01100101 00111111', // Binary
+        'D○ ¥◊u w∆nt t◊ ¢◊nt∆nu€? [¥/N]'            // Corrupted English
     ]
 };

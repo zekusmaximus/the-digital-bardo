@@ -48,6 +48,9 @@ export class DegradationSystem {
         this.choiceMade = false;
         /** @private */
         this.isDestroyed = false;
+
+        /** @private */
+        this.randomSeed = Date.now();
     }
     
      /**
@@ -105,40 +108,47 @@ export class DegradationSystem {
 
         const glitchPrompts = this.config.glitchPrompts;
         if (!glitchPrompts || glitchPrompts.length === 0) {
-            console.error("[DegradationSystem] No glitch prompts found in config.");
+            console.error('[DegradationSystem] No glitch prompts found in config.');
             return;
         }
 
-        const promptElement = document.querySelector('.glitching-text');
-        if (!promptElement) {
-            console.error("'.glitching-text' element not found.");
+        const promptTextEl = document.querySelector('.glitching-text .prompt-text');
+        if (!promptTextEl) {
+            console.error("'.prompt-text' element not found.");
             return;
         }
 
         let promptIndex = 0;
-        this.corruptionLevel = 0;
-        this.choiceMade = false;
+        let corruptionLevel = 0;
 
-        const intervalId = setInterval(() => {
+        // Display the first prompt immediately
+        this.activePrompt = glitchPrompts[0];
+        this.corruptionLevel = corruptionLevel;
+        this.updatePromptDisplay(this.activePrompt);
+
+        const cycleInterval = setInterval(() => {
             if (this.choiceMade) {
-                clearInterval(intervalId);
+                clearInterval(cycleInterval);
                 return;
             }
 
-            // Cycle through prompts
-            this.activePrompt = glitchPrompts[promptIndex];
-            promptIndex = (promptIndex + 1) % glitchPrompts.length;
+            // Cycle through languages
+            this.activePrompt = glitchPrompts[promptIndex % glitchPrompts.length];
 
-            // Increase corruption and apply it
-            this.corruptionLevel += 0.05; // Slower corruption rate
-            const corruptedText = this.applyTextCorruption(this.activePrompt, this.corruptionLevel);
-            promptElement.textContent = corruptedText;
+            // Apply increasing corruption
+            const corruptedPrompt = this.applyTextCorruption(this.activePrompt, corruptionLevel);
 
-        }, 2000); // Switch language every 2 seconds
-        this.guardian.registerTimer(intervalId, true);
-        this.glitchSequenceInterval = intervalId;
+            // Update UI
+            this.updatePromptDisplay(corruptedPrompt);
 
-        this.setupChoiceListener();
+            // Increment counters
+            promptIndex++;
+            corruptionLevel = Math.min(1.0, corruptionLevel + 0.1);
+            this.corruptionLevel = corruptionLevel;
+        }, 1500);
+
+        this.guardian.registerTimer(cycleInterval, true);
+        this.glitchSequenceInterval = cycleInterval;
     }
 
     /**
@@ -148,17 +158,27 @@ export class DegradationSystem {
      * @returns {string} The corrupted text.
      */
     applyTextCorruption(text, corruptionLevel) {
-        const GLITCH_CHARS = ['▓', '░', '█', '▒', '?', '§', '¶'];
-        
-        return text.split('').map(char => {
+        const GLITCH_CHARS = ['▓', '▒', '░', '█', '◆', '◇', '◊', '○', '●', '∆', '¥', '€', '¢'];
+
+        // Locate choice brackets to optionally preserve them
+        const bracketMatch = text.match(/\[.*?\]/);
+        const bracketStart = bracketMatch ? bracketMatch.index : -1;
+        const bracketEnd = bracketMatch ? bracketStart + bracketMatch[0].length : -1;
+
+        return text.split('').map((char, idx) => {
             if (char.trim() === '') return char; // Preserve whitespace
 
-            const roll = Math.random();
-            const corruptionThreshold = corruptionLevel * 0.7; // Adjust multiplier to control intensity
+            if (idx >= bracketStart && idx < bracketEnd && corruptionLevel < 0.6) {
+                // Keep choice brackets readable until heavy corruption
+                return char;
+            }
 
-            if (roll < corruptionThreshold) {
-                // Increasingly likely to replace with glitch characters
-                return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+            const roll = this.seededRandom();
+            const threshold = corruptionLevel;
+
+            if (roll < threshold) {
+                const replacement = GLITCH_CHARS[Math.floor(this.seededRandom() * GLITCH_CHARS.length)];
+                return replacement;
             }
             return char;
         }).join('');
@@ -182,7 +202,7 @@ export class DegradationSystem {
         const glitchingText = choicePrompt.querySelector('.glitching-text');
         if (glitchingText) {
             glitchingText.innerHTML = `
-                CONTINUE TO NEXT LIFE?
+                <span class="prompt-text"></span>
                 <span id="degradation-choice-yes" class="choice-option" data-choice="yes">Y</span>/
                 <span id="degradation-choice-no" class="choice-option" data-choice="no">N</span>
             `;
@@ -219,6 +239,9 @@ export class DegradationSystem {
             }
         }, 30000);
         this.guardian.registerTimer(this.timeoutTimer);
+
+        // Begin the multilingual glitch sequence
+        this.startGlitchSequence();
     }
 
     /**
@@ -227,8 +250,10 @@ export class DegradationSystem {
     setupChoiceListener() {
         // Mappings for different languages to a unified 'yes' or 'no'
         const CHOICE_MAP = {
-            'y': 'yes', '是': 'yes', 'はい': 'yes', 'д': 'yes', 'o': 'yes',
-            'n': 'no',  '否': 'no',  'いいえ': 'no', 'н': 'no'
+            'y': 'yes', 's': 'yes', 'o': 'yes', 'j': 'yes',
+            'はい': 'yes', 'д': 'yes', 'ن': 'yes',
+            'n': 'no', 'l': 'no', 'н': 'no',
+            '否': 'no', 'いいえ': 'no'
         };
 
         this.choiceListener = (e) => {
@@ -294,6 +319,16 @@ export class DegradationSystem {
             timeToChoice
         });
 
+        // Narrative-driven karma modifications
+        if (timeToChoice < 5000) {
+            karmaImpact.computational += 1; // quick decisive action
+        } else if (timeToChoice > 10000) {
+            karmaImpact.void += 1; // hesitation
+        }
+        if (this.corruptionLevel > 0.6 && choice !== 'timeout') {
+            karmaImpact.temporal -= 1; // acting under heavy corruption
+        }
+
         consciousness.recordEvent(eventType, {
             choice: choice,
             timeToChoice: timeToChoice,
@@ -345,6 +380,27 @@ export class DegradationSystem {
                 });
             }
         });
+    }
+
+    /**
+     * Updates the visible prompt text while keeping choice options intact.
+     * Also sets an aria-label for screen readers using the uncorrupted text.
+     * @param {string} corruptedText
+     */
+    updatePromptDisplay(corruptedText) {
+        const textEl = document.querySelector('.glitching-text .prompt-text');
+        if (!textEl) return;
+        textEl.textContent = corruptedText;
+        textEl.setAttribute('aria-label', this.activePrompt);
+    }
+
+    /**
+     * Deterministic pseudo-random number generator for consistent corruption.
+     * @private
+     */
+    seededRandom() {
+        const x = Math.sin(this.randomSeed++) * 10000;
+        return x - Math.floor(x);
     }
 
 
