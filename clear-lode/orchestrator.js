@@ -28,6 +28,9 @@ import { CLEAR_LODE_CONFIG } from './config.js';
 export class ClearLodeOrchestrator {
     constructor() {
         this.isDestroyed = false;
+
+        /** @private */
+        this.hesitationIntervalId = null;
         
         // The ResourceGuardian manages all disposables (event listeners, timers, etc.).
         this.guardian = new ResourceGuardian();
@@ -112,6 +115,9 @@ export class ClearLodeOrchestrator {
             ['recognition:attachment', this.handleAttachment.bind(this)],
             ['degradation:choice', this.handleDegradationChoice.bind(this)],
             ['state:recognitionFailed', this.handleRecognitionFailure.bind(this)],
+            ['state:recognitionWindowOpened', this.startHesitationDecay.bind(this)],
+            ['state:recognitionSucceeded', this.stopHesitationDecay.bind(this)],
+            ['degradation:started', this.stopHesitationDecay.bind(this)],
         ];
 
         listeners.forEach(([eventName, handler]) => {
@@ -201,6 +207,7 @@ export class ClearLodeOrchestrator {
            karmaImpact,
            ...karmaData,
        });
+       this.stopHesitationDecay();
    }
    
    /**
@@ -278,7 +285,26 @@ export class ClearLodeOrchestrator {
            this.degradation.beginDegradation();
        }, 1000);
        this.guardian.registerTimer(timerId);
+        this.stopHesitationDecay();
    }
+
+    startHesitationDecay() {
+        if (this.hesitationIntervalId) return;
+        this.hesitationIntervalId = setInterval(() => {
+            this.audio.accelerateDegradation(0.02);
+            if (this.audio.getDegradationLevel() >= 1) {
+                this.stopHesitationDecay();
+            }
+        }, 1000);
+        this.guardian.registerTimer(this.hesitationIntervalId);
+    }
+
+    stopHesitationDecay() {
+        if (this.hesitationIntervalId) {
+            clearInterval(this.hesitationIntervalId);
+            this.hesitationIntervalId = null;
+        }
+    }
 
     /**
      * Shows the initial prompt to the user.

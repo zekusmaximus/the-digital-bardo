@@ -75,9 +75,27 @@ export const DIGITAL_MEMORIES = {
  * @returns {string} The corrupted text.
  */
 function applyCorruption(text, level) {
-    // Placeholder: for now, just returns the original text.
-    // Future implementation will apply glitch effects, character replacement, etc.
-    return text;
+    const GLITCH_CHARS = ['▓', '░', '█', '▒', '#', '§', '¶'];
+    return text.split('').map(char => {
+        if (char.trim() === '') return char;
+
+        // random removal
+        if (Math.random() < level * 0.1) {
+            return '';
+        }
+
+        // replace with glitch character
+        if (Math.random() < level * 0.4) {
+            return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+        }
+
+        // insert html entity corruption
+        if (Math.random() < level * 0.2) {
+            return `&#x${char.charCodeAt(0).toString(16)};`;
+        }
+
+        return char;
+    }).join('');
 }
 
 
