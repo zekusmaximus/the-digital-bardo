@@ -1,68 +1,76 @@
-// Audio subsystem for the Clear Lode
+/**
+ * @file Manages all audio for the Clear Lode experience.
+ *
+ * This class handles the creation of the pure tone, its degradation into static,
+ * and karmic/event-driven audio responses. It is initialized by the orchestrator
+ * and activated by events from the EventBridge, ensuring that audio context
+ * requirements (user gesture) are met.
+ */
 import { createKarmicValidator, audioParamsSchema } from '../src/security/karmic-validation.js';
-import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
-import { consciousness } from '../src/consciousness/digital-soul.js';
 import { ConsciousnessCompatibility } from '../src/utils/consciousness-compatibility.js';
 
 export class ClearLodeAudio {
-    constructor() {
+    /**
+     * @param {object} dependencies
+     * @param {import('./event-bridge.js').ClearLodeEventBridge} dependencies.eventBridge
+     * @param {import('../src/consciousness/resource-guardian.js').ResourceGuardian} dependencies.guardian
+     */
+    constructor({ eventBridge, guardian }) {
+        if (!eventBridge || !guardian) {
+            throw new Error('ClearLodeAudio requires an eventBridge and a guardian.');
+        }
+
         const capabilities = ConsciousnessCompatibility.checkCapabilities();
         this.silentMode = !capabilities.webAudio;
 
-        this.guardian = new ResourceGuardian();
+        /** @private */
+        this.eventBridge = eventBridge;
+        /** @private */
+        this.guardian = guardian;
+        
+        /** @private */
         this.audioContext = null;
+        /** @private */
         this.oscillator = null;
+        /** @private */
         this.gainNode = null;
+        /** @private */
         this.degradationLevel = 0;
-        this.baseFrequency = 528; // "Love frequency" / DNA repair
-        this.audioInitialized = false;
-        this.userGestureReceived = false;
-        this.pendingPureTone = false;
+        /** @private */
+        this.baseFrequency = 528; // "Love frequency"
+        /** @private */
+        this.isInitialized = false;
+        /** @private */
         this.harmonicOscillators = [];
-
-        // Track if worklet is available
+        /** @private */
         this.workletAvailable = false;
+        /** @private */
         this.noiseWorklet = null;
+         /** @private */
+        this.isDestroyed = false;
 
-        // Set up user gesture listener
-        this.setupUserGestureListener();
-
-        // Karmic Validator for Audio Params
         this.validateAudioParams = createKarmicValidator(audioParamsSchema);
-
-        // Subscribe to karma state changes
-        consciousness.subscribe('karma', (newKarmaState) => {
-            if (this.audioInitialized) {
-                this.updateAudioFromKarma(newKarmaState);
-            }
-        });
-
-        // Subscribe to specific, impactful events
-        consciousness.subscribe('lastEvent', (event) => {
-            if (this.audioInitialized && event) {
-                this.respondToKarmaEvent(event);
-            }
-        });
     }
-
-    setupUserGestureListener() {
+    
+    /**
+     * Initializes the audio engine by subscribing to events.
+     * Does not create the AudioContext yet.
+     */
+    init() {
         if (this.silentMode) return;
-        const initAudio = async () => {
-            if (!this.userGestureReceived) {
-                this.userGestureReceived = true;
-                await this.initializeAudioContext();
+        console.log('[AudioEngine] Initializing...');
 
-                // Remove listeners after first gesture
-                document.removeEventListener('click', initAudio);
-                document.removeEventListener('keydown', initAudio);
-                document.removeEventListener('touchstart', initAudio);
-            }
-        };
+        const listeners = [
+            ['degradation:started', this.startDegradation.bind(this)],
+            ['state:recognitionSucceeded', this.achieveResonance.bind(this)],
+            ['attachment:formed', () => this.createGlitchBurst(0.5, 0.2)],
+            ['degradation:refused', () => this.accelerateDegradation(0.2)],
+        ];
 
-        // Listen for any user gesture
-        document.addEventListener('click', initAudio);
-        document.addEventListener('keydown', initAudio);
-        document.addEventListener('touchstart', initAudio);
+        listeners.forEach(([eventName, handler]) => {
+            this.eventBridge.on(eventName, handler);
+            this.guardian.registerCleanup(() => this.eventBridge.off(eventName, handler));
+        });
     }
 
     async initializeAudioContext() {
@@ -85,19 +93,20 @@ export class ClearLodeAudio {
                 await this.audioContext.resume();
             }
 
-            this.audioInitialized = true;
-            console.log('AudioContext initialized successfully');
+            this.isInitialized = true;
+             console.log('[AudioEngine] AudioContext initialized successfully.');
 
-            // Initialize worklet support
             await this.initializeWorklet();
 
-            // Start pure tone if it was requested before audio was ready
+            // If the orchestrator requested a tone before the gesture, start it now.
             if (this.pendingPureTone) {
-                await this.startPureTone();
+                this.startPureTone();
+                this.pendingPureTone = false;
             }
         } catch (error) {
-            console.warn('AudioContext initialization failed:', error);
-            this.audioInitialized = false;
+            console.error('[AudioEngine] AudioContext initialization failed:', error);
+            this.isInitialized = false;
+            throw error; // Re-throw for the orchestrator to handle
         }
     }
     
@@ -117,11 +126,11 @@ export class ClearLodeAudio {
 
     async startPureTone() {
         // If audio isn't initialized yet, queue the start for later
-        if (this.silentMode || !this.audioInitialized) {
-            if (!this.silentMode) {
-                console.log('Audio not initialized - queueing pure tone start');
-                this.pendingPureTone = true;
-            }
+        if (this.silentMode) return;
+
+        if (!this.isInitialized) {
+            console.log('[AudioEngine] Audio not ready, queueing pure tone start.');
+            this.pendingPureTone = true; // The orchestrator will call startPureTone after initialization
             return;
         }
 
@@ -159,19 +168,11 @@ export class ClearLodeAudio {
         // This function is now a trigger. The actual degradation is handled by updateAudioFromKarma.
         
         // If audio isn't initialized, try to start it first
-        if (!this.audioInitialized) {
-            console.log('Audio not initialized - attempting to initialize for degradation');
-            this.initializeAudioContext().then(() => {
-                if (this.audioInitialized && !this.oscillator) {
-                    console.log('Starting pure tone for degradation');
-                    this.startPureTone().then(() => this.completeDigitalStatic());
-                } else if (this.audioInitialized) {
-                    this.completeDigitalStatic();
-                }
-            });
-        } else {
-             this.completeDigitalStatic();
+        if (!this.isInitialized) {
+            console.log('[AudioEngine] Audio not ready for degradation start.');
+            return;
         }
+        this.completeDigitalStatic();
 
         // The old interval-based degradation is removed. Karma is now the driver.
     }

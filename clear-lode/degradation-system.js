@@ -1,51 +1,79 @@
 /**
- * Manages consciousness degradation - the breath held at the moment of dissolution.
- * Handles all visual and audio degradation effects and displays the non-interactive glitch prompt.
+ * @file Manages the system degradation sequence that occurs when recognition fails.
+ *
+ * This class handles the visual and audio degradation effects and presents the
+ * multilingual, corrupting choice prompt to the user. It is activated by a
+ * `state:recognitionFailed` event from the EventBridge and, in turn, emits
+ * `degradation:choice` events based on user input.
  */
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
 import { AnimationGuardian } from '../src/utils/animation-guardian.js';
-import { manifestElement } from '../src/security/consciousness-purification.js';
+import { KarmicEngine } from '../src/consciousness/karmic-engine.js'
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
 
 export class DegradationSystem {
-    constructor(orchestrator) {
-        this.orchestrator = orchestrator;
-        this.guardian = orchestrator.guardian;
-        this.degradationActive = false;
-        this.glitchTimeline = null;
-        this.glitchSequenceInterval = null;
-        this.corruptionLevel = 0;
-        this.activePrompt = null;
-        this.choiceMade = false;
-        this.choiceListener = null;
+    /**
+     * @param {object} dependencies
+     * @param {import('./event-bridge.js').ClearLodeEventBridge} dependencies.eventBridge
+     * @param {import('../src/consciousness/resource-guardian.js').ResourceGuardian} dependencies.guardian
+     * @param {import('./config.js').CLEAR_LODE_CONFIG} dependencies.config
+     */
+    constructor({ eventBridge, guardian, config }) {
+         if (!eventBridge || !guardian || !config) {
+            throw new Error('DegradationSystem requires eventBridge, guardian, and config.');
+        }
 
-        // The degradation system now listens for the FSM to enter the 'failed' state.
-        consciousness.subscribe('clearLode.recognitionFSMState', (newState) => {
-            if (newState === 'failed') {
-                this.beginDegradation();
-            }
-        });
+        /** @private */
+        this.eventBridge = eventBridge;
+        /** @private */
+        this.guardian = guardian;
+        /** @private */
+        this.config = config;
+        /** @private */
+        this.karmicEngine = new KarmicEngine();
+
+        /** @private */
+        this.degradationActive = false;
+        /** @private */
+        this.glitchSequenceInterval = null;
+        /** @private */
+        this.corruptionLevel = 0;
+        /** @private */
+        this.activePrompt = null;
+        /** @private */
+        this.choiceMade = false;
+        /** @private */
+        this.isDestroyed = false;
     }
     
+     /**
+     * Initializes the system by subscribing to application events.
+     */
+    init() {
+        console.log('[DegradationSystem] Initializing...');
+        this.eventBridge.on('state:recognitionFailed', () => this.beginDegradation());
+        this.guardian.registerCleanup(() => this.eventBridge.off('state:recognitionFailed', () => this.beginDegradation()));
+        console.log('[DegradationSystem] Initialized.');
+    }
+    
+    /**
+     * @private
+     */
     beginDegradation() {
         if (consciousness.getState('clearLode.recognized') || this.degradationActive) return;
 
-        console.log('🌀 Beginning consciousness degradation...');
+        console.log('🌀 [DegradationSystem] Beginning consciousness degradation...');
         this.degradationActive = true;
         consciousness.setState('clearLode.degradationStarted', true);
         
-        // Start audio degradation
-        this.orchestrator.audio.startDegradation();
-        
-        // Show glitching prompt with GSAP (migrated from clear-lode.js)
+        this.eventBridge.emit('degradation:started');
+
         const choicePrompt = document.getElementById('choice-prompt');
-        if (choicePrompt) {
-            choicePrompt.classList.remove('hidden'); // Remove hidden class first
-        }
+        if (choicePrompt) choicePrompt.classList.remove('hidden');
 
         AnimationGuardian.safeAnimate('#choice-prompt', {
             display: 'block',
@@ -53,24 +81,13 @@ export class DegradationSystem {
             y: 0,
             duration: 1,
             ease: 'power2.out',
-            onComplete: () => {
-                this.startGlitchSequence();
-            }
+            onComplete: () => this.startGlitchSequence()
         });
         
-        // Increase fragments (migrated from clear-lode.js)
-        this.orchestrator.fragments.intensifyFragments();
-        
-        // Record degradation event
         consciousness.recordEvent('consciousness_degradation_started', {
             recognitionMissed: true,
             hintsShown: consciousness.getState('clearLode.hintsShown'),
             attempts: consciousness.getState('clearLode.recognitionAttempts')
-        });
-        
-        // Dispatch degradation complete event
-        this.dispatchEvent('degradation:complete', {
-            level: consciousness.getState('clearLode.degradationLevel') + 1
         });
     }
     
@@ -81,9 +98,9 @@ export class DegradationSystem {
     startGlitchSequence() {
         if (this.glitchSequenceInterval) return;
 
-        const glitchPrompts = this.orchestrator.config.glitchPrompts;
+        const glitchPrompts = this.config.glitchPrompts;
         if (!glitchPrompts || glitchPrompts.length === 0) {
-            console.error("No glitch prompts found in orchestrator config.");
+            console.error("[DegradationSystem] No glitch prompts found in config.");
             return;
         }
 
@@ -185,28 +202,19 @@ export class DegradationSystem {
         console.log(`User selected: ${choice} (mapped from multilingual input)`);
         
         // Calculate Karma
-        let karmaImpact = { computational: 0, emotional: 0, temporal: 0, void: 0 };
-        if (choice === 'yes') {
-            karmaImpact.emotional -= 5; // Yearning for form
-            karmaImpact.temporal += 2;
-        } else { // 'no'
-            karmaImpact.void += 10; // Embracing the void
-            karmaImpact.computational += 5; // Acknowledging the system
-        }
+        const karmaImpact = this.karmicEngine.calculateImpact('degradation_choice', { choice });
 
-        // Record karma event
-        consciousness.recordEvent(this.orchestrator.karmicEngine.KARMA_EVENTS.DEGRADATION_CHOICE, {
+        consciousness.recordEvent('degradation_choice', {
             choice: choice,
             promptLanguage: this.activePrompt,
             corruptionLevel: this.corruptionLevel,
             karmaImpact: karmaImpact
         });
 
-        // Dispatch event for orchestrator to handle transition
-        this.dispatchEvent('degradation:choice', {
-            choice: choice,
-            karmaImpact: karmaImpact,
-            degradationLevel: consciousness.getState('clearLode.degradationLevel') || 0
+        this.eventBridge.emit('degradation:choice', {
+            choice,
+            karmaImpact,
+            degradationLevel: (consciousness.getState('clearLode.degradationLevel') || 0) + 1
         });
 
         // Visual feedback for the choice
@@ -234,9 +242,6 @@ export class DegradationSystem {
         });
     }
 
-    dispatchEvent(type, detail = {}) {
-        window.dispatchEvent(new CustomEvent(type, { detail }));
-    }
 
     // Intensify degradation effects for refusal consequences
     intensifyEffects() {
@@ -268,25 +273,24 @@ export class DegradationSystem {
         });
     }
 
+    /**
+     * Cleans up all resources.
+     */
     destroy() {
-        console.log('Dissolving degradation system...');
-
-        // Prevent multiple destroy calls
-        if (this._destroyed) {
-            console.warn('Degradation system already destroyed, skipping cleanup');
-            return;
+        if (this.isDestroyed) return;
+        this.isDestroyed = true;
+        
+        console.log('[DegradationSystem] Destroying...');
+        if (this.glitchSequenceInterval) {
+            clearInterval(this.glitchSequenceInterval);
+            this.glitchSequenceInterval = null;
         }
-        this._destroyed = true;
 
-        this.guardian.cleanupAll();
-
-        // Nullify all properties to break references
-        this.orchestrator = null;
-        this.glitchTimeline = null;
-        this.glitchSequenceInterval = null;
-        this.corruptionLevel = 0;
-        this.activePrompt = null;
-        this.choiceMade = false;
-        this.choiceListener = null;
+        // The guardian will handle removing the keydown listener if it was registered.
+        // Nullify references to help GC
+        this.eventBridge = null;
+        this.guardian = null;
+        this.config = null;
+        this.karmicEngine = null;
     }
 }
