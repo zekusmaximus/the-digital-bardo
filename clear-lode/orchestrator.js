@@ -113,6 +113,7 @@ export class ClearLodeOrchestrator {
             ['recognition:failed', this.handleRecognitionFailed.bind(this)],
             ['recognition:attachment', this.handleAttachment.bind(this)],
             ['degradation:complete', this.handleTransition.bind(this)],
+            ['degradation:choice', this.handleDegradationChoice.bind(this)],
             ['light:manifestation:complete', this.handleLightManifested.bind(this)]
         ];
         
@@ -184,6 +185,108 @@ export class ClearLodeOrchestrator {
         console.log('Light manifestation complete:', e.detail);
         // Enable recognition after light is manifested
         this.scheduleRecognitionWindow();
+    }
+
+    handleDegradationChoice(e) {
+        console.log('Degradation choice made:', e.detail);
+        const { choice, timeToChoice, karmaImpact, degradationLevel } = e.detail;
+
+        // Log the karmic consequences
+        console.log(`🔮 Karmic impact of choice "${choice}":`, karmaImpact);
+        console.log(`⏱️ Decision time: ${timeToChoice}ms`);
+
+        // Update local state
+        this.localState.degradationLevel = degradationLevel;
+        this.localState.degradationChoiceMade = true;
+        this.localState.degradationChoice = choice;
+
+        // Handle transition based on choice
+        gsap.delayedCall(2, () => {
+            this.handleDegradationTransition(choice);
+        });
+    }
+
+    handleDegradationTransition(choice) {
+        console.log(`🌀 Transitioning based on choice: ${choice}`);
+
+        // Record the transition event
+        consciousness.recordEvent('degradation_transition', {
+            choice: choice,
+            fromState: 'degradation_prompt',
+            timestamp: Date.now()
+        });
+
+        switch (choice) {
+            case 'yes':
+                // Continue to next life - transition to datascape
+                console.log('🔄 Continuing to next life...');
+                this.transitionToDatascape('degradation_yes');
+                break;
+            case 'no':
+                // Refuse transition - stay in current state with consequences
+                console.log('🛑 Refusing transition - remaining in current state...');
+                this.handleRefusalConsequences();
+                break;
+            case 'timeout':
+                // Timeout - apply void consequences and force transition
+                console.log('⏰ Timeout - applying void consequences...');
+                this.handleTimeoutConsequences();
+                break;
+        }
+    }
+
+    transitionToDatascape(reason) {
+        // Fade out current experience
+        gsap.to('body', {
+            opacity: 0,
+            duration: 2,
+            ease: 'power2.in',
+            onComplete: () => {
+                consciousness.recordEvent('transitioning_to_datascape', {
+                    fromState: 'degradation',
+                    reason: reason
+                });
+                window.location.href = '/datascape/';
+            }
+        });
+    }
+
+    handleRefusalConsequences() {
+        // Apply additional karmic consequences for refusal
+        console.log('🚫 Applying consequences for refusal...');
+
+        // Intensify degradation effects
+        if (this.degradation) {
+            this.degradation.intensifyEffects();
+        }
+
+        // Eventually force transition after showing consequences
+        gsap.delayedCall(5, () => {
+            console.log('⚡ Forced transition due to refusal...');
+            this.transitionToDatascape('forced_after_refusal');
+        });
+    }
+
+    handleTimeoutConsequences() {
+        // Apply void karma consequences and transition
+        console.log('🕳️ Applying void consequences for timeout...');
+
+        // Show timeout feedback
+        const body = document.body;
+        gsap.timeline()
+            .to(body, {
+                filter: 'grayscale(1) contrast(0.5)',
+                duration: 1,
+                ease: 'power2.out'
+            })
+            .to(body, {
+                opacity: 0.5,
+                duration: 1,
+                ease: 'power2.out'
+            })
+            .call(() => {
+                this.transitionToDatascape('timeout_void');
+            });
     }
 
     /**

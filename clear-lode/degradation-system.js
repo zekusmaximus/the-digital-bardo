@@ -58,7 +58,7 @@ export class DegradationSystem {
             duration: 1,
             ease: 'power2.out',
             onComplete: () => {
-                this.animateGlitchText();
+                this.showInteractivePrompt();
             }
         });
         
@@ -78,60 +78,332 @@ export class DegradationSystem {
         });
     }
     
-    // Animate glitch text (migrated from clear-lode.js)
-    animateGlitchText() {
+    // Show interactive Y/N prompt with full input handling and karma integration
+    showInteractivePrompt() {
         const glitchText = document.querySelector('.glitching-text');
-        const prompts = this.orchestrator.config.glitchPrompts;
+        if (!glitchText) {
+            console.warn('Warning: .glitching-text element not found in degradation-system.js');
+            return;
+        }
 
-        // Warning: Assumed prompt in degradation-system.js; verify manually
-        console.warn('Warning: Assumed prompt in degradation-system.js; verify manually');
+        // Initialize prompt state
+        this.promptStartTime = Date.now();
+        this.promptActive = true;
+        this.typingBuffer = '';
+        this.timeoutId = null;
+        this.inputListeners = [];
 
-        // Create a timeline for text glitching (much slower)
-        this.glitchTimeline = gsap.timeline({ repeat: -1 });
-
-        prompts.forEach((prompt) => {
-            // GSAP's text property is safer than innerHTML but we sanitize for consistency
-            const sanitizedPrompt = sanitizeHTML(prompt, { tags: ['pre'], classes: ['glitching-text'] });
-            this.glitchTimeline.to(glitchText, {
-                duration: 0.3, // Increased from 0.1 to 0.3
-                text: sanitizedPrompt,
-                ease: 'none',
-                delay: 2.5    // Increased from 0.5 to 2.5 seconds between changes
-            });
+        // Create interactive HTML structure with clickable Y/N spans
+        const promptHTML = `CONTINUE TO NEXT LIFE? <span id="degradation-choice-yes" class="choice-option">Y</span>/<span id="degradation-choice-no" class="choice-option">N</span>`;
+        glitchText.innerHTML = sanitizeHTML(promptHTML, {
+            tags: ['span'],
+            classes: ['choice-option']
         });
 
-        // Add random glitch spikes (less frequent)
-        gsap.to(glitchText, {
-            skewX: () => Math.random() * 2 - 1, // Reduced intensity
-            skewY: () => Math.random() * 1 - 0.5,
-            x: () => Math.random() * 2 - 1,
-            duration: 0.3, // Slower glitch spikes
+        // Get choice elements
+        const yesChoice = document.getElementById('degradation-choice-yes');
+        const noChoice = document.getElementById('degradation-choice-no');
+
+        if (!yesChoice || !noChoice) {
+            console.warn('Warning: Choice elements not found after HTML creation');
+            return;
+        }
+
+        // Set up input handling
+        this.setupInputHandling(yesChoice, noChoice);
+
+        // Set up 30-second timeout
+        this.setupTimeout();
+
+        // Add subtle glitch effect to the prompt (less intense than before)
+        this.glitchTimeline = gsap.timeline({ repeat: -1 });
+        this.glitchTimeline.to(glitchText, {
+            skewX: () => Math.random() * 1 - 0.5,
+            skewY: () => Math.random() * 0.5 - 0.25,
+            x: () => Math.random() * 1 - 0.5,
+            duration: 0.5,
             repeat: -1,
             yoyo: true,
             ease: 'steps(2)',
-            delay: 1 // Add delay between glitch spikes
+            delay: 2
         });
     }
-    
+
+    // Set up comprehensive input handling for keyboard and click events
+    setupInputHandling(yesChoice, noChoice) {
+        // Keyboard event handler
+        const keyboardHandler = (e) => {
+            if (!this.promptActive) return;
+
+            const key = e.key.toLowerCase();
+
+            // Handle single key presses
+            if (key === 'y') {
+                this.handleChoice('yes');
+            } else if (key === 'n') {
+                this.handleChoice('no');
+            } else if (key === 'enter') {
+                // Handle typed words
+                const buffer = this.typingBuffer.toLowerCase();
+                if (buffer.includes('yes') || buffer.includes('ye')) {
+                    this.handleChoice('yes');
+                } else if (buffer.includes('no')) {
+                    this.handleChoice('no');
+                }
+                this.typingBuffer = '';
+            } else if (key.length === 1 && /[a-z]/.test(key)) {
+                // Build typing buffer for word input
+                this.typingBuffer += key;
+                // Clear buffer after 3 seconds of inactivity
+                clearTimeout(this.bufferClearTimeout);
+                this.bufferClearTimeout = setTimeout(() => {
+                    this.typingBuffer = '';
+                }, 3000);
+            }
+        };
+
+        // Click event handlers with visual feedback
+        const yesClickHandler = (e) => {
+            e.preventDefault();
+            if (this.promptActive) {
+                this.handleChoice('yes');
+            }
+        };
+
+        const noClickHandler = (e) => {
+            e.preventDefault();
+            if (this.promptActive) {
+                this.handleChoice('no');
+            }
+        };
+
+        // Hover effects for visual feedback
+        const addHoverEffects = (element) => {
+            const mouseEnterHandler = () => {
+                if (this.promptActive) {
+                    element.classList.add('choice-selected');
+                    gsap.to(element, {
+                        scale: 1.2,
+                        duration: 0.2,
+                        ease: 'back.out(1.7)'
+                    });
+                }
+            };
+
+            const mouseLeaveHandler = () => {
+                if (this.promptActive) {
+                    element.classList.remove('choice-selected');
+                    gsap.to(element, {
+                        scale: 1,
+                        duration: 0.2,
+                        ease: 'power2.out'
+                    });
+                }
+            };
+
+            element.addEventListener('mouseenter', mouseEnterHandler);
+            element.addEventListener('mouseleave', mouseLeaveHandler);
+
+            // Store for cleanup
+            this.inputListeners.push(
+                { element, event: 'mouseenter', handler: mouseEnterHandler },
+                { element, event: 'mouseleave', handler: mouseLeaveHandler }
+            );
+        };
+
+        // Add all event listeners
+        document.addEventListener('keydown', keyboardHandler);
+        yesChoice.addEventListener('click', yesClickHandler);
+        noChoice.addEventListener('click', noClickHandler);
+
+        addHoverEffects(yesChoice);
+        addHoverEffects(noChoice);
+
+        // Store listeners for cleanup
+        this.inputListeners.push(
+            { element: document, event: 'keydown', handler: keyboardHandler },
+            { element: yesChoice, event: 'click', handler: yesClickHandler },
+            { element: noChoice, event: 'click', handler: noClickHandler }
+        );
+    }
+
+    // Set up 30-second timeout mechanism
+    setupTimeout() {
+        this.timeoutId = setTimeout(() => {
+            if (this.promptActive) {
+                console.log('Degradation choice timeout - applying void karma penalty');
+                this.handleChoice('timeout');
+            }
+        }, 30000); // 30 seconds
+    }
+
+    // Handle user choice and calculate karma impact
+    handleChoice(choice) {
+        if (!this.promptActive) return;
+
+        // Deactivate prompt immediately
+        this.promptActive = false;
+        const timeToChoice = Date.now() - this.promptStartTime;
+
+        // Clean up event listeners and timers
+        this.cleanupPrompt();
+
+        // Calculate karma impact based on choice and timing
+        let karmaImpact = { computational: 0, emotional: 0, temporal: 0, void: 0 };
+        let eventName = '';
+
+        switch (choice) {
+            case 'yes':
+                karmaImpact.emotional = -3;
+                karmaImpact.temporal = timeToChoice < 10000 ? 2 : -1; // +2 if <10s, -1 if >=10s
+                eventName = 'degradation_choice_yes';
+                break;
+            case 'no':
+                karmaImpact.void = 10;
+                karmaImpact.computational = 3;
+                eventName = 'degradation_choice_no';
+                break;
+            case 'timeout':
+                karmaImpact.void = 20;
+                karmaImpact.temporal = -10;
+                eventName = 'degradation_choice_timeout';
+                break;
+        }
+
+        // Record karma event using the orchestrator's karmic engine
+        if (this.orchestrator && this.orchestrator.karmicEngine) {
+            this.orchestrator.karmicEngine.recordEvent(eventName, {
+                choice: choice,
+                timeToChoice: timeToChoice,
+                karmaImpact: karmaImpact,
+                degradationLevel: this.orchestrator.localState.degradationLevel || 0
+            });
+        }
+
+        // Provide visual feedback for the choice
+        this.showChoiceFeedback(choice);
+
+        // Dispatch custom event with comprehensive detail
+        this.dispatchEvent('degradation:choice', {
+            choice: choice,
+            timeToChoice: timeToChoice,
+            karmaImpact: karmaImpact,
+            degradationLevel: this.orchestrator.localState.degradationLevel || 0
+        });
+
+        console.log(`🔮 Degradation choice made: ${choice} (${timeToChoice}ms)`, karmaImpact);
+    }
+
+    // Show visual feedback for the user's choice
+    showChoiceFeedback(choice) {
+        const choiceElement = choice === 'yes'
+            ? document.getElementById('degradation-choice-yes')
+            : choice === 'no'
+            ? document.getElementById('degradation-choice-no')
+            : null;
+
+        if (choiceElement) {
+            choiceElement.classList.add('choice-selected');
+            gsap.to(choiceElement, {
+                scale: 1.5,
+                opacity: 0.8,
+                duration: 0.5,
+                ease: 'back.out(1.7)'
+            });
+        }
+
+        // Fade out the entire prompt after feedback
+        gsap.to('.glitching-text', {
+            opacity: 0.3,
+            duration: 1,
+            ease: 'power2.out'
+        });
+    }
+
+    // Clean up all event listeners and timers
+    cleanupPrompt() {
+        // Clear timeout
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+
+        // Clear buffer timeout
+        if (this.bufferClearTimeout) {
+            clearTimeout(this.bufferClearTimeout);
+            this.bufferClearTimeout = null;
+        }
+
+        // Remove all event listeners
+        this.inputListeners.forEach(({ element, event, handler }) => {
+            element.removeEventListener(event, handler);
+        });
+        this.inputListeners = [];
+
+        // Clear typing buffer
+        this.typingBuffer = '';
+    }
+
     dispatchEvent(type, detail = {}) {
         window.dispatchEvent(new CustomEvent(type, { detail }));
     }
-    
+
+    // Intensify degradation effects for refusal consequences
+    intensifyEffects() {
+        console.log('🌀 Intensifying degradation effects...');
+
+        // Increase visual degradation
+        if (this.orchestrator.timelines.degradation) {
+            this.orchestrator.timelines.degradation.timeScale(2); // Double speed
+        }
+
+        // Add more intense visual effects
+        gsap.to('body', {
+            filter: 'contrast(1.5) saturate(0.5) hue-rotate(45deg)',
+            duration: 1,
+            ease: 'power2.out'
+        });
+
+        // Intensify audio degradation if available
+        if (this.orchestrator.audio) {
+            this.orchestrator.audio.accelerateDegradation(0.2);
+        }
+
+        // Add screen shake effect
+        gsap.to('body', {
+            x: () => Math.random() * 10 - 5,
+            y: () => Math.random() * 10 - 5,
+            duration: 0.1,
+            repeat: 20,
+            yoyo: true,
+            ease: 'power2.inOut',
+            onComplete: () => {
+                gsap.set('body', { x: 0, y: 0 });
+            }
+        });
+    }
+
     destroy() {
         console.log('Dissolving degradation system...');
-        
+
+        // Clean up interactive prompt if active
+        if (this.promptActive) {
+            this.promptActive = false;
+            this.cleanupPrompt();
+        }
+
         // Stop glitch timeline
         if (this.glitchTimeline) {
             this.glitchTimeline.kill();
             this.glitchTimeline = null;
         }
-        
+
         // Clean up any visual effects
         const choicePrompt = document.getElementById('choice-prompt');
         if (choicePrompt) {
             choicePrompt.style.display = 'none';
         }
-        
+
         this.degradationActive = false;
         this.orchestrator = null;
     }

@@ -228,6 +228,31 @@ body.light-manifested {
     90% { transform: skew(0.5deg); }
 }
 
+/* Interactive choice options */
+.choice-option {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    display: inline-block;
+    font-weight: bold;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.choice-option:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.choice-option.choice-selected {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: rgba(255, 215, 0, 0.6);
+    color: #000;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
+}
+
 /* Fragment field container */
 #fragment-field {
     position: fixed;
@@ -398,74 +423,4 @@ body[data-debug="true"] .recognition-zone::after {
     border: 2px dashed rgba(255, 0, 0, 0.5);
     border-radius: 50%;
     pointer-events: none;
-}
-
-/* === NEW RECOGNITION METHOD STYLES === */
-
-/* Ripple effect for center-click near misses */
-@keyframes ripple-expand {
-    0% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 0.8;
-    }
-    100% {
-        transform: translate(-50%, -50%) scale(4);
-        opacity: 0;
-    }
-}
-
-.recognition-ripple {
-    animation: ripple-expand 0.6s ease-out forwards;
-}
-
-/* Typing display styles */
-#recognition-typing {
-    font-family: 'Courier New', monospace;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-#recognition-typing.error-flash {
-    animation: error-flash 0.2s ease-out;
-    color: var(--bardo-red, #ff0000) !important;
-}
-
-@keyframes error-flash {
-    0%, 100% {
-        background: rgba(255,255,255,0.1);
-    }
-    50% {
-        background: rgba(255,0,0,0.3);
-    }
-}
-
-/* Progress circle animation fallback */
-@keyframes progress-fill {
-    0% {
-        stroke-dashoffset: 1256.64; /* 2 * PI * 200 */
-        stroke: #ffffff;
-    }
-    47% {
-        stroke: #ffffff;
-    }
-    50% {
-        stroke: var(--bardo-gold, #ffd700);
-    }
-    53% {
-        stroke: var(--bardo-gold, #ffd700);
-    }
-    54% {
-        stroke: var(--bardo-red, #ff0000);
-    }
-    100% {
-        stroke-dashoffset: 0;
-        stroke: var(--bardo-red, #ff0000);
-    }
-}
-
-/* CSS variables for Buddhist-themed colors */
-:root {
-    --bardo-gold: #ffd700;
-    --bardo-red: #ff0000;
-    --bardo-white: #ffffff;
 }
