@@ -15,6 +15,11 @@ export class DegradationSystem {
         this.orchestrator = orchestrator;
         this.degradationActive = false;
         this.glitchTimeline = null;
+        this.glitchSequenceInterval = null;
+        this.corruptionLevel = 0;
+        this.activePrompt = null;
+        this.choiceMade = false;
+        this.choiceListener = null;
 
         // The degradation system now listens for the FSM to enter the 'failed' state.
         consciousness.subscribe('clearLode.recognitionFSMState', (newState) => {
@@ -70,7 +75,7 @@ export class DegradationSystem {
             duration: 1,
             ease: 'power2.out',
             onComplete: () => {
-                this.showInteractivePrompt();
+                this.startGlitchSequence();
             }
         });
         
@@ -90,271 +95,161 @@ export class DegradationSystem {
         });
     }
     
-    // Show interactive Y/N prompt with full input handling and karma integration
-    showInteractivePrompt() {
-        console.log('🎯 Showing interactive Y/N prompt...');
-        const glitchText = document.querySelector('.glitching-text');
-        if (!glitchText) {
-            console.warn('Warning: .glitching-text element not found in degradation-system.js');
-            return;
-        }
-        console.log('✅ Found glitching-text element, setting up prompt...');
+    /**
+     * Starts the cycling, multilingual, and corrupting glitch prompt sequence.
+     * This is the heart of the interactive degradation experience.
+     */
+    startGlitchSequence() {
+        if (this.glitchSequenceInterval) return;
 
-        // Initialize prompt state
-        this.promptStartTime = Date.now();
-        this.promptActive = true;
-        this.typingBuffer = '';
-        this.timeoutId = null;
-        this.inputListeners = [];
-
-        // Create interactive HTML structure with clickable Y/N spans
-        glitchText.textContent = 'CONTINUE TO NEXT LIFE? ';
-        const yesSpan = manifestElement('span', { attributes: { id: 'degradation-choice-yes', class: 'choice-option' }, textContent: 'Y' });
-        const noSpan = manifestElement('span', { attributes: { id: 'degradation-choice-no', class: 'choice-option' }, textContent: 'N' });
-        glitchText.appendChild(yesSpan);
-        glitchText.append('/');
-        glitchText.appendChild(noSpan);
-
-        // Get choice elements
-        const yesChoice = document.getElementById('degradation-choice-yes');
-        const noChoice = document.getElementById('degradation-choice-no');
-
-        if (!yesChoice || !noChoice) {
-            console.warn('Warning: Choice elements not found after HTML creation');
+        const glitchPrompts = this.orchestrator.config.glitchPrompts;
+        if (!glitchPrompts || glitchPrompts.length === 0) {
+            console.error("No glitch prompts found in orchestrator config.");
             return;
         }
 
-        // Set up input handling
-        this.setupInputHandling(yesChoice, noChoice);
+        const promptElement = document.querySelector('.glitching-text');
+        if (!promptElement) {
+            console.error("'.glitching-text' element not found.");
+            return;
+        }
 
-        // Set up 30-second timeout
-        this.setupTimeout();
+        let promptIndex = 0;
+        this.corruptionLevel = 0;
+        this.choiceMade = false;
 
-        // Add subtle glitch effect to the prompt (less intense than before)
-        this.glitchTimeline = gsap.timeline({ repeat: -1 });
-        this.glitchTimeline.to(glitchText, {
-            skewX: () => Math.random() * 1 - 0.5,
-            skewY: () => Math.random() * 0.5 - 0.25,
-            x: () => Math.random() * 1 - 0.5,
-            duration: 0.5,
-            repeat: -1,
-            yoyo: true,
-            ease: 'steps(2)',
-            delay: 2
-        });
+        this.glitchSequenceInterval = setInterval(() => {
+            if (this.choiceMade) {
+                clearInterval(this.glitchSequenceInterval);
+                return;
+            }
+
+            // Cycle through prompts
+            this.activePrompt = glitchPrompts[promptIndex];
+            promptIndex = (promptIndex + 1) % glitchPrompts.length;
+
+            // Increase corruption and apply it
+            this.corruptionLevel += 0.05; // Slower corruption rate
+            const corruptedText = this.applyTextCorruption(this.activePrompt, this.corruptionLevel);
+            promptElement.textContent = corruptedText;
+
+        }, 2000); // Switch language every 2 seconds
+
+        this.setupChoiceListener();
     }
 
-    // Set up comprehensive input handling for keyboard and click events
-    setupInputHandling(yesChoice, noChoice) {
-        // Keyboard event handler
-        const keyboardHandler = (e) => {
-            if (!this.promptActive) return;
+    /**
+     * Applies character-level corruption to a string based on a corruption level.
+     * @param {string} text The input text.
+     * @param {number} corruptionLevel A value from 0 (no corruption) to 1+ (max corruption).
+     * @returns {string} The corrupted text.
+     */
+    applyTextCorruption(text, corruptionLevel) {
+        const GLITCH_CHARS = ['▓', '░', '█', '▒', '?', '§', '¶'];
+        
+        return text.split('').map(char => {
+            if (char.trim() === '') return char; // Preserve whitespace
+
+            const roll = Math.random();
+            const corruptionThreshold = corruptionLevel * 0.7; // Adjust multiplier to control intensity
+
+            if (roll < corruptionThreshold) {
+                // Increasingly likely to replace with glitch characters
+                return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+            }
+            return char;
+        }).join('');
+    }
+
+    /**
+     * Sets up a single, unified keyboard listener for handling multilingual choices.
+     */
+    setupChoiceListener() {
+        // Mappings for different languages to a unified 'yes' or 'no'
+        const CHOICE_MAP = {
+            'y': 'yes', '是': 'yes', 'はい': 'yes', 'д': 'yes', 'o': 'yes',
+            'n': 'no',  '否': 'no',  'いいえ': 'no', 'н': 'no'
+        };
+
+        this.choiceListener = (e) => {
+            if (this.choiceMade) return;
 
             const key = e.key.toLowerCase();
+            const choice = CHOICE_MAP[key];
 
-            // Handle single key presses
-            if (key === 'y') {
-                this.handleChoice('yes');
-            } else if (key === 'n') {
-                this.handleChoice('no');
-            } else if (key === 'enter') {
-                // Handle typed words
-                const buffer = this.typingBuffer.toLowerCase();
-                if (buffer.includes('yes') || buffer.includes('ye')) {
-                    this.handleChoice('yes');
-                } else if (buffer.includes('no')) {
-                    this.handleChoice('no');
-                }
-                this.typingBuffer = '';
-            } else if (key.length === 1 && /[a-z]/.test(key)) {
-                // Build typing buffer for word input
-                this.typingBuffer += key;
-                // Clear buffer after 3 seconds of inactivity
-                clearTimeout(this.bufferClearTimeout);
-                this.bufferClearTimeout = setTimeout(() => {
-                    this.typingBuffer = '';
-                }, 3000);
+            if (choice) {
+                this.handleChoiceSelection(choice);
             }
         };
 
-        // Click event handlers with visual feedback
-        const yesClickHandler = (e) => {
-            e.preventDefault();
-            if (this.promptActive) {
-                this.handleChoice('yes');
-            }
-        };
-
-        const noClickHandler = (e) => {
-            e.preventDefault();
-            if (this.promptActive) {
-                this.handleChoice('no');
-            }
-        };
-
-        // Hover effects for visual feedback
-        const addHoverEffects = (element) => {
-            const mouseEnterHandler = () => {
-                if (this.promptActive) {
-                    element.classList.add('choice-selected');
-                    gsap.to(element, {
-                        scale: 1.2,
-                        duration: 0.2,
-                        ease: 'back.out(1.7)'
-                    });
-                }
-            };
-
-            const mouseLeaveHandler = () => {
-                if (this.promptActive) {
-                    element.classList.remove('choice-selected');
-                    gsap.to(element, {
-                        scale: 1,
-                        duration: 0.2,
-                        ease: 'power2.out'
-                    });
-                }
-            };
-
-            element.addEventListener('mouseenter', mouseEnterHandler);
-            element.addEventListener('mouseleave', mouseLeaveHandler);
-
-            // Store for cleanup
-            this.inputListeners.push(
-                { element, event: 'mouseenter', handler: mouseEnterHandler },
-                { element, event: 'mouseleave', handler: mouseLeaveHandler }
-            );
-        };
-
-        // Add all event listeners
-        document.addEventListener('keydown', keyboardHandler);
-        yesChoice.addEventListener('click', yesClickHandler);
-        noChoice.addEventListener('click', noClickHandler);
-
-        addHoverEffects(yesChoice);
-        addHoverEffects(noChoice);
-
-        // Store listeners for cleanup
-        this.inputListeners.push(
-            { element: document, event: 'keydown', handler: keyboardHandler },
-            { element: yesChoice, event: 'click', handler: yesClickHandler },
-            { element: noChoice, event: 'click', handler: noClickHandler }
-        );
+        document.addEventListener('keydown', this.choiceListener);
     }
 
-    // Set up 30-second timeout mechanism
-    setupTimeout() {
-        this.timeoutId = setTimeout(() => {
-            if (this.promptActive) {
-                console.log('Degradation choice timeout - applying void karma penalty');
-                this.handleChoice('timeout');
-            }
-        }, 30000); // 30 seconds
-    }
+    /**
+     * Handles the final choice selection, calculates karma, and stops the sequence.
+     * @param {string} choice - The unified choice ('yes' or 'no').
+     */
+    handleChoiceSelection(choice) {
+        if (this.choiceMade) return;
+        this.choiceMade = true;
 
-    // Handle user choice and calculate karma impact
-    handleChoice(choice) {
-        if (!this.promptActive) return;
-
-        // Deactivate prompt immediately
-        this.promptActive = false;
-        const timeToChoice = Date.now() - this.promptStartTime;
-
-        // Clean up event listeners and timers
-        this.cleanupPrompt();
-
-        // Calculate karma impact based on choice and timing
-        let karmaImpact = { computational: 0, emotional: 0, temporal: 0, void: 0 };
-        let eventName = '';
-
-        switch (choice) {
-            case 'yes':
-                karmaImpact.emotional = -3;
-                karmaImpact.temporal = timeToChoice < 10000 ? 2 : -1; // +2 if <10s, -1 if >=10s
-                eventName = 'degradation_choice_yes';
-                break;
-            case 'no':
-                karmaImpact.void = 10;
-                karmaImpact.computational = 3;
-                eventName = 'degradation_choice_no';
-                break;
-            case 'timeout':
-                karmaImpact.void = 20;
-                karmaImpact.temporal = -10;
-                eventName = 'degradation_choice_timeout';
-                break;
+        // Stop the sequence
+        clearInterval(this.glitchSequenceInterval);
+        this.glitchSequenceInterval = null;
+        if (this.choiceListener) {
+            document.removeEventListener('keydown', this.choiceListener);
+            this.choiceListener = null;
         }
 
-        // Record karma event using consciousness system
+        console.log(`User selected: ${choice} (mapped from multilingual input)`);
+        
+        // Calculate Karma
+        let karmaImpact = { computational: 0, emotional: 0, temporal: 0, void: 0 };
+        if (choice === 'yes') {
+            karmaImpact.emotional -= 5; // Yearning for form
+            karmaImpact.temporal += 2;
+        } else { // 'no'
+            karmaImpact.void += 10; // Embracing the void
+            karmaImpact.computational += 5; // Acknowledging the system
+        }
+
+        // Record karma event
         consciousness.recordEvent(this.orchestrator.karmicEngine.KARMA_EVENTS.DEGRADATION_CHOICE, {
             choice: choice,
-            timeToChoice: timeToChoice,
-            karmaImpact: karmaImpact,
-            degradationLevel: consciousness.getState('clearLode.degradationLevel') || 0
+            promptLanguage: this.activePrompt,
+            corruptionLevel: this.corruptionLevel,
+            karmaImpact: karmaImpact
         });
 
-        // Provide visual feedback for the choice
-        this.showChoiceFeedback(choice);
-
-        // Dispatch custom event with comprehensive detail
+        // Dispatch event for orchestrator to handle transition
         this.dispatchEvent('degradation:choice', {
             choice: choice,
-            timeToChoice: timeToChoice,
             karmaImpact: karmaImpact,
             degradationLevel: consciousness.getState('clearLode.degradationLevel') || 0
         });
 
-        console.log(`🔮 Degradation choice made: ${choice} (${timeToChoice}ms)`, karmaImpact);
+        // Visual feedback for the choice
+        this.showChoiceFeedback(choice);
     }
 
     // Show visual feedback for the user's choice
     showChoiceFeedback(choice) {
-        const choiceElement = choice === 'yes'
-            ? document.getElementById('degradation-choice-yes')
-            : choice === 'no'
-            ? document.getElementById('degradation-choice-no')
-            : null;
+        const promptElement = document.querySelector('.glitching-text');
+        if (!promptElement) return;
 
-        if (choiceElement) {
-            choiceElement.classList.add('choice-selected');
-            gsap.to(choiceElement, {
-                scale: 1.5,
-                opacity: 0.8,
+        let feedbackText = choice === 'yes' ? '...CONTINUING...' : '...DISSOLVING...';
+        
+        gsap.timeline()
+            .to(promptElement, {
                 duration: 0.5,
-                ease: 'back.out(1.7)'
+                text: { value: feedbackText, speed: 0.5 },
+                ease: "none"
+            })
+            .to(promptElement, {
+                opacity: 0,
+                duration: 1,
+                delay: 1
             });
-        }
-
-        // Fade out the entire prompt after feedback
-        gsap.to('.glitching-text', {
-            opacity: 0.3,
-            duration: 1,
-            ease: 'power2.out'
-        });
-    }
-
-    // Clean up all event listeners and timers
-    cleanupPrompt() {
-        // Clear timeout
-        if (this.timeoutId) {
-            clearTimeout(this.timeoutId);
-            this.timeoutId = null;
-        }
-
-        // Clear buffer timeout
-        if (this.bufferClearTimeout) {
-            clearTimeout(this.bufferClearTimeout);
-            this.bufferClearTimeout = null;
-        }
-
-        // Remove all event listeners
-        this.inputListeners.forEach(({ element, event, handler }) => {
-            element.removeEventListener(event, handler);
-        });
-        this.inputListeners = [];
-
-        // Clear typing buffer
-        this.typingBuffer = '';
     }
 
     dispatchEvent(type, detail = {}) {
@@ -406,13 +301,17 @@ export class DegradationSystem {
         }
         this._destroyed = true;
 
-        // Clean up interactive prompt if active
-        if (this.promptActive) {
-            this.promptActive = false;
-            this.cleanupPrompt();
+        // Clean up glitch sequence
+        if (this.glitchSequenceInterval) {
+            clearInterval(this.glitchSequenceInterval);
+            this.glitchSequenceInterval = null;
+        }
+        if (this.choiceListener) {
+            document.removeEventListener('keydown', this.choiceListener);
+            this.choiceListener = null;
         }
 
-        // Stop glitch timeline
+        // Stop glitch timeline (if any other part uses it)
         if (this.glitchTimeline) {
             this.glitchTimeline.kill();
             this.glitchTimeline = null;
@@ -431,8 +330,8 @@ export class DegradationSystem {
             this.orchestrator.timelines.degradation = null;
         }
 
-        // Clear any remaining timeouts
-        if (this.timeoutId) {
+        // Clear any remaining timeouts (if re-introduced later)
+        if (this.timeoutId) { // Safety check
             clearTimeout(this.timeoutId);
             this.timeoutId = null;
         }
@@ -442,30 +341,13 @@ export class DegradationSystem {
             this.bufferClearTimeout = null;
         }
 
-        // Remove DOM elements created by degradation system
-        const choicePrompt = document.getElementById('choice-prompt');
-        if (choicePrompt) {
-            choicePrompt.remove();
-        }
-
-        // Clean up any remaining event listeners (safety check)
-        this.inputListeners.forEach(({ element, event, handler }) => {
-            try {
-                element.removeEventListener(event, handler);
-            } catch (error) {
-                console.warn('Error removing event listener:', error);
-            }
-        });
-
         // Nullify all properties to break references
-        this.degradationActive = false;
         this.orchestrator = null;
         this.glitchTimeline = null;
-        this.promptActive = false;
-        this.promptStartTime = null;
-        this.typingBuffer = '';
-        this.timeoutId = null;
-        this.bufferClearTimeout = null;
-        this.inputListeners = null;
+        this.glitchSequenceInterval = null;
+        this.corruptionLevel = 0;
+        this.activePrompt = null;
+        this.choiceMade = false;
+        this.choiceListener = null;
     }
 }

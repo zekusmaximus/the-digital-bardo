@@ -44,6 +44,10 @@ export class RecognitionHandler {
 
         // Resize handler for center point updates
         this.handleResize = this.debounce(this.updateCenterPoint.bind(this), 200);
+
+        // Hint cycling state
+        this.hintInterval = null;
+        this.hintElement = null;
     }
     
     startListening() {
@@ -71,6 +75,8 @@ export class RecognitionHandler {
         // Add resize listener for center point updates
         window.addEventListener('resize', this.handleResize);
         this.listeners.push({ type: 'resize', handler: this.handleResize, element: window });
+
+        this.showRecognitionHints();
     }
     
     stopListening() {
@@ -107,6 +113,10 @@ export class RecognitionHandler {
 
         // Clean up UI elements
         this.cleanupUI();
+        if (this.hintInterval) {
+            clearInterval(this.hintInterval);
+            this.hintInterval = null;
+        }
     }
     
     // === LEGACY HANDLERS (Migrated to new specific methods) ===
@@ -518,7 +528,7 @@ export class RecognitionHandler {
         if (this.progressCircle) {
             this.progressCircle.setAttribute('stroke-dashoffset', 2 * Math.PI * 200);
             this.progressCircle.setAttribute('stroke', '#ffffff');
-            this.progress_circle.style.animation = '';
+            this.progressCircle.style.animation = '';
         }
     }
 
@@ -567,5 +577,53 @@ export class RecognitionHandler {
 
         // Reset progress circle reference
         this.progressCircle = null;
+
+        // Remove hint display
+        if (this.hintElement) {
+            this.hintElement.remove();
+            this.hintElement = null;
+        }
+    }
+
+    /**
+     * Cycles through hints for the various recognition methods.
+     */
+    showRecognitionHints() {
+        // This check prevents creating multiple hint elements if startListening is called again
+        if (this.hintElement) return;
+
+        const HINTS = [
+            "Hint: Find the center.",
+            "Hint: Speak the word of power.",
+            "Hint: Hold your breath at the precipice.",
+        ];
+        let hintIndex = 0;
+
+        this.hintElement = manifestElement('div', {
+            attributes: {
+                id: 'recognition-hints',
+                'aria-live': 'polite',
+                style: `position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); font-family: monospace; font-size: 16px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.2); padding: 8px 16px; border-radius: 4px; pointer-events: none; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; text-align: center;`
+            }
+        });
+        document.body.appendChild(this.hintElement);
+
+        const updateHint = () => {
+            if (!this.hintElement) return; // Stop if UI was cleaned up
+
+            this.hintElement.style.opacity = '0';
+            setTimeout(() => {
+                if (!this.hintElement) return;
+                this.hintElement.textContent = HINTS[hintIndex];
+                this.hintElement.style.opacity = '1';
+                hintIndex = (hintIndex + 1) % HINTS.length;
+            }, 500); // Wait for fade out
+        };
+
+        // Initial hint display
+        updateHint();
+
+        // Start cycling
+        this.hintInterval = setInterval(updateHint, 5000); // Change hint every 5 seconds
     }
 }

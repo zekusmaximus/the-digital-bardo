@@ -1,6 +1,7 @@
 // Audio subsystem for the Clear Lode
 import { createKarmicValidator, audioParamsSchema } from '../src/security/karmic-validation.js';
 import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+import { consciousness } from '../src/consciousness/digital-soul.js';
 
 export class ClearLodeAudio {
     constructor() {
@@ -13,6 +14,7 @@ export class ClearLodeAudio {
         this.audioInitialized = false;
         this.userGestureReceived = false;
         this.pendingPureTone = false;
+        this.harmonicOscillators = [];
 
         // Track if worklet is available
         this.workletAvailable = false;
@@ -23,6 +25,20 @@ export class ClearLodeAudio {
 
         // Karmic Validator for Audio Params
         this.validateAudioParams = createKarmicValidator(audioParamsSchema);
+
+        // Subscribe to karma state changes
+        consciousness.subscribe('karma', (newKarmaState) => {
+            if (this.audioInitialized) {
+                this.updateAudioFromKarma(newKarmaState);
+            }
+        });
+
+        // Subscribe to specific, impactful events
+        consciousness.subscribe('lastEvent', (event) => {
+            if (this.audioInitialized && event) {
+                this.respondToKarmaEvent(event);
+            }
+        });
     }
 
     setupUserGestureListener() {
@@ -127,78 +143,25 @@ export class ClearLodeAudio {
     }
     
     startDegradation() {
-        console.log('🔊 Starting audio degradation...', {
-            oscillator: !!this.oscillator,
-            audioInitialized: this.audioInitialized,
-            degradationLevel: this.degradationLevel
-        });
-
+        console.log('🔊 Starting audio degradation...');
+        // This function is now a trigger. The actual degradation is handled by updateAudioFromKarma.
+        
         // If audio isn't initialized, try to start it first
         if (!this.audioInitialized) {
             console.log('Audio not initialized - attempting to initialize for degradation');
             this.initializeAudioContext().then(() => {
                 if (this.audioInitialized && !this.oscillator) {
                     console.log('Starting pure tone for degradation');
-                    this.startPureTone();
+                    this.startPureTone().then(() => this.completeDigitalStatic());
+                } else if (this.audioInitialized) {
+                    this.completeDigitalStatic();
                 }
             });
+        } else {
+             this.completeDigitalStatic();
         }
 
-        // Start degradation even if oscillator isn't available (visual effects still work)
-        // Gradually introduce noise and frequency shifts
-        const degradeInterval = setInterval(() => {
-            this.degradationLevel += 0.05;
-
-            // Update CSS custom property for visual degradation
-            document.documentElement.style.setProperty('--degradation-level',
-                this.degradationLevel);
-
-            // Update body attribute for degradation state
-            const degradationState = this.getDegradationState();
-            document.body.setAttribute('data-degradation', degradationState);
-
-            // Frequency starts to waver (only if audio is available)
-            if (this.oscillator && this.audioContext) {
-                try {
-                    const frequencyShift = Math.sin(Date.now() * 0.001) * this.degradationLevel * 50;
-                    const newFrequency = this.baseFrequency + frequencyShift;
-                    if (this.validateAudioParams({ frequency: newFrequency, gain: this.gainNode.gain.value })) {
-                        this.oscillator.frequency.setValueAtTime(
-                            newFrequency,
-                            this.audioContext.currentTime
-                        );
-                    } else {
-                        console.warn('Karmic validation failed for frequency shift, skipping update.');
-                    }
-                } catch (error) {
-                    console.warn('Audio degradation failed:', error);
-                }
-            }
-
-            // Volume decreases (only if gain node is available)
-            if (this.gainNode && this.audioContext) {
-                try {
-                    const newGain = Math.max(0.05, 0.3 - (this.degradationLevel * 0.1));
-                    if(this.validateAudioParams({ frequency: this.oscillator.frequency.value, gain: newGain })) {
-                        this.gainNode.gain.setValueAtTime(newGain, this.audioContext.currentTime);
-                    } else {
-                        console.warn('Karmic validation failed for gain adjustment, skipping update.');
-                    }
-                } catch (error) {
-                    console.warn('Audio gain adjustment failed:', error);
-                }
-            }
-
-            // Add digital artifacts (create noise bursts)
-            if (Math.random() < this.degradationLevel * 0.1) {
-                this.createGlitchBurst();
-            }
-
-            if (this.degradationLevel >= 1) {
-                clearInterval(degradeInterval);
-                this.completeDigitalStatic();
-            }
-        }, 100);
+        // The old interval-based degradation is removed. Karma is now the driver.
     }
     
     // Enhanced glitch burst using worklet if available
@@ -266,11 +229,13 @@ export class ClearLodeAudio {
             this.oscillator = null;
         }
 
-        // Use worklet if available, otherwise fall back
-        if (this.workletAvailable) {
-            await this.createWorkletNoise();
-        } else {
-            this.createScriptProcessorNoise();
+        // Ensure the noise worklet is running so it can respond to karma changes
+        if (!this.noiseWorklet) {
+            if (this.workletAvailable) {
+                await this.createWorkletNoise();
+            } else {
+                this.createScriptProcessorNoise();
+            }
         }
     }
 
@@ -421,5 +386,108 @@ export class ClearLodeAudio {
         this.oscillator = null;
         this.gainNode = null;
         this.noiseWorklet = null;
+        this.harmonicOscillators = [];
+    }
+
+    /**
+     * Translates the current karma state into real-time audio parameter adjustments.
+     * @param {object} karmaState - The full karma object from the consciousness.
+     */
+    updateAudioFromKarma(karmaState) {
+        if (!this.audioInitialized || !this.oscillator) return;
+
+        // 1. Computational Karma -> Pitch Stability
+        // Higher computational karma = more pitch instability (vibrato/detune)
+        const computationalKarma = karmaState.computational || 0;
+        const maxPitchWobble = 20; // Max deviation in Hz
+        const pitchWobble = (computationalKarma / 100) * maxPitchWobble; // Assuming karma is 0-100 scale
+        const frequencyShift = Math.sin(Date.now() * 0.005) * pitchWobble;
+        const newFrequency = this.baseFrequency + frequencyShift;
+        if (this.validateAudioParams({ frequency: newFrequency })) {
+            this.oscillator.frequency.setTargetAtTime(newFrequency, this.audioContext.currentTime, 0.1);
+        }
+
+        // 2. Emotional Karma -> Harmonic Richness
+        // Higher emotional karma = more complex harmonics
+        const emotionalKarma = karmaState.emotional || 0;
+        const targetHarmonics = Math.floor((emotionalKarma / 100) * 4); // 0 to 4 harmonics
+        this.updateHarmonics(targetHarmonics);
+
+        // 3. Void Karma -> Background Static Volume
+        // Higher void karma = louder static noise
+        const voidKarma = karmaState.void || 0;
+        const noiseLevel = Math.min(0.5, (voidKarma / 100) * 0.5); // Cap noise level
+        if (this.noiseWorklet && this.noiseWorklet.port) {
+            this.noiseWorklet.port.postMessage({
+                type: 'setNoiseLevel',
+                value: noiseLevel
+            });
+        }
+    }
+
+    /**
+     * Manages the creation and destruction of harmonic oscillators based on emotional karma.
+     * @param {number} targetCount - The desired number of harmonic oscillators.
+     */
+    updateHarmonics(targetCount) {
+        // Remove excess harmonics
+        while (this.harmonicOscillators.length > targetCount) {
+            const oscInfo = this.harmonicOscillators.pop();
+            oscInfo.gain.gain.setTargetAtTime(0, this.audioContext.currentTime, 0.5);
+            oscInfo.osc.stop(this.audioContext.currentTime + 1);
+            this.guardian.cleanup(oscInfo.osc);
+            this.guardian.cleanup(oscInfo.gain);
+        }
+
+        // Add needed harmonics
+        while (this.harmonicOscillators.length < targetCount) {
+            const harmonicNumber = this.harmonicOscillators.length + 2; // Start with 2nd harmonic
+            const freq = this.baseFrequency * harmonicNumber;
+            const gainLevel = 0.1 / harmonicNumber; // Higher harmonics are quieter
+
+            if (!this.validateAudioParams({ frequency: freq, gain: gainLevel})) continue;
+
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+            gain.gain.setValueAtTime(0, this.audioContext.currentTime);
+            gain.gain.setTargetAtTime(gainLevel, this.audioContext.currentTime, 0.5);
+
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+            osc.start();
+
+            this.guardian.register(osc, o => o.disconnect());
+            this.guardian.register(gain, g => g.disconnect());
+            this.harmonicOscillators.push({ osc, gain });
+        }
+    }
+
+    /**
+     * Triggers immediate, noticeable audio cues for specific karma events.
+     * @param {object} event - The event object from the consciousness.
+     */
+    respondToKarmaEvent(event) {
+        if (!this.audioInitialized) return;
+
+        switch (event.name) {
+            case 'recognition_achieved':
+                // A clear, resonant chime
+                this.achieveResonance();
+                break;
+            case 'attachment_formed':
+                // A harsh, discordant burst of static
+                this.createGlitchBurst(0.5, 0.2); // Higher intensity burst
+                break;
+            case 'degradation_choice_no':
+                // A low, rumbling frequency shift
+                if(this.oscillator) {
+                    this.oscillator.frequency.setTargetAtTime(this.baseFrequency / 2, this.audioContext.currentTime, 0.1);
+                    this.oscillator.frequency.setTargetAtTime(this.baseFrequency, this.audioContext.currentTime + 1, 0.5);
+                }
+                break;
+        }
     }
 }

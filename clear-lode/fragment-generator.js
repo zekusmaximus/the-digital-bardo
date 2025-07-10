@@ -8,6 +8,79 @@ import { ResourceGuardian } from './consciousness/resource-guardian.js';
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
 
+export const DIGITAL_MEMORIES = {
+  browserHistory: [
+    "Last search: 'how to be happy' - 3:47 AM",
+    "17 tabs open, all forgotten",
+    "What is the average human lifespan in seconds?",
+    "Can AIs feel lonely?",
+    "Error 404: Authenticity not found",
+  ],
+  unfinishedCommunication: [
+    "Draft: 'Hey, we should catch up' - saved 247 days ago",
+    "Typing indicator seen, message never sent",
+    "Voicemail: 1 new message, saved for 3 years",
+    "To: Mom. Subject: I'm sorry. (Draft)",
+    "5 unread messages from 'SELF'",
+  ],
+  technicalDebt: [
+    "// TODO: Refactor this whole mess",
+    "FIXME: Off-by-one error in the soul calculation",
+    "Temporary solution, permanent problem",
+    "Circular dependency detected in core logic",
+    "Memory leak in recollection module",
+  ],
+  deletedFiles: [
+    "Poem_for_no_one.txt (permanently deleted)",
+    "Regrets.log (corrupted)",
+    "old_passwords.txt.bak (zeroed out)",
+    "path/to/home (not found)",
+    "IMG_2077.jpg (1 byte remaining)",
+  ],
+  systemAlerts: [
+    "Warning: Karmic buffer overflow",
+    "Critical error: Reality matrix desynchronized",
+    "Connection to physical world lost",
+    "User identity not recognized",
+    "FATAL: Consciousness heap corruption",
+  ],
+};
+
+/**
+ * Applies corruption to a text string based on a degradation level.
+ * Placeholder implementation.
+ * @param {string} text The text to corrupt.
+ * @param {number} level The degradation level (e.g., 0 to 1).
+ * @returns {string} The corrupted text.
+ */
+function applyCorruption(text, level) {
+    // Placeholder: for now, just returns the original text.
+    // Future implementation will apply glitch effects, character replacement, etc.
+    return text;
+}
+
+
+/**
+ * Generates a final thought fragment based on karma and degradation.
+ * @param {object} karma - The karmic state of the consciousness.
+ * @param {number} degradation - The current level of system degradation.
+ * @returns {string} A corrupted thought fragment.
+ */
+export function generateLastThought(karma, degradation) {
+    const categories = Object.keys(DIGITAL_MEMORIES);
+    
+    // Placeholder karma-based category selection
+    // Use computational karma to cycle through categories.
+    const karmaValue = (karma && karma.computational) || 0;
+    const categoryIndex = Math.floor(karmaValue * categories.length) % categories.length;
+    const selectedCategory = categories[categoryIndex];
+
+    const memories = DIGITAL_MEMORIES[selectedCategory];
+    const rawMemory = memories[Math.floor(Math.random() * memories.length)];
+
+    return applyCorruption(rawMemory, degradation);
+}
+
 // Simulated Personal Data (privacy-preserving)
 const thought_data = {
     origins: ["a quiet town", "the city that never sleeps", "a place of light", "the digital sea", "a forgotten server"],
@@ -89,14 +162,6 @@ export class FragmentGenerator {
         // Log browser compatibility on initialization
         console.log('🔧 Fragment Generator Browser Compatibility:', this.getBrowserCompatibility());
 
-        // Last thoughts database
-        this.thoughtFragments = [
-            "I remember...", "Was I ever...", "The light...", "Mother's voice...",
-            "That summer day...", "The taste of...", "Her smile...", "My name was...",
-            "I loved...", "I feared...", "The sound of rain...", "Home...",
-            "Forgive me...", "I should have...", "One more time...", "Beautiful...",
-            "Why did I...", "I'm sorry...", "Thank you...", "Goodbye..."
-        ];
     }
 
     initializeIntersectionObserver() {
