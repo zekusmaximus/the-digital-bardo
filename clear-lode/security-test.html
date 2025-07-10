@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Test - Digital Bardo</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #0f0; }
+        .test-result { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .pass { border-color: #0f0; }
+        .fail { border-color: #f00; color: #f00; }
+        .test-output { background: #111; padding: 10px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔒 Digital Bardo Security Test</h1>
+    <p>Testing XSS protection in purification module...</p>
+    
+    <div id="test-results"></div>
+    
+    <script type="module">
+        import { sanitizeText, sanitizeHTML } from '../src/utils/purification.js';
+        
+        const results = document.getElementById('test-results');
+        
+        function runTest(name, testFn) {
+            try {
+                const result = testFn();
+                const div = document.createElement('div');
+                div.className = 'test-result pass';
+                div.innerHTML = `
+                    <h3>✅ ${name}</h3>
+                    <div class="test-output">${result}</div>
+                `;
+                results.appendChild(div);
+                return true;
+            } catch (error) {
+                const div = document.createElement('div');
+                div.className = 'test-result fail';
+                div.innerHTML = `
+                    <h3>❌ ${name}</h3>
+                    <div class="test-output">Error: ${error.message}</div>
+                `;
+                results.appendChild(div);
+                return false;
+            }
+        }
+        
+        // Test 1: Basic XSS script tag removal
+        runTest('Script Tag Removal', () => {
+            const malicious = '<script>alert("XSS")</script>Safe text';
+            const result = sanitizeText(malicious);
+            if (result === 'Safe text') {
+                return `Input: ${malicious}<br>Output: ${result}<br>Status: Script stripped successfully`;
+            }
+            throw new Error(`Expected 'Safe text', got '${result}'`);
+        });
+        
+        // Test 2: HTML sanitization with allowed tags
+        runTest('HTML Sanitization', () => {
+            const input = '<pre class="glitching-text">CONTINUE TO NEXT LIFE? Y/N</pre><script>alert(1)</script>';
+            const result = sanitizeHTML(input);
+            const expected = '<pre class="glitching-text">CONTINUE TO NEXT LIFE? Y/N</pre>alert(1)';
+            if (result === expected) {
+                return `Input: ${input}<br>Output: ${result}<br>Status: Allowed tags preserved, script removed`;
+            }
+            throw new Error(`Expected '${expected}', got '${result}'`);
+        });
+        
+        // Test 3: Fragment thought sanitization
+        runTest('Fragment Thought Safety', () => {
+            const maliciousThought = 'I remember...<img src=x onerror=alert(1)>';
+            const result = sanitizeText(maliciousThought);
+            const expected = 'I remember...';
+            if (result === expected) {
+                return `Input: ${maliciousThought}<br>Output: ${result}<br>Status: Malicious HTML stripped from thought`;
+            }
+            throw new Error(`Expected '${expected}', got '${result}'`);
+        });
+        
+        // Test 4: Class filtering
+        runTest('Class Filtering', () => {
+            const input = '<div class="consciousness-fragment malicious-class">Fragment</div>';
+            const result = sanitizeHTML(input);
+            const expected = '<div class="consciousness-fragment">Fragment</div>';
+            if (result === expected) {
+                return `Input: ${input}<br>Output: ${result}<br>Status: Malicious class removed, safe class preserved`;
+            }
+            throw new Error(`Expected '${expected}', got '${result}'`);
+        });
+        
+        // Test 5: Data attribute preservation
+        runTest('Data Attribute Preservation', () => {
+            const input = '<div data-birth-time="123" onclick="alert(1)" class="consciousness-fragment">Fragment</div>';
+            const result = sanitizeHTML(input);
+            const expected = '<div data-birth-time="123" class="consciousness-fragment">Fragment</div>';
+            if (result === expected) {
+                return `Input: ${input}<br>Output: ${result}<br>Status: Data attributes preserved, onclick removed`;
+            }
+            throw new Error(`Expected '${expected}', got '${result}'`);
+        });
+        
+        console.log('🔒 Security tests completed. Check the page for results.');
+    </script>
+</body>
+</html>

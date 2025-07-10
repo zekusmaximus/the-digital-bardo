@@ -5,6 +5,7 @@
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
+import { sanitizeHTML } from '../src/utils/purification.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -82,13 +83,18 @@ export class DegradationSystem {
         const glitchText = document.querySelector('.glitching-text');
         const prompts = this.orchestrator.config.glitchPrompts;
 
+        // Warning: Assumed prompt in degradation-system.js; verify manually
+        console.warn('Warning: Assumed prompt in degradation-system.js; verify manually');
+
         // Create a timeline for text glitching (much slower)
         this.glitchTimeline = gsap.timeline({ repeat: -1 });
 
         prompts.forEach((prompt) => {
+            // GSAP's text property is safer than innerHTML but we sanitize for consistency
+            const sanitizedPrompt = sanitizeHTML(prompt, { tags: ['pre'], classes: ['glitching-text'] });
             this.glitchTimeline.to(glitchText, {
                 duration: 0.3, // Increased from 0.1 to 0.3
-                text: prompt,
+                text: sanitizedPrompt,
                 ease: 'none',
                 delay: 2.5    // Increased from 0.5 to 2.5 seconds between changes
             });

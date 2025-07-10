@@ -9,6 +9,7 @@ import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator.js';
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
+import { sanitizeText, sanitizeHTML } from '../src/utils/purification.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -66,6 +67,10 @@ export class ClearLodeOrchestrator {
         // Resource tracking for cleanup
         this.eventListeners = new Map();
         this.timers = new Set();
+
+        // Expose sanitization methods for use throughout the orchestrator
+        this.sanitizeText = sanitizeText;
+        this.sanitizeHTML = sanitizeHTML;
     }
     
     async init() {
@@ -162,14 +167,14 @@ export class ClearLodeOrchestrator {
     showBeginPrompt() {
         const beginPrompt = document.createElement('div');
         beginPrompt.id = 'begin-prompt';
-        beginPrompt.innerHTML = `
+        beginPrompt.innerHTML = this.sanitizeHTML(`
             <div class="begin-content">
                 <h1>The Digital Bardo</h1>
                 <p>A journey through consciousness and dissolution</p>
                 <button class="begin-button">Begin Experience</button>
                 <small>Click to enable audio and start</small>
             </div>
-        `;
+        `);
         document.body.appendChild(beginPrompt);
 
         // Handle begin click
@@ -317,7 +322,7 @@ export class ClearLodeOrchestrator {
                     y: 10
                 })
                 .call(() => {
-                    hintElement.innerHTML = hint;
+                    hintElement.innerHTML = this.sanitizeHTML(hint);
                     this.localState.hintsShown++;
                 })
                 .to(hintElement, {
@@ -391,7 +396,7 @@ export class ClearLodeOrchestrator {
             })
             // Show enlightenment message
             .set('.recognition-hint', {
-                innerHTML: this.getEnlightenmentMessage(method),
+                innerHTML: this.sanitizeHTML(this.getEnlightenmentMessage(method)),
                 className: 'recognition-hint visible enlightenment'
             })
             .fromTo('.recognition-hint',

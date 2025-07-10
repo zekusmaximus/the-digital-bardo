@@ -1,6 +1,7 @@
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
+import { sanitizeText } from '../src/utils/purification.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -411,7 +412,7 @@ export class FragmentGenerator {
 
         const fragment = document.createElement('div');
         fragment.className = 'consciousness-fragment';
-        fragment.textContent = this.generateLastThoughts()[0];
+        fragment.textContent = sanitizeText(this.generateLastThoughts()[0]);
         fragment.dataset.birthTime = Date.now();
 
         // Random position along screen edge
