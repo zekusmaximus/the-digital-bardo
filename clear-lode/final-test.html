@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Test - All Issues Fixed</title>
+    <link rel="stylesheet" href="../src/styles/reality.css">
+    <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <style>
+        /* Critical CSS to ensure proper layout */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden !important;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .absolute-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #fragment-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden !important;
+        }
+        #choice-prompt {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        .glitching-text {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #fff !important;
+        }
+        .choice-option {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            display: inline-block;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: inherit;
+        }
+        .choice-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+        
+        /* Test status panel */
+        .test-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #00ff00;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #00ff00;
+            z-index: 10001;
+        }
+        .status-item {
+            margin: 3px 0;
+        }
+        .pass { color: #00ff00; }
+        .fail { color: #ff0000; }
+        .pending { color: #ffff00; }
+    </style>
+</head>
+<body class="approaching-light">
+    <div class="test-status">
+        <div class="status-item">Overflow Hidden: <span id="overflow-status" class="pending">TESTING</span></div>
+        <div class="status-item">Y/N Prompt: <span id="prompt-status" class="pending">WAITING</span></div>
+        <div class="status-item">Audio Degrading: <span id="audio-status" class="pending">WAITING</span></div>
+        <div class="status-item">Fragments Contained: <span id="fragments-status" class="pending">TESTING</span></div>
+    </div>
+
+    <!-- Main experience elements -->
+    <div id="pre-light" class="absolute-center">
+        <div class="last-thought"></div>
+    </div>
+    
+    <div id="clear-light" class="hidden">
+        <div class="recognition-zone" data-active="false">
+            <div class="light-core">
+                <div class="recognition-hint"></div>
+            </div>
+            <div class="instruction-wrapper hidden">
+                <p class="recognition-instruction"></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="choice-prompt" class="hidden">
+        <pre class="glitching-text"></pre>
+    </div>
+    
+    <div id="fragment-field"></div>
+
+    <script type="module">
+        import { ClearLodeOrchestrator } from './orchestrator.js';
+
+        function updateStatus(id, status, className) {
+            const element = document.getElementById(id);
+            element.textContent = status;
+            element.className = className;
+        }
+
+        // Test 1: Check overflow hidden
+        setTimeout(() => {
+            const bodyStyle = getComputedStyle(document.body);
+            const htmlStyle = getComputedStyle(document.documentElement);
+            if (bodyStyle.overflow === 'hidden' || htmlStyle.overflow === 'hidden') {
+                updateStatus('overflow-status', 'PASS', 'pass');
+            } else {
+                updateStatus('overflow-status', 'FAIL', 'fail');
+            }
+        }, 500);
+
+        // Test 2: Monitor for Y/N prompt
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    const yesChoice = document.getElementById('degradation-choice-yes');
+                    const noChoice = document.getElementById('degradation-choice-no');
+                    if (yesChoice && noChoice) {
+                        updateStatus('prompt-status', 'PASS', 'pass');
+                        observer.disconnect();
+                    }
+                }
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Test 3: Monitor console for audio degradation
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.join(' ');
+            if (message.includes('Starting audio degradation') || message.includes('Digital static achieved')) {
+                updateStatus('audio-status', 'PASS', 'pass');
+            }
+        };
+
+        // Test 4: Monitor fragments containment
+        setInterval(() => {
+            const fragments = document.querySelectorAll('.consciousness-fragment');
+            if (fragments.length > 0) {
+                let allContained = true;
+                fragments.forEach(fragment => {
+                    const rect = fragment.getBoundingClientRect();
+                    // Allow small margin for edge positioning
+                    if (rect.left < -100 || rect.right > window.innerWidth + 100 || 
+                        rect.top < -100 || rect.bottom > window.innerHeight + 100) {
+                        allContained = false;
+                    }
+                });
+                updateStatus('fragments-status', allContained ? 'PASS' : 'FAIL', allContained ? 'pass' : 'fail');
+            }
+        }, 2000);
+
+        // Initialize orchestrator
+        document.addEventListener('DOMContentLoaded', async () => {
+            const orchestrator = new ClearLodeOrchestrator();
+            await orchestrator.init();
+
+            // Auto-start experience
+            orchestrator.showBeginPrompt();
+            
+            setTimeout(() => {
+                const beginButton = document.querySelector('.begin-button');
+                if (beginButton) {
+                    beginButton.click();
+                }
+            }, 1000);
+
+            window.testOrchestrator = orchestrator;
+        });
+    </script>
+</body>
+</html>

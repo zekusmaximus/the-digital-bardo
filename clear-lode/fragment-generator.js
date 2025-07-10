@@ -6,6 +6,41 @@ import { sanitizeText } from '../src/utils/purification.js';
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
 
+// Simulated Personal Data (privacy-preserving)
+const thought_data = {
+    origins: ["a quiet town", "the city that never sleeps", "a place of light", "the digital sea", "a forgotten server"],
+    windows: ["a view of the rain", "the skyline at dusk", "a screen filled with code", "trees swaying in the wind"],
+    times: ["just before dawn", "late afternoon", "3:14 AM", "the blink of an eye"],
+    colors: ["a deep blue", "the color of static", "warm grey", "faded sepia"],
+    devices: ["a humming server", "a pocket-sized screen", "an old CRT monitor", "a network of nodes"]
+};
+
+// Thought Templates
+const thought_templates = {
+    personal: [
+        "I came from {origins}...",
+        "Looking through {windows}...",
+        "I remember {colors}.",
+        "It was {times}.",
+        "Connected via {devices}."
+    ],
+    existential: [
+        "I remember...",
+        "Was I ever...",
+        "The light...",
+        "Home...",
+        "Everything fades."
+    ]
+};
+
+// Corruption Effects
+const corruption_levels = {
+    minimal: { charReplace: 0.05, truncation: 0.05, entity: 0.01 },
+    moderate: { charReplace: 0.20, truncation: 0.25, entity: 0.05 },
+    severe: { charReplace: 0.40, truncation: 0.50, entity: 0.15 },
+    complete: { charReplace: 1.0, truncation: 1.0, entity: 0.50 }
+};
+
 export class FragmentGenerator {
     constructor(karmicCallbacks = null) {
         this.activeFragments = [];
@@ -371,14 +406,66 @@ export class FragmentGenerator {
         }
     }
 
-    generateLastThoughts() {
-        // Return random thought fragments based on performance mode
-        const count = this.performanceMode === 'minimal' ? 1 :
-                     this.performanceMode === 'reduced' ? 2 : 3;
+    generateLastThoughts(degradationLevel = 'minimal', seed = null) {
+        // Seeded random number generator for reproducible testing
+        let currentSeed = seed || Date.now();
+        const seededRandom = () => {
+            const x = Math.sin(currentSeed++) * 10000;
+            return x - Math.floor(x);
+        };
 
-        return Array.from({ length: count }, () =>
-            this.thoughtFragments[Math.floor(Math.random() * this.thoughtFragments.length)]
-        );
+        // Mix ratio: 70% personal, 30% existential
+        const isPersonal = seededRandom() < 0.7;
+        let fragment;
+
+        if (isPersonal) {
+            // Select random personal template
+            const templates = thought_templates.personal;
+            const template = templates[Math.floor(seededRandom() * templates.length)];
+
+            // Fill template placeholders
+            fragment = template.replace(/\{(\w+)\}/g, (match, key) => {
+                if (thought_data[key]) {
+                    const options = thought_data[key];
+                    return options[Math.floor(seededRandom() * options.length)];
+                }
+                return match; // Return original if no data found
+            });
+        } else {
+            // Select random existential template
+            const templates = thought_templates.existential;
+            fragment = templates[Math.floor(seededRandom() * templates.length)];
+        }
+
+        // Apply corruption effects based on degradation level
+        const corruption = corruption_levels[degradationLevel] || corruption_levels.minimal;
+
+        // Character replacement corruption
+        if (seededRandom() < corruption.charReplace) {
+            const chars = fragment.split('');
+            const numToReplace = Math.floor(chars.length * corruption.charReplace * seededRandom());
+            for (let i = 0; i < numToReplace; i++) {
+                const index = Math.floor(seededRandom() * chars.length);
+                chars[index] = seededRandom() < 0.5 ? '▒' : '-';
+            }
+            fragment = chars.join('');
+        }
+
+        // Truncation corruption
+        if (seededRandom() < corruption.truncation) {
+            const truncateAt = Math.floor(fragment.length * (0.3 + seededRandom() * 0.4));
+            fragment = fragment.substring(0, truncateAt) + '...';
+        }
+
+        // Entity corruption
+        if (seededRandom() < corruption.entity) {
+            const entities = ['&̷#@*!', '&#x2620;', '&amp;', '&lt;', '&gt;'];
+            const entity = entities[Math.floor(seededRandom() * entities.length)];
+            const insertAt = Math.floor(seededRandom() * fragment.length);
+            fragment = fragment.substring(0, insertAt) + entity + fragment.substring(insertAt);
+        }
+
+        return fragment;
     }
 
     startFragmentField() {
@@ -411,9 +498,26 @@ export class FragmentGenerator {
             return;
         }
 
+        // Determine degradation level from orchestrator or default to minimal
+        let degradationLevel = 'minimal';
+        try {
+            // Try to access degradation level from global orchestrator
+            if (window.clearLodeOrchestrator && window.clearLodeOrchestrator.audio &&
+                typeof window.clearLodeOrchestrator.audio.getDegradationState === 'function') {
+                degradationLevel = window.clearLodeOrchestrator.audio.getDegradationState();
+            } else {
+                console.warn('FragmentGenerator: Cannot access degradationLevel from orchestrator, defaulting to minimal corruption');
+            }
+        } catch (error) {
+            console.warn('FragmentGenerator: Error accessing degradationLevel, defaulting to minimal corruption:', error.message);
+        }
+
         const fragment = document.createElement('div');
         fragment.className = 'consciousness-fragment';
-        fragment.textContent = sanitizeText(this.generateLastThoughts()[0]);
+
+        // Generate and sanitize the corrupted thought
+        const thoughtText = this.generateLastThoughts(degradationLevel);
+        fragment.textContent = sanitizeText(thoughtText);
         fragment.dataset.birthTime = Date.now();
 
         // Random position along screen edge
@@ -486,14 +590,14 @@ export class FragmentGenerator {
                 }
             )
             .to(fragment, {
-                x: drift.x * 0.3, // Reduce drift distance
-                y: drift.y * 0.3,
+                x: drift.x * 0.2, // Further reduce drift distance
+                y: drift.y * 0.2,
                 duration: animationDuration * 0.7, // Most of the time at full opacity
                 ease: 'none'
             })
             .to(fragment, {
-                x: drift.x,
-                y: drift.y,
+                x: drift.x * 0.5, // More conservative final position
+                y: drift.y * 0.5,
                 opacity: 0,
                 duration: animationDuration * 0.3, // Quick fade at the end
                 ease: 'power2.in',
@@ -562,13 +666,13 @@ export class FragmentGenerator {
     }
 
     calculateDrift(edge) {
-        // Adjust drift distance based on performance mode - move more toward center
-        const baseDistance = this.performanceMode === 'minimal' ? 80 :
-                           this.performanceMode === 'reduced' ? 120 : 150;
-        const distance = baseDistance + Math.random() * 100;
+        // More conservative drift to ensure fragments stay within viewport
+        const baseDistance = this.performanceMode === 'minimal' ? 60 :
+                           this.performanceMode === 'reduced' ? 80 : 100;
+        const distance = baseDistance + Math.random() * 50; // Reduced random component
 
-        // Reduce spread to avoid fragments going too far off-screen
-        const spread = (Math.random() - 0.5) * 60; // Reduced from 100 to 60
+        // Much more conservative spread to prevent viewport overflow
+        const spread = (Math.random() - 0.5) * 40; // Further reduced from 60 to 40
 
         switch(edge) {
             case 0: // Top - drift toward center and down

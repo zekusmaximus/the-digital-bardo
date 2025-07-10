@@ -1,6 +1,5 @@
 // The Clear Lode - First encounter with digital dissolution
 // Refactored entry point - imports and initializes the orchestrator
-import '../src/styles/clear-lode.css';
 import { ClearLodeOrchestrator } from './orchestrator.js';
 
 // Initialize and start the Clear Lode experience

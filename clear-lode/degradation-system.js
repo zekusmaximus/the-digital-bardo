@@ -5,7 +5,6 @@
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
-import { sanitizeHTML } from '../src/utils/purification.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -19,8 +18,8 @@ export class DegradationSystem {
     
     beginDegradation() {
         if (this.orchestrator.localState.recognized || this.degradationActive) return;
-        
-        console.log('Beginning consciousness degradation...');
+
+        console.log('🌀 Beginning consciousness degradation...');
         this.degradationActive = true;
         this.orchestrator.localState.degradationStarted = true;
         
@@ -46,6 +45,11 @@ export class DegradationSystem {
         this.orchestrator.audio.startDegradation();
         
         // Show glitching prompt with GSAP (migrated from clear-lode.js)
+        const choicePrompt = document.getElementById('choice-prompt');
+        if (choicePrompt) {
+            choicePrompt.classList.remove('hidden'); // Remove hidden class first
+        }
+
         gsap.set('#choice-prompt', {
             display: 'block',
             opacity: 0,
@@ -80,11 +84,13 @@ export class DegradationSystem {
     
     // Show interactive Y/N prompt with full input handling and karma integration
     showInteractivePrompt() {
+        console.log('🎯 Showing interactive Y/N prompt...');
         const glitchText = document.querySelector('.glitching-text');
         if (!glitchText) {
             console.warn('Warning: .glitching-text element not found in degradation-system.js');
             return;
         }
+        console.log('✅ Found glitching-text element, setting up prompt...');
 
         // Initialize prompt state
         this.promptStartTime = Date.now();
@@ -95,10 +101,8 @@ export class DegradationSystem {
 
         // Create interactive HTML structure with clickable Y/N spans
         const promptHTML = `CONTINUE TO NEXT LIFE? <span id="degradation-choice-yes" class="choice-option">Y</span>/<span id="degradation-choice-no" class="choice-option">N</span>`;
-        glitchText.innerHTML = sanitizeHTML(promptHTML, {
-            tags: ['span'],
-            classes: ['choice-option']
-        });
+        // Bypass sanitization for this controlled HTML string
+        glitchText.innerHTML = promptHTML;
 
         // Get choice elements
         const yesChoice = document.getElementById('degradation-choice-yes');
@@ -270,15 +274,13 @@ export class DegradationSystem {
                 break;
         }
 
-        // Record karma event using the orchestrator's karmic engine
-        if (this.orchestrator && this.orchestrator.karmicEngine) {
-            this.orchestrator.karmicEngine.recordEvent(eventName, {
-                choice: choice,
-                timeToChoice: timeToChoice,
-                karmaImpact: karmaImpact,
-                degradationLevel: this.orchestrator.localState.degradationLevel || 0
-            });
-        }
+        // Record karma event using consciousness system
+        consciousness.recordEvent(eventName, {
+            choice: choice,
+            timeToChoice: timeToChoice,
+            karmaImpact: karmaImpact,
+            degradationLevel: this.orchestrator.localState.degradationLevel || 0
+        });
 
         // Provide visual feedback for the choice
         this.showChoiceFeedback(choice);

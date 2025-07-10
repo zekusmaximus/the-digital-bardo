@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test - Recognition Timeout</title>
+    <link rel="stylesheet" href="../src/styles/reality.css">
+    <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <style>
+        .test-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            font-family: monospace;
+            z-index: 10000;
+            border: 1px solid #333;
+        }
+        .test-log {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body class="approaching-light">
+    <div class="test-info">
+        <div>Recognition Timeout Test</div>
+        <div id="timer">Timer: 0s</div>
+        <div id="status">Status: Starting...</div>
+        <div class="test-log" id="log"></div>
+    </div>
+
+    <div id="pre-light" class="absolute-center">
+        <div class="last-thought"></div>
+    </div>
+    
+    <div id="clear-light" class="hidden">
+        <div class="recognition-zone" data-active="false">
+            <div class="light-core">
+                <div class="recognition-hint"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="choice-prompt" class="hidden">
+        <pre class="glitching-text"></pre>
+    </div>
+    
+    <div id="fragment-field"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script>
+        let startTime = Date.now();
+        let timer = 0;
+        
+        function log(message) {
+            console.log(message);
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.textContent = `${timer}s: ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(status) {
+            document.getElementById('status').textContent = `Status: ${status}`;
+        }
+        
+        // Update timer
+        setInterval(() => {
+            timer = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').textContent = `Timer: ${timer}s`;
+        }, 100);
+        
+        // Simulate the recognition timeout sequence
+        log('Starting test...');
+        updateStatus('Initializing');
+        
+        // Step 1: Show begin prompt (simulate user click after 1 second)
+        setTimeout(() => {
+            log('Simulating begin button click...');
+            updateStatus('Starting experience');
+            startExperience();
+        }, 1000);
+        
+        function startExperience() {
+            // Step 2: Manifest light
+            log('Manifesting light...');
+            updateStatus('Light manifesting');
+            
+            // Hide pre-light
+            gsap.to('#pre-light', { opacity: 0, duration: 0.5 });
+            
+            // Show clear light
+            const clearLight = document.getElementById('clear-light');
+            clearLight.classList.remove('hidden');
+            gsap.set('#clear-light', { display: 'block', opacity: 1 });
+            gsap.fromTo('.light-core', 
+                { scale: 0, opacity: 0 },
+                { scale: 1, opacity: 1, duration: 3 }
+            );
+            
+            // Step 3: Schedule recognition window (3.5s start, 6.5s end)
+            setTimeout(() => {
+                log('Recognition window opened');
+                updateStatus('Recognition available');
+            }, 3500);
+            
+            setTimeout(() => {
+                log('Recognition window timeout - starting degradation');
+                updateStatus('Degradation starting');
+                startDegradation();
+            }, 6500);
+        }
+        
+        function startDegradation() {
+            log('Degradation system activated');
+            
+            // Show choice prompt
+            const choicePrompt = document.getElementById('choice-prompt');
+            choicePrompt.classList.remove('hidden');
+            
+            gsap.set('#choice-prompt', {
+                display: 'block',
+                opacity: 0,
+                y: 50
+            });
+            
+            gsap.to('#choice-prompt', {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                onComplete: () => {
+                    log('Interactive prompt shown');
+                    updateStatus('Y/N prompt visible');
+                    showInteractivePrompt();
+                }
+            });
+        }
+        
+        function showInteractivePrompt() {
+            const glitchText = document.querySelector('.glitching-text');
+            if (glitchText) {
+                glitchText.innerHTML = 'CONTINUE TO NEXT LIFE? <span class="choice-option">Y</span>/<span class="choice-option">N</span>';
+                log('Y/N choices added to prompt');
+                updateStatus('Choices interactive');
+            } else {
+                log('ERROR: glitching-text element not found');
+                updateStatus('ERROR: No prompt element');
+            }
+        }
+        
+        log('Test script loaded');
+    </script>
+</body>
+</html>

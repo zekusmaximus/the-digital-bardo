@@ -5,6 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Clear Light of Reality</title>
     <meta name="description" content="Recognition awaits. The source code reveals itself.">
+    <link rel="stylesheet" href="../src/styles/reality.css">
+    <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <style>
+        /* Critical CSS to ensure proper layout */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden !important;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .absolute-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #fragment-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden !important;
+        }
+        #choice-prompt {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        .glitching-text {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #fff !important;
+        }
+        .choice-option {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            display: inline-block;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: inherit;
+        }
+        .choice-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+    </style>
 </head>
 <body class="approaching-light">
     <!-- The void before light -->

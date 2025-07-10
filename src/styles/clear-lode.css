@@ -102,6 +102,19 @@
     50% { opacity: 1; }
 }
 
+/* Hidden elements */
+.hidden {
+    display: none !important;
+}
+
+/* Utility classes */
+.absolute-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
 /* The transition from void to overwhelming light */
 body.approaching-light {
     background: #000000;
@@ -228,31 +241,6 @@ body.light-manifested {
     90% { transform: skew(0.5deg); }
 }
 
-/* Interactive choice options */
-.choice-option {
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 3px;
-    transition: all 0.2s ease;
-    display: inline-block;
-    font-weight: bold;
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-.choice-option:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(0, 0, 0, 0.4);
-    transform: scale(1.1);
-}
-
-.choice-option.choice-selected {
-    background: rgba(255, 215, 0, 0.3);
-    border-color: rgba(255, 215, 0, 0.6);
-    color: #000;
-    text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
-}
-
 /* Fragment field container */
 #fragment-field {
     position: fixed;
@@ -262,6 +250,7 @@ body.light-manifested {
     height: 100vh;
     pointer-events: none;
     z-index: 10;
+    overflow: hidden; /* Prevent fragments from causing scrollbars */
 }
 
 /* Consciousness fragments at screen edges */

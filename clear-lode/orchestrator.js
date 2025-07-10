@@ -446,12 +446,9 @@ export class ClearLodeOrchestrator {
         this.localState.lightManifested = true;
 
         // Create GSAP timeline for light manifestation
-        this.timelines.manifestation = gsap.timeline({
-            onComplete: () => {
-                console.log('✨ Light fully manifested');
-                this.dispatchEvent('light:manifestation:complete', {});
-            }
-        });
+        this.timelines.manifestation = gsap.timeline();
+
+        console.log('🎬 GSAP timeline created, starting light manifestation sequence...');
         
         // Orchestrate the transition with GSAP - keep background dark while light grows
         this.timelines.manifestation
@@ -482,7 +479,10 @@ export class ClearLodeOrchestrator {
                 scale: 1,
                 opacity: 1,
                 duration: 3,
-                ease: 'power2.out'
+                ease: 'power2.out',
+                onComplete: () => {
+                    console.log('🌟 Light core animation complete');
+                }
             })
             // THEN transition background to white (after light is visible, much later)
             .to('body', {
@@ -497,6 +497,10 @@ export class ClearLodeOrchestrator {
             // Add the light-manifested class after background transition
             .call(() => {
                 document.body.classList.add('light-manifested');
+                console.log('✨ Light manifestation sequence complete - dispatching event...');
+                this.dispatchEvent('light:manifestation:complete', {});
+                console.log('✨ Event dispatched, scheduling recognition window...');
+                this.scheduleRecognitionWindow();
             })
             // Start the gentle rotation
             .to('.light-core', {
@@ -516,20 +520,36 @@ export class ClearLodeOrchestrator {
         gsap.delayedCall(4, () => {
             this.fragments.startFragmentField();
         });
-        
+
+        // Ensure recognition window is scheduled even if timeline completion fails
+        gsap.delayedCall(6, () => {
+            console.log('🔄 Fallback: Ensuring recognition window is scheduled...');
+            if (!this.localState.recognitionAvailable && !this.localState.degradationStarted) {
+                console.log('🔄 Fallback: Scheduling recognition window now...');
+                this.scheduleRecognitionWindow();
+            }
+        });
+
         consciousness.recordEvent('clear_light_manifested', {
             timestamp: Date.now()
         });
     }
 
     scheduleRecognitionWindow() {
+        console.log('⏰ Scheduling recognition window...', {
+            startDelay: this.config.recognitionWindow.start / 1000,
+            endDelay: this.config.recognitionWindow.end / 1000
+        });
+
         // Enable recognition window with GSAP delay
         gsap.delayedCall(this.config.recognitionWindow.start / 1000, () => {
+            console.log('🎯 Enabling recognition...');
             this.enableRecognition();
         });
-        
+
         // Close recognition window
         gsap.delayedCall(this.config.recognitionWindow.end / 1000, () => {
+            console.log('⏰ Recognition window timeout - closing...');
             this.closeRecognitionWindow();
         });
     }
@@ -566,7 +586,7 @@ export class ClearLodeOrchestrator {
                     y: 10
                 })
                 .call(() => {
-                    hintElement.innerHTML = this.sanitizeHTML(hint);
+                    hintElement.textContent = hint; // Use textContent instead of innerHTML for safety
                     this.localState.hintsShown++;
                 })
                 .to(hintElement, {
@@ -611,9 +631,13 @@ export class ClearLodeOrchestrator {
 
         // Begin degradation if not recognized
         if (!this.localState.recognized) {
+            console.log('🌀 Recognition timeout - beginning degradation in 1 second...');
             gsap.delayedCall(1, () => {
+                console.log('🌀 Triggering degradation now...');
                 this.degradation.beginDegradation();
             });
+        } else {
+            console.log('✨ Recognition achieved - skipping degradation');
         }
     }
 

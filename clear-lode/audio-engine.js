@@ -109,8 +109,24 @@ export class ClearLodeAudio {
     }
     
     startDegradation() {
-        if (!this.oscillator || !this.audioInitialized) return;
+        console.log('🔊 Starting audio degradation...', {
+            oscillator: !!this.oscillator,
+            audioInitialized: this.audioInitialized,
+            degradationLevel: this.degradationLevel
+        });
 
+        // If audio isn't initialized, try to start it first
+        if (!this.audioInitialized) {
+            console.log('Audio not initialized - attempting to initialize for degradation');
+            this.initializeAudioContext().then(() => {
+                if (this.audioInitialized && !this.oscillator) {
+                    console.log('Starting pure tone for degradation');
+                    this.startPureTone();
+                }
+            });
+        }
+
+        // Start degradation even if oscillator isn't available (visual effects still work)
         // Gradually introduce noise and frequency shifts
         const degradeInterval = setInterval(() => {
             this.degradationLevel += 0.05;
@@ -136,9 +152,15 @@ export class ClearLodeAudio {
                 }
             }
 
-            // Volume decreases
-            const newGain = Math.max(0.05, 0.3 - (this.degradationLevel * 0.1));
-            this.gainNode.gain.setValueAtTime(newGain, this.audioContext.currentTime);
+            // Volume decreases (only if gain node is available)
+            if (this.gainNode && this.audioContext) {
+                try {
+                    const newGain = Math.max(0.05, 0.3 - (this.degradationLevel * 0.1));
+                    this.gainNode.gain.setValueAtTime(newGain, this.audioContext.currentTime);
+                } catch (error) {
+                    console.warn('Audio gain adjustment failed:', error);
+                }
+            }
 
             // Add digital artifacts (create noise bursts)
             if (Math.random() < this.degradationLevel * 0.1) {

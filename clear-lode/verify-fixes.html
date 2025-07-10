@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Fixes - The Digital Bardo</title>
+    <link rel="stylesheet" href="../src/styles/reality.css">
+    <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <style>
+        .verification-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #00ff00;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid #00ff00;
+            max-width: 350px;
+            z-index: 10000;
+        }
+        .check {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .pass { color: #00ff00; }
+        .fail { color: #ff0000; }
+        .pending { color: #ffff00; }
+        .timer {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="approaching-light">
+    <div class="verification-panel">
+        <div class="timer" id="timer">Time: 0s</div>
+        <div class="check">
+            <span>CSS Loaded:</span>
+            <span id="css-check" class="status pending">PENDING</span>
+        </div>
+        <div class="check">
+            <span>Overflow Hidden:</span>
+            <span id="overflow-check" class="status pending">PENDING</span>
+        </div>
+        <div class="check">
+            <span>Recognition Scheduled:</span>
+            <span id="recognition-check" class="status pending">PENDING</span>
+        </div>
+        <div class="check">
+            <span>Degradation Started:</span>
+            <span id="degradation-check" class="status pending">PENDING</span>
+        </div>
+        <div class="check">
+            <span>Y/N Prompt Visible:</span>
+            <span id="prompt-check" class="status pending">PENDING</span>
+        </div>
+        <div class="check">
+            <span>Audio Degrading:</span>
+            <span id="audio-check" class="status pending">PENDING</span>
+        </div>
+        <div class="check">
+            <span>Fragments Contained:</span>
+            <span id="fragments-check" class="status pending">PENDING</span>
+        </div>
+    </div>
+
+    <!-- Main experience elements -->
+    <div id="pre-light" class="absolute-center">
+        <div class="last-thought"></div>
+    </div>
+    
+    <div id="clear-light" class="hidden">
+        <div class="recognition-zone" data-active="false">
+            <div class="light-core">
+                <div class="recognition-hint"></div>
+            </div>
+            <div class="instruction-wrapper hidden">
+                <p class="recognition-instruction"></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="choice-prompt" class="hidden">
+        <pre class="glitching-text"></pre>
+    </div>
+    
+    <div id="fragment-field"></div>
+
+    <script type="module">
+        import { ClearLodeOrchestrator } from './orchestrator.js';
+
+        let startTime = Date.now();
+        let checks = {
+            css: false,
+            overflow: false,
+            recognition: false,
+            degradation: false,
+            prompt: false,
+            audio: false,
+            fragments: false
+        };
+
+        function updateCheck(id, status) {
+            const element = document.getElementById(id + '-check');
+            element.textContent = status ? 'PASS' : 'FAIL';
+            element.className = 'status ' + (status ? 'pass' : 'fail');
+            checks[id] = status;
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').textContent = `Time: ${elapsed}s`;
+        }
+
+        setInterval(updateTimer, 100);
+
+        // Check 1: CSS Loading
+        setTimeout(() => {
+            const bodyStyle = getComputedStyle(document.body);
+            const htmlStyle = getComputedStyle(document.documentElement);
+            updateCheck('css', bodyStyle.fontFamily.includes('Courier') || htmlStyle.overflow === 'hidden');
+        }, 500);
+
+        // Check 2: Overflow Hidden
+        setTimeout(() => {
+            const bodyStyle = getComputedStyle(document.body);
+            const htmlStyle = getComputedStyle(document.documentElement);
+            updateCheck('overflow', bodyStyle.overflow === 'hidden' || htmlStyle.overflow === 'hidden');
+        }, 600);
+
+        // Initialize orchestrator
+        document.addEventListener('DOMContentLoaded', async () => {
+            const orchestrator = new ClearLodeOrchestrator();
+            await orchestrator.init();
+
+            // Monitor events
+            window.addEventListener('light:manifestation:complete', () => {
+                updateCheck('recognition', true);
+            });
+
+            let degradationStarted = false;
+            const originalLog = console.log;
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                const message = args.join(' ');
+                
+                if (message.includes('Recognition window timeout') || message.includes('Triggering degradation')) {
+                    updateCheck('degradation', true);
+                    degradationStarted = true;
+                }
+                
+                if (message.includes('Interactive prompt shown') || message.includes('Y/N choices')) {
+                    updateCheck('prompt', true);
+                }
+                
+                if (message.includes('Starting audio degradation') || message.includes('degradation')) {
+                    updateCheck('audio', true);
+                }
+            };
+
+            // Auto-start experience
+            orchestrator.showBeginPrompt();
+            
+            setTimeout(() => {
+                const beginButton = document.querySelector('.begin-button');
+                if (beginButton) {
+                    beginButton.click();
+                }
+            }, 1000);
+
+            // Check fragments containment
+            setInterval(() => {
+                const fragments = document.querySelectorAll('.consciousness-fragment');
+                let allContained = true;
+                fragments.forEach(fragment => {
+                    const rect = fragment.getBoundingClientRect();
+                    if (rect.left < -50 || rect.right > window.innerWidth + 50 || 
+                        rect.top < -50 || rect.bottom > window.innerHeight + 50) {
+                        allContained = false;
+                    }
+                });
+                if (fragments.length > 0) {
+                    updateCheck('fragments', allContained);
+                }
+            }, 2000);
+
+            window.testOrchestrator = orchestrator;
+        });
+    </script>
+</body>
+</html>

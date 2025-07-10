@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - The Digital Bardo</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+            margin: 0;
+        }
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #0f0;
+            padding: 10px;
+            max-width: 300px;
+            z-index: 10000;
+        }
+        .status {
+            margin: 5px 0;
+        }
+        .status.success { color: #0f0; }
+        .status.error { color: #f00; }
+        .status.warning { color: #ff0; }
+        .log {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 5px;
+            margin-top: 10px;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h3>Debug Status</h3>
+        <div id="css-status" class="status">CSS: Loading...</div>
+        <div id="recognition-status" class="status">Recognition: Waiting...</div>
+        <div id="degradation-status" class="status">Degradation: Waiting...</div>
+        <div id="audio-status" class="status">Audio: Waiting...</div>
+        <div id="fragments-status" class="status">Fragments: Waiting...</div>
+        <div class="log" id="console-log"></div>
+    </div>
+
+    <!-- Include the main experience -->
+    <div id="pre-light" class="absolute-center">
+        <div class="last-thought"></div>
+    </div>
+    
+    <div id="clear-light" class="hidden">
+        <div class="recognition-zone" data-active="false">
+            <div class="light-core">
+                <div class="recognition-hint"></div>
+            </div>
+            <div class="instruction-wrapper hidden">
+                <p class="recognition-instruction"></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="choice-prompt" class="hidden">
+        <pre class="glitching-text"></pre>
+    </div>
+    
+    <div id="fragment-field"></div>
+
+    <script type="module">
+        import '../src/styles/reality.css';
+        import '../src/styles/clear-lode.css';
+        import { ClearLodeOrchestrator } from './orchestrator.js';
+
+        // Debug logging
+        const log = document.getElementById('console-log');
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const logEntry = document.createElement('div');
+            logEntry.textContent = args.join(' ');
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+        };
+
+        // Status updates
+        function updateStatus(id, text, type = 'success') {
+            const element = document.getElementById(id);
+            element.textContent = text;
+            element.className = `status ${type}`;
+        }
+
+        // Check CSS loading
+        setTimeout(() => {
+            const body = getComputedStyle(document.body);
+            if (body.overflow === 'hidden') {
+                updateStatus('css-status', 'CSS: Loaded ✓', 'success');
+            } else {
+                updateStatus('css-status', 'CSS: Failed ✗', 'error');
+            }
+        }, 100);
+
+        // Initialize orchestrator
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const orchestrator = new ClearLodeOrchestrator();
+                await orchestrator.init();
+                
+                // Monitor events
+                window.addEventListener('light:manifestation:complete', () => {
+                    updateStatus('recognition-status', 'Recognition: Scheduled ✓', 'success');
+                });
+                
+                window.addEventListener('degradation:complete', () => {
+                    updateStatus('degradation-status', 'Degradation: Started ✓', 'success');
+                });
+
+                // Start the experience
+                orchestrator.showBeginPrompt();
+                
+                // Auto-click begin after 2 seconds for testing
+                setTimeout(() => {
+                    const beginButton = document.querySelector('.begin-button');
+                    if (beginButton) {
+                        beginButton.click();
+                        updateStatus('audio-status', 'Audio: Initialized ✓', 'success');
+                    }
+                }, 2000);
+
+                // Monitor fragments
+                const observer = new MutationObserver((mutations) => {
+                    const fragments = document.querySelectorAll('.consciousness-fragment');
+                    updateStatus('fragments-status', `Fragments: ${fragments.length}`, 'success');
+                });
+                observer.observe(document.getElementById('fragment-field'), { childList: true });
+
+                window.debugOrchestrator = orchestrator;
+            } catch (error) {
+                console.error('Initialization failed:', error);
+                updateStatus('recognition-status', 'Init: Failed ✗', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Y Key - The Digital Bardo</title>
+    <link rel="stylesheet" href="../src/styles/reality.css">
+    <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <style>
+        /* Critical CSS to ensure proper layout */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden !important;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .absolute-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #fragment-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden !important;
+        }
+        #choice-prompt {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+        .glitching-text {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #fff !important;
+        }
+        .choice-option {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            display: inline-block;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: inherit;
+        }
+        .choice-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+        
+        /* Test status panel */
+        .test-status {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #00ff00;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #00ff00;
+            z-index: 10001;
+            max-width: 400px;
+        }
+        .status-item {
+            margin: 5px 0;
+        }
+        .pass { color: #00ff00; }
+        .fail { color: #ff0000; }
+        .pending { color: #ffff00; }
+        .instructions {
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="approaching-light">
+    <div class="test-status">
+        <div class="instructions">Wait for "CONTINUE TO NEXT LIFE? Y/N" to appear, then press Y</div>
+        <div class="status-item">Y/N Prompt Visible: <span id="prompt-status" class="pending">WAITING</span></div>
+        <div class="status-item">Y Key Response: <span id="key-status" class="pending">WAITING</span></div>
+        <div class="status-item">Choice Handled: <span id="choice-status" class="pending">WAITING</span></div>
+        <div class="status-item">Karma Recorded: <span id="karma-status" class="pending">WAITING</span></div>
+        <div class="status-item">Transition Started: <span id="transition-status" class="pending">WAITING</span></div>
+    </div>
+
+    <!-- Main experience elements -->
+    <div id="pre-light" class="absolute-center">
+        <div class="last-thought"></div>
+    </div>
+    
+    <div id="clear-light" class="hidden">
+        <div class="recognition-zone" data-active="false">
+            <div class="light-core">
+                <div class="recognition-hint"></div>
+            </div>
+            <div class="instruction-wrapper hidden">
+                <p class="recognition-instruction"></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="choice-prompt" class="hidden">
+        <pre class="glitching-text"></pre>
+    </div>
+    
+    <div id="fragment-field"></div>
+
+    <script type="module">
+        import { ClearLodeOrchestrator } from './orchestrator.js';
+
+        function updateStatus(id, status, className) {
+            const element = document.getElementById(id);
+            element.textContent = status;
+            element.className = className;
+        }
+
+        // Monitor for Y/N prompt appearance
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    const yesChoice = document.getElementById('degradation-choice-yes');
+                    const noChoice = document.getElementById('degradation-choice-no');
+                    if (yesChoice && noChoice) {
+                        updateStatus('prompt-status', 'VISIBLE', 'pass');
+                        observer.disconnect();
+                    }
+                }
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Monitor console for key events and choices
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.join(' ');
+            
+            if (message.includes('Y key pressed') || message.includes('handleChoice')) {
+                updateStatus('key-status', 'Y PRESSED', 'pass');
+            }
+            
+            if (message.includes('Choice Made') || message.includes('degradation_choice_yes')) {
+                updateStatus('choice-status', 'HANDLED', 'pass');
+            }
+            
+            if (message.includes('karma') && message.includes('recorded')) {
+                updateStatus('karma-status', 'RECORDED', 'pass');
+            }
+            
+            if (message.includes('Continuing to next life') || message.includes('transitionToDatascape')) {
+                updateStatus('transition-status', 'STARTED', 'pass');
+            }
+        };
+
+        // Monitor for degradation choice events
+        window.addEventListener('degradation:choice', (event) => {
+            console.log('Degradation choice event received:', event.detail);
+            updateStatus('choice-status', 'EVENT FIRED', 'pass');
+        });
+
+        // Initialize orchestrator
+        document.addEventListener('DOMContentLoaded', async () => {
+            const orchestrator = new ClearLodeOrchestrator();
+            await orchestrator.init();
+
+            // Auto-start experience
+            orchestrator.showBeginPrompt();
+            
+            setTimeout(() => {
+                const beginButton = document.querySelector('.begin-button');
+                if (beginButton) {
+                    beginButton.click();
+                }
+            }, 1000);
+
+            window.testOrchestrator = orchestrator;
+        });
+    </script>
+</body>
+</html>
