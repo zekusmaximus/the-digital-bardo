@@ -163,37 +163,120 @@ export class ClearLodeOrchestrator {
         this.scheduleRecognitionWindow();
     }
 
-    // Show an immediate, engaging prompt instead of long black screen (migrated from clear-lode.js)
-    showBeginPrompt() {
+    /**
+     * Show explicit consent UI - the gateway to dissolution requires conscious entry
+     * Addresses iOS/Safari audio context issues by ensuring user gesture before audio init
+     */
+    async showBeginPrompt() {
         const beginPrompt = document.createElement('div');
         beginPrompt.id = 'begin-prompt';
-        beginPrompt.innerHTML = this.sanitizeHTML(`
+        beginPrompt.setAttribute('role', 'dialog');
+        beginPrompt.setAttribute('aria-labelledby', 'begin-title');
+        beginPrompt.setAttribute('aria-describedby', 'begin-desc');
+
+        // Sanitize HTML content with explicit allowed tags and classes
+        const sanitizedContent = this.sanitizeHTML(`
             <div class="begin-content">
-                <h1>The Digital Bardo</h1>
-                <p>A journey through consciousness and dissolution</p>
-                <button class="begin-button">Begin Experience</button>
-                <small>Click to enable audio and start</small>
+                <h1 id="begin-title">The Digital Bardo</h1>
+                <p id="begin-desc">A journey through consciousness and dissolution</p>
+                <button class="begin-button">
+                    Begin Experience
+                </button>
+                <small id="begin-note">Click to enable audio and start</small>
             </div>
-        `);
+        `, {
+            tags: ['div', 'h1', 'p', 'button', 'small'],
+            classes: ['begin-content', 'begin-button']
+        });
+
+        beginPrompt.innerHTML = sanitizedContent;
+
+        // Set accessibility attributes after sanitization (since sanitizeHTML strips them)
+        const beginButton = beginPrompt.querySelector('.begin-button');
+        if (beginButton) {
+            beginButton.setAttribute('aria-label', 'Click to begin the Digital Bardo experience and enable audio');
+            beginButton.style.cssText = 'min-height: 48px; min-width: 120px;';
+        }
         document.body.appendChild(beginPrompt);
 
-        // Handle begin click
-        const beginButton = beginPrompt.querySelector('.begin-button');
-        beginButton.addEventListener('click', async () => {
-            // Initialize audio first
-            await this.audio.initializeAudioContext();
+        // Apply CSS styling using CSS variables from reality.css
+        beginPrompt.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--void-black, #000000);
+            color: var(--clear-light, #ffffff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
 
-            // Remove prompt
-            gsap.to(beginPrompt, {
-                opacity: 0,
-                duration: 0.5,
-                onComplete: () => {
-                    beginPrompt.remove();
-                    // Start the actual experience immediately
-                    this.manifestLight();
+        const button = beginPrompt.querySelector('.begin-button');
+        button.focus(); // Accessibility: Auto-focus for keyboard navigation
+
+        // Enhanced click handler with proper error handling
+        button.addEventListener('click', async () => {
+            try {
+                console.log('🎭 User gesture received - initializing audio context...');
+
+                // Initialize audio with user gesture (critical for iOS/Safari)
+                if (this.audio) {
+                    await this.audio.initializeAudioContext();
+                    console.log('🎵 Audio context initialized successfully');
+                } else {
+                    console.warn('Warning: Audio system not yet initialized; implement in future.');
                 }
-            });
+
+                // Fade out with GSAP
+                gsap.to(beginPrompt, {
+                    opacity: 0,
+                    duration: 0.5,
+                    ease: 'power2.inOut',
+                    onComplete: () => {
+                        beginPrompt.remove();
+                        console.log('🌟 Beginning light manifestation...');
+                        // Start experience (migrate existing)
+                        this.manifestLight(); // The gateway opens
+                    }
+                });
+            } catch (error) {
+                console.error('Audio initialization failed:', error);
+                this.showAudioError(beginPrompt);
+            }
         });
+
+        // Keyboard accessibility
+        button.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                button.click();
+            }
+        });
+    }
+
+    /**
+     * Display audio error and retry option
+     */
+    showAudioError(container) {
+        const errorMsg = document.createElement('p');
+        errorMsg.textContent = 'Audio failed to initialize. Click to retry.';
+        errorMsg.style.cssText = `
+            color: var(--karma-red, #ff0000);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-align: center;
+        `;
+        errorMsg.setAttribute('role', 'alert');
+
+        const beginContent = container.querySelector('.begin-content');
+        if (beginContent) {
+            beginContent.appendChild(errorMsg);
+        }
+
+        console.log('Audio error displayed - user can retry');
     }
 
     // Manifest the clear light (migrated from clear-lode.js)

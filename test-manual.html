@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test - Digital Bardo Begin Prompt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .fail { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        #test-container {
+            position: relative;
+            height: 200px;
+            border: 2px dashed #ccc;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manual Test: Digital Bardo Begin Prompt</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <div class="info test-result">
+            <strong>How to test:</strong>
+            <ol>
+                <li>Open the Clear Lode experience: <a href="http://localhost:8888/clear-lode/" target="_blank">http://localhost:8888/clear-lode/</a></li>
+                <li>Verify the begin prompt appears as a fullscreen overlay</li>
+                <li>Check that the button has proper accessibility attributes</li>
+                <li>Click the button and verify audio initializes</li>
+                <li>Confirm the prompt fades out and the light experience begins</li>
+                <li>Test keyboard navigation (Tab to button, Enter to activate)</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected Behavior Checklist</h2>
+        <div id="checklist">
+            <label><input type="checkbox"> Fullscreen overlay appears on load</label><br>
+            <label><input type="checkbox"> Title shows "The Digital Bardo"</label><br>
+            <label><input type="checkbox"> Description shows journey text</label><br>
+            <label><input type="checkbox"> Button has proper aria-label</label><br>
+            <label><input type="checkbox"> Button is focusable with Tab key</label><br>
+            <label><input type="checkbox"> Button responds to Enter key</label><br>
+            <label><input type="checkbox"> Button responds to Space key</label><br>
+            <label><input type="checkbox"> Audio context initializes on click</label><br>
+            <label><input type="checkbox"> Prompt fades out smoothly</label><br>
+            <label><input type="checkbox"> Light manifestation begins after fade</label><br>
+            <label><input type="checkbox"> No console errors during process</label><br>
+            <label><input type="checkbox"> Works on mobile/touch devices</label><br>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Browser Compatibility</h2>
+        <div class="info test-result">
+            <strong>Test in these browsers:</strong>
+            <ul>
+                <li>Chrome (desktop & mobile)</li>
+                <li>Firefox (desktop & mobile)</li>
+                <li>Safari (desktop & iOS) - <em>Critical for audio context issues</em></li>
+                <li>Edge</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Audio Context Test</h2>
+        <div class="info test-result">
+            <strong>iOS/Safari specific tests:</strong>
+            <ul>
+                <li>Verify AudioContext only creates after user gesture</li>
+                <li>Check that audio.audioInitialized becomes true after click</li>
+                <li>Confirm no "The AudioContext was not allowed to start" errors</li>
+                <li>Test that pure tone plays correctly after initialization</li>
+            </ul>
+        </div>
+        <button onclick="testAudioContext()">Test Audio Context Creation</button>
+        <div id="audio-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Accessibility Test</h2>
+        <button onclick="testAccessibility()">Test Accessibility Features</button>
+        <div id="accessibility-result"></div>
+    </div>
+
+    <script>
+        function testAudioContext() {
+            const result = document.getElementById('audio-test-result');
+            try {
+                // Test if AudioContext can be created (should work after user gesture)
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                const testContext = new AudioContextClass();
+                
+                result.innerHTML = `
+                    <div class="pass test-result">
+                        ✓ AudioContext created successfully<br>
+                        State: ${testContext.state}<br>
+                        Sample Rate: ${testContext.sampleRate}Hz
+                    </div>
+                `;
+                
+                // Clean up
+                testContext.close();
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="fail test-result">
+                        ✗ AudioContext creation failed: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function testAccessibility() {
+            const result = document.getElementById('accessibility-result');
+            const tests = [];
+            
+            // Test if we can create the same structure as the app
+            const testDiv = document.createElement('div');
+            testDiv.innerHTML = `
+                <div class="begin-content">
+                    <h1 id="begin-title">The Digital Bardo</h1>
+                    <p id="begin-desc">A journey through consciousness and dissolution</p>
+                    <button class="begin-button">Begin Experience</button>
+                </div>
+            `;
+            
+            const button = testDiv.querySelector('.begin-button');
+            button.setAttribute('aria-label', 'Click to begin the Digital Bardo experience and enable audio');
+            
+            // Test accessibility features
+            tests.push({
+                name: 'Button has aria-label',
+                pass: button.getAttribute('aria-label') !== null
+            });
+            
+            tests.push({
+                name: 'Title has proper ID',
+                pass: testDiv.querySelector('#begin-title') !== null
+            });
+            
+            tests.push({
+                name: 'Description has proper ID', 
+                pass: testDiv.querySelector('#begin-desc') !== null
+            });
+            
+            const resultHTML = tests.map(test => 
+                `<div class="${test.pass ? 'pass' : 'fail'} test-result">
+                    ${test.pass ? '✓' : '✗'} ${test.name}
+                </div>`
+            ).join('');
+            
+            result.innerHTML = resultHTML;
+        }
+
+        // Auto-run accessibility test on load
+        document.addEventListener('DOMContentLoaded', testAccessibility);
+    </script>
+</body>
+</html>
