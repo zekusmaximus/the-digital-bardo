@@ -8,6 +8,8 @@ import { consciousness } from '../src/consciousness/digital-soul.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator.js';
 import { KarmicEngine } from '../src/consciousness/karmic-engine.js';
+import { recognitionFSM } from '../src/consciousness/recognition-fsm.js';
+import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { sanitizeText, sanitizeHTML } from '../src/utils/purification.js';
@@ -41,16 +43,8 @@ export class ClearLodeOrchestrator {
             ]
         };
 
-        // State variables (migrated from clear-lode.js)
-        this.localState = {
-            startTime: Date.now(),
-            lightManifested: false,
-            recognitionAvailable: false,
-            recognized: false,
-            degradationStarted: false,
-            hintsShown: 0,
-            recognitionAttempts: 0
-        };
+        // Local state has been centralized in digital-soul.js.
+        // All state access is now through consciousness.getState() and consciousness.setState().
 
         // GSAP timelines for complex animations
         this.timelines = {
@@ -71,10 +65,8 @@ export class ClearLodeOrchestrator {
 
         this.audio = new ClearLodeAudio(); // Migrated from clear-lode.js
 
-        // Resource tracking for cleanup
-        this.eventListeners = new Map();
-        this.timers = new Set();
-        this.windowEventListeners = new Map(); // Track window lifecycle listeners
+        // The ResourceGuardian will manage all disposables.
+        this.guardian = new ResourceGuardian();
 
         // Expose sanitization methods for use throughout the orchestrator
         this.sanitizeText = sanitizeText;
@@ -110,52 +102,70 @@ export class ClearLodeOrchestrator {
     }
     
     setupEventListeners() {
+        // Subscribe to FSM state changes to drive the experience
+        consciousness.subscribe('clearLode.recognitionFSMState', (newState) => {
+            this.handleFSMStateChange(newState);
+        });
+
         const events = [
-            ['recognition:success', this.handleRecognitionSuccess.bind(this)],
-            ['recognition:failed', this.handleRecognitionFailed.bind(this)],
+            // This event now only carries data for karmic calculation, not for state changes.
+            ['recognition:details', this.handleRecognitionDetails.bind(this)],
             ['recognition:attachment', this.handleAttachment.bind(this)],
             ['degradation:complete', this.handleTransition.bind(this)],
             ['degradation:choice', this.handleDegradationChoice.bind(this)],
-            ['light:manifestation:complete', this.handleLightManifested.bind(this)]
         ];
 
         events.forEach(([event, handler]) => {
             window.addEventListener(event, handler);
-            this.eventListeners.set(event, handler);
+            this.guardian.register(
+                { event, handler },
+                ({ event, handler }) => window.removeEventListener(event, handler)
+            );
         });
     }
 
     setupWindowLifecycleListeners() {
-        // Set up automatic cleanup on page unload/navigation
-        const beforeUnloadHandler = () => {
-            console.log('Page unloading - triggering cleanup...');
-            this.destroy();
-        };
-
-        const pageHideHandler = () => {
-            console.log('Page hiding (iOS compatibility) - triggering cleanup...');
-            this.destroy();
-        };
-
+        const beforeUnloadHandler = () => this.destroy();
         window.addEventListener('beforeunload', beforeUnloadHandler);
-        window.addEventListener('pagehide', pageHideHandler);
+        this.guardian.register(
+            { event: 'beforeunload', handler: beforeUnloadHandler },
+            ({ event, handler }) => window.removeEventListener(event, handler)
+        );
 
-        // Store for cleanup in destroy method
-        this.windowEventListeners.set('beforeunload', beforeUnloadHandler);
-        this.windowEventListeners.set('pagehide', pageHideHandler);
+        const pageHideHandler = () => this.destroy();
+        window.addEventListener('pagehide', pageHideHandler);
+        this.guardian.register(
+            { event: 'pagehide', handler: pageHideHandler },
+            ({ event, handler }) => window.removeEventListener(event, handler)
+        );
     }
 
-    handleRecognitionSuccess(e) {
-        console.log('Recognition success:', e.detail);
+    handleFSMStateChange(newState) {
+        console.log(`[Orchestrator] FSM state changed to: ${newState}`);
+        switch (newState) {
+            case 'window_open':
+                this.enableRecognition();
+                break;
+            case 'recognized':
+                // The recognition:details event will handle the specifics
+                this.executeRecognitionSequence();
+                break;
+            case 'failed':
+                this.closeRecognitionWindow();
+                break;
+            default:
+                // No action needed for 'dormant' or other states.
+                break;
+        }
+    }
+    
+    /**
+     * This handler now ONLY processes the karmic and logging details of a successful recognition.
+     * The core state transition is handled by the FSM subscription.
+     */
+    handleRecognitionDetails(e) {
+        console.log('Recognition details received:', e.detail);
         const { method, karmaData } = e.detail;
-
-        if (this.localState.recognized) return;
-
-        this.localState.recognized = true;
-
-        // Update recognition visual properties (migrated from clear-lode.js)
-        document.documentElement.style.setProperty('--recognition-scale', '1.2');
-        document.documentElement.style.setProperty('--recognition-opacity', '1');
 
         // Calculate karma impact using the new KarmicEngine
         const karmaImpact = this.karmicEngine.calculateImpact('recognition_achieved', {
@@ -164,34 +174,20 @@ export class ClearLodeOrchestrator {
         });
 
         console.log('🔮 Karma impact calculated:', karmaImpact);
-        console.log('📊 Recognition timing:', {
-            timeToDecision: karmaData?.elapsedTime,
-            perfectTimingBonus: karmaData?.perfectTimingBonus,
-            wasQuickDecision: (karmaData?.elapsedTime || 0) < 5000,
-            hadRushPenalty: (karmaData?.elapsedTime || 0) < 3000
-        });
 
-        // Update consciousness with karma data
-        consciousness.state.recognitions.clear_light = true;
-        consciousness.recordEvent('recognition_achieved', {
+        // Update consciousness with karma data for record-keeping
+        consciousness.setState('recognitions.clear_light', true);
+        consciousness.recordEvent(this.karmicEngine.KARMA_EVENTS.RECOGNITION_ACHIEVED, {
             method: method,
             timeToRecognize: karmaData?.elapsedTime || 0,
-            hintsNeeded: this.localState.hintsShown,
-            attempts: this.localState.recognitionAttempts,
+            hintsNeeded: consciousness.getState('clearLode.hintsShown'),
+            attempts: consciousness.getState('clearLode.recognitionAttempts'),
             perfectTiming: karmaData?.perfectTimingBonus > 0,
-            karmaData: karmaData, // Store full karma data for future use
-            karmaImpact: karmaImpact // Store calculated karma impact
+            karmaData: karmaData,
+            karmaImpact: karmaImpact
         });
+    }
 
-        this.executeRecognitionSequence(method);
-    }
-    
-    handleRecognitionFailed(e) {
-        console.log('Recognition failed:', e.detail);
-        // Close recognition window and begin degradation if not recognized
-        this.closeRecognitionWindow();
-    }
-    
     handleAttachment(e) {
         console.log('Attachment formed:', e.detail);
         const { type, data } = e.detail;
@@ -201,12 +197,6 @@ export class ClearLodeOrchestrator {
     handleTransition(e) {
         console.log('Transitioning to next phase:', e.detail);
         // Transition logic will be handled by degradation system
-    }
-    
-    handleLightManifested(e) {
-        console.log('Light manifestation complete:', e.detail);
-        // Enable recognition after light is manifested
-        this.scheduleRecognitionWindow();
     }
 
     handleDegradationChoice(e) {
@@ -218,9 +208,10 @@ export class ClearLodeOrchestrator {
         console.log(`⏱️ Decision time: ${timeToChoice}ms`);
 
         // Update local state
-        this.localState.degradationLevel = degradationLevel;
-        this.localState.degradationChoiceMade = true;
-        this.localState.degradationChoice = choice;
+        consciousness.setState('clearLode.degradationLevel', degradationLevel);
+        // These are transient states, but for consistency we'll manage them in the central state
+        consciousness.setState('clearLode.degradationChoiceMade', true);
+        consciousness.setState('clearLode.degradationChoice', choice);
 
         // Handle transition based on choice
         gsap.delayedCall(2, () => {
@@ -443,10 +434,17 @@ export class ClearLodeOrchestrator {
     // Manifest the clear light (migrated from clear-lode.js)
     manifestLight() {
         console.log('🌟 Starting light manifestation...');
-        this.localState.lightManifested = true;
+        consciousness.setState('clearLode.lightManifested', true);
 
         // Create GSAP timeline for light manifestation
-        this.timelines.manifestation = gsap.timeline();
+        const timeline = gsap.timeline({
+            onComplete: () => {
+                console.log('✨ Light manifestation sequence complete, transitioning FSM...');
+                recognitionFSM.transition('onLightManifested');
+            }
+        });
+        this.guardian.register(timeline, (tl) => tl.kill());
+        this.timelines.manifestation = timeline;
 
         console.log('🎬 GSAP timeline created, starting light manifestation sequence...');
         
@@ -498,9 +496,8 @@ export class ClearLodeOrchestrator {
             .call(() => {
                 document.body.classList.add('light-manifested');
                 console.log('✨ Light manifestation sequence complete - dispatching event...');
-                this.dispatchEvent('light:manifestation:complete', {});
-                console.log('✨ Event dispatched, scheduling recognition window...');
-                this.scheduleRecognitionWindow();
+                console.log('✨ Light manifestation sequence complete, transitioning FSM...');
+                recognitionFSM.transition('onLightManifested');
             })
             // Start the gentle rotation
             .to('.light-core', {
@@ -521,12 +518,12 @@ export class ClearLodeOrchestrator {
             this.fragments.startFragmentField();
         });
 
-        // Ensure recognition window is scheduled even if timeline completion fails
-        gsap.delayedCall(6, () => {
-            console.log('🔄 Fallback: Ensuring recognition window is scheduled...');
-            if (!this.localState.recognitionAvailable && !this.localState.degradationStarted) {
-                console.log('🔄 Fallback: Scheduling recognition window now...');
-                this.scheduleRecognitionWindow();
+        // The FSM now handles the window, but we still need a timeout for the 'failed' state.
+        const recognitionWindowDuration = (this.config.recognitionWindow.end - this.config.recognitionWindow.start) / 1000;
+        gsap.delayedCall(recognitionWindowDuration, () => {
+             if (recognitionFSM.getState() === 'window_open') {
+                console.log('⏰ Recognition window timeout - transitioning FSM to failed...');
+                recognitionFSM.transition('onTimeout');
             }
         });
 
@@ -535,27 +532,8 @@ export class ClearLodeOrchestrator {
         });
     }
 
-    scheduleRecognitionWindow() {
-        console.log('⏰ Scheduling recognition window...', {
-            startDelay: this.config.recognitionWindow.start / 1000,
-            endDelay: this.config.recognitionWindow.end / 1000
-        });
-
-        // Enable recognition window with GSAP delay
-        gsap.delayedCall(this.config.recognitionWindow.start / 1000, () => {
-            console.log('🎯 Enabling recognition...');
-            this.enableRecognition();
-        });
-
-        // Close recognition window
-        gsap.delayedCall(this.config.recognitionWindow.end / 1000, () => {
-            console.log('⏰ Recognition window timeout - closing...');
-            this.closeRecognitionWindow();
-        });
-    }
-
     enableRecognition() {
-        this.localState.recognitionAvailable = true;
+        consciousness.setState('clearLode.recognitionActive', true);
 
         // Animate recognition zone activation
         gsap.to('.recognition-zone', {
@@ -577,7 +555,7 @@ export class ClearLodeOrchestrator {
         const hintElement = document.querySelector('.recognition-hint');
 
         for (let hint of this.config.hints) {
-            if (!this.localState.recognitionAvailable || this.localState.recognized) break;
+            if (!consciousness.getState('clearLode.recognitionActive') || consciousness.getState('clearLode.recognized')) break;
 
             // GSAP-powered hint animation
             await gsap.timeline()
@@ -587,7 +565,7 @@ export class ClearLodeOrchestrator {
                 })
                 .call(() => {
                     hintElement.textContent = hint; // Use textContent instead of innerHTML for safety
-                    this.localState.hintsShown++;
+                    consciousness.setState('clearLode.hintsShown', consciousness.getState('clearLode.hintsShown') + 1);
                 })
                 .to(hintElement, {
                     opacity: 0.4,
@@ -614,7 +592,7 @@ export class ClearLodeOrchestrator {
     }
 
     closeRecognitionWindow() {
-        this.localState.recognitionAvailable = false;
+        consciousness.setState('clearLode.recognitionActive', false);
 
         // Animate recognition zone deactivation
         gsap.to('.recognition-zone', {
@@ -630,7 +608,7 @@ export class ClearLodeOrchestrator {
         this.recognition.stopListening();
 
         // Begin degradation if not recognized
-        if (!this.localState.recognized) {
+        if (!consciousness.getState('clearLode.recognized')) {
             console.log('🌀 Recognition timeout - beginning degradation in 1 second...');
             gsap.delayedCall(1, () => {
                 console.log('🌀 Triggering degradation now...');
@@ -642,9 +620,11 @@ export class ClearLodeOrchestrator {
     }
 
     // Execute recognition achievement sequence (migrated from clear-lode.js)
-    executeRecognitionSequence(method) {
+    executeRecognitionSequence() {
         // Create recognition achievement timeline
-        this.timelines.recognition = gsap.timeline();
+        const timeline = gsap.timeline();
+        this.guardian.register(timeline, (tl) => tl.kill());
+        this.timelines.recognition = timeline;
 
         this.timelines.recognition
             // Flash of enlightenment
@@ -662,9 +642,9 @@ export class ClearLodeOrchestrator {
                 duration: 1,
                 ease: 'power2.out'
             })
-            // Show enlightenment message
+            // Show enlightenment message - no longer method-dependent as FSM handles state
             .set('.recognition-hint', {
-                innerHTML: this.sanitizeHTML(this.getEnlightenmentMessage(method)),
+                innerHTML: this.sanitizeHTML("Recognition Achieved"),
                 className: 'recognition-hint visible enlightenment'
             })
             .fromTo('.recognition-hint',
@@ -700,12 +680,12 @@ export class ClearLodeOrchestrator {
 
     // Record attachment (migrated from clear-lode.js)
     recordAttachment(type, data = {}) {
-        this.localState.recognitionAttempts++;
+        consciousness.setState('clearLode.recognitionAttempts', consciousness.getState('clearLode.recognitionAttempts') + 1);
 
         consciousness.recordEvent('attachment_formed', {
             type: type,
             degradationLevel: this.audio.getDegradationLevel(),
-            recognitionAvailable: this.localState.recognitionAvailable,
+            recognitionAvailable: consciousness.getState('clearLode.recognitionActive'),
             ...data
         });
 
@@ -728,7 +708,7 @@ export class ClearLodeOrchestrator {
             });
 
         // Accelerate degradation
-        if (this.localState.recognitionAvailable) {
+        if (consciousness.getState('clearLode.recognitionActive')) {
             this.audio.accelerateDegradation(0.05);
         }
     }
@@ -741,48 +721,20 @@ export class ClearLodeOrchestrator {
         window.dispatchEvent(new CustomEvent('error:karmaImbalance', { detail: { type, error: error.message } }));
     }
 
-    // Clean shutdown method (migrated from clear-lode.js)
+    /**
+     * Clean shutdown method using the ResourceGuardian.
+     */
     destroy() {
-        console.log('Releasing attachments to prevent karmic recycling...');
-
-        // Prevent multiple destroy calls
-        if (this._destroyed) {
-            console.warn('Orchestrator already destroyed, skipping cleanup');
+        if (this.isDestroyed) {
+             console.warn('Orchestrator already destroyed, skipping cleanup');
             return;
         }
-        this._destroyed = true;
+        console.log('Releasing attachments to prevent karmic recycling...');
+        this.isDestroyed = true;
 
-        // Stop all GSAP timelines
-        Object.values(this.timelines).forEach(timeline => {
-            if (timeline) {
-                timeline.kill();
-                timeline = null;
-            }
-        });
+        this.guardian.cleanupAll();
 
-        // Kill any global GSAP animations that might be running
-        if (window.gsap) {
-            window.gsap.killTweensOf('body');
-            window.gsap.killTweensOf('.recognition-zone');
-            window.gsap.killTweensOf('#choice-prompt');
-        }
-
-        // Remove custom event listeners
-        this.eventListeners.forEach((handler, event) => window.removeEventListener(event, handler));
-        this.eventListeners.clear();
-
-        // Remove window lifecycle listeners
-        this.windowEventListeners.forEach((handler, event) => window.removeEventListener(event, handler));
-        this.windowEventListeners.clear();
-
-        // Clear all timers
-        this.timers.forEach(id => {
-            clearTimeout(id);
-            clearInterval(id);
-        });
-        this.timers.clear();
-
-        // Destroy subsystems in reverse order of creation
+        // Destroy subsystems
         [this.recognition, this.degradation, this.fragments, this.audio].forEach(system => {
             if (system && typeof system.destroy === 'function') {
                 try {
@@ -792,28 +744,7 @@ export class ClearLodeOrchestrator {
                 }
             }
         });
-
-        // Remove DOM elements created by orchestrator
-        const elementsToRemove = ['clear-light', 'begin-prompt'];
-        elementsToRemove.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.remove();
-            }
-        });
-
-        // Record final state before nullifying
-        if (consciousness && typeof consciousness.recordEvent === 'function') {
-            try {
-                consciousness.recordEvent('clear_lode_destroyed', {
-                    finalState: this.localState,
-                    fragmentStats: this.fragments?.getPerformanceStats?.() || null
-                });
-            } catch (error) {
-                console.warn('Error recording destruction event:', error);
-            }
-        }
-
+        
         // Nullify all major properties to break references
         this.recognition = null;
         this.degradation = null;
@@ -821,11 +752,8 @@ export class ClearLodeOrchestrator {
         this.audio = null;
         this.karmicEngine = null;
         this.timelines = null;
-        this.localState = null;
         this.config = null;
-        this.eventListeners = null;
-        this.windowEventListeners = null;
-        this.timers = null;
+        this.guardian = null;
         this.sanitizeText = null;
         this.sanitizeHTML = null;
     }

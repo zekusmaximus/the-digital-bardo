@@ -11,6 +11,8 @@ const HOLD_SWEET_SPOT = { min: 2800, max: 3200 }; // ms
 const KEYWORDS = ['RECOGNIZE', 'SELF', 'HOME']; // Case-insensitive
 import { manifestElement } from '../src/security/consciousness-purification.js';
 import { createKarmicValidator, mouseEventSchema, keyboardEventSchema, touchEventSchema } from '../src/security/karmic-validation.js';
+import { recognitionFSM } from '../src/consciousness/recognition-fsm.js';
+import { consciousness } from '../src/consciousness/digital-soul.js';
 
 export class RecognitionHandler {
     constructor(orchestrator) {
@@ -21,12 +23,9 @@ export class RecognitionHandler {
         // Mouse movement tracking for attachment detection
         this.lastMouseMove = null;
         this.mouseMovements = 0;
-
-        // Shared state for 3-7s window and recognition methods
-        this.recognitionWindowActive = false;
-        this.windowStartTime = null;
-        this.methodsEnabled = true;
-        this.recognitionAchieved = false;
+        
+        // Internal state has been removed. This handler now reads from and writes to the central `consciousness` state.
+        // For example, `this.recognitionAchieved` is now `consciousness.getState('clearLode.recognized')`.
 
         // Center-click method state
         this.centerPoint = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -52,12 +51,8 @@ export class RecognitionHandler {
 
         console.log('Starting recognition listening...');
         this.isListening = true;
-        this.recognitionWindowActive = true;
-        this.windowStartTime = Date.now();
-        this.recognitionAchieved = false;
-
-        // Set up recognition window timing
-        this.setupRecognitionWindow();
+        // All state flags like recognitionWindowActive, windowStartTime, and recognitionAchieved
+        // are now managed by the orchestrator via the central state.
 
         // Bind all three recognition methods
         this.bindCenterClick();
@@ -83,7 +78,6 @@ export class RecognitionHandler {
 
         console.log('Stopping recognition listening...');
         this.isListening = false;
-        this.recognitionWindowActive = false;
 
         // Clean up all event listeners
         this.listeners.forEach(({ type, handler, element }) => {
@@ -121,12 +115,12 @@ export class RecognitionHandler {
         // Warning: This generic click handler has been replaced by bindCenterClick()
         console.warn('Warning: Legacy click handler called; new center-click method should handle this');
         // Legacy fallback for compatibility
-        if (this.orchestrator.localState.recognitionAvailable && !this.orchestrator.localState.recognized) {
+        if (consciousness.getState('clearLode.recognitionActive') && !consciousness.getState('clearLode.recognized')) {
             this.achieveRecognition('legacy-click');
-        } else if (!this.orchestrator.localState.recognitionAvailable) {
+        } else if (!consciousness.getState('clearLode.recognitionActive')) {
             this.recordAttachment('premature_click', {
                 target: e.target.tagName,
-                timeFromStart: Date.now() - this.orchestrator.localState.startTime
+                timeFromStart: Date.now() - (consciousness.getState('performance.startTime') || 0)
             });
         }
     }
@@ -143,7 +137,7 @@ export class RecognitionHandler {
     }
     
     handleMouseMove(e) {
-        if (this.orchestrator.localState.recognitionAvailable && !this.orchestrator.localState.recognized) {
+        if (consciousness.getState('clearLode.recognitionActive') && !consciousness.getState('clearLode.recognized')) {
             // Track excessive mouse movement as attachment
             if (!this.lastMouseMove) {
                 this.lastMouseMove = Date.now();
@@ -165,7 +159,7 @@ export class RecognitionHandler {
     }
     
     handleWindowBlur() {
-        if (this.orchestrator.localState.recognitionAvailable && !this.orchestrator.localState.recognized) {
+        if (consciousness.getState('clearLode.recognitionActive') && !consciousness.getState('clearLode.recognized')) {
             this.recordAttachment('distraction', {
                 type: 'window_blur'
             });
@@ -173,24 +167,30 @@ export class RecognitionHandler {
     }
     
     achieveRecognition(method, karmaData = {}) {
-        if (this.recognitionAchieved) return;
-
-        this.recognitionAchieved = true;
-        this.stopListening();
-
-        const elapsed = Date.now() - this.windowStartTime;
+        if (recognitionFSM.getState() !== 'window_open') {
+            console.warn(`[RecognitionHandler] Recognition attempted in invalid state: ${recognitionFSM.getState()}`);
+            return;
+        }
+        
+        const startTime = consciousness.getState('clearLode.recognitionWindowStartTime') || Date.now();
+        const elapsed = Date.now() - startTime;
         karmaData.elapsedTime = elapsed;
         karmaData.perfectTimingBonus = (elapsed >= 3000 && elapsed <= 5000) ? 5 : 0;
 
-        console.log(`🌟 Recognition achieved through ${method} at ${elapsed}ms`);
-        console.log('Karma data placeholder:', karmaData); // For later calculations
+        console.log(`🌟 Recognition FSM transition dispatched via ${method} at ${elapsed}ms`);
+        
+        // Dispatch the transition event to the FSM.
+        // The orchestrator will listen for the FSM state change and handle the consequences.
+        recognitionFSM.transition('onRecognition');
 
-        // Dispatch recognition success event with karma data
-        this.dispatchEvent('recognition:success', {
+        // We can still pass details of the recognition for karmic calculation
+        this.dispatchEvent('recognition:details', {
             method: method,
             timestamp: Date.now(),
             karmaData: karmaData
         });
+
+        this.stopListening();
     }
     
     recordAttachment(type, data = {}) {
@@ -239,10 +239,6 @@ export class RecognitionHandler {
         this.lastMouseMove = null;
         this.mouseMovements = 0;
         this.listeners = null;
-        this.recognitionWindowActive = false;
-        this.windowStartTime = null;
-        this.methodsEnabled = false;
-        this.recognitionAchieved = false;
         this.centerPoint = null;
         this.typedBuffer = '';
         this.lastKeyTime = 0;
@@ -256,30 +252,11 @@ export class RecognitionHandler {
     // === NEW RECOGNITION METHODS ===
 
     /**
-     * Set up the recognition window timing - the shared 3-7 second window
-     */
-    setupRecognitionWindow() {
-        // Enable recognition after minimum window time
-        setTimeout(() => {
-            this.recognitionWindowActive = true;
-        }, RECOGNITION_WINDOW.min);
-
-        // Close recognition window after maximum time
-        setTimeout(() => {
-            if (!this.recognitionAchieved) {
-                this.recognitionWindowActive = false;
-                console.log('Recognition window closed - opportunity missed');
-            }
-        }, RECOGNITION_WINDOW.max);
-    }
-
-    /**
-     * Check if we're currently in the recognition window
+     * Check if we're currently in the recognition window.
+     * This now defers to the orchestrator-controlled state property.
      */
     isInWindow() {
-        if (!this.windowStartTime || this.recognitionAchieved) return false;
-        const elapsed = Date.now() - this.windowStartTime;
-        return elapsed >= RECOGNITION_WINDOW.min && elapsed <= RECOGNITION_WINDOW.max;
+        return consciousness.getState('clearLode.recognitionActive') && !consciousness.getState('clearLode.recognized');
     }
 
     /**
@@ -288,7 +265,7 @@ export class RecognitionHandler {
      */
     bindCenterClick() {
         const handler = (e) => {
-            if (!this.isInWindow() || this.recognitionAchieved) return;
+            if (!this.isInWindow()) return;
 
             const isTouch = e.type.includes('touch');
             const validateEvent = createKarmicValidator(isTouch ? touchEventSchema : mouseEventSchema);
@@ -367,8 +344,8 @@ export class RecognitionHandler {
                 this.recordAttachment('invalid_event_stream', { eventType: e.type });
                 return;
             }
-
-            if (!this.isInWindow() || this.recognitionAchieved || !e.key.match(/^[a-zA-Z]$/)) return;
+            
+            if (!this.isInWindow() || !e.key.match(/^[a-zA-Z]$/)) return;
 
             const now = Date.now();
             if (now - this.lastKeyTime > 2000) this.typedBuffer = '';
@@ -427,8 +404,7 @@ export class RecognitionHandler {
 
             if ((e.code === 'Space' || isTouch) &&
                 !this.spacebarDownTime &&
-                this.isInWindow() &&
-                !this.recognitionAchieved) {
+                this.isInWindow()) {
 
                 e.preventDefault();
                 this.spacebarDownTime = Date.now();

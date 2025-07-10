@@ -1,8 +1,10 @@
 // Audio subsystem for the Clear Lode
 import { createKarmicValidator, audioParamsSchema } from '../src/security/karmic-validation.js';
+import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
 
 export class ClearLodeAudio {
     constructor() {
+        this.guardian = new ResourceGuardian();
         this.audioContext = null;
         this.oscillator = null;
         this.gainNode = null;
@@ -47,6 +49,11 @@ export class ClearLodeAudio {
             // Handle browser compatibility
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             this.audioContext = new AudioContextClass();
+            this.guardian.register(this.audioContext, (ctx) => {
+                if (ctx.state !== 'closed') {
+                    ctx.close();
+                }
+            });
 
             // Resume context if suspended
             if (this.audioContext.state === 'suspended') {
@@ -94,7 +101,9 @@ export class ClearLodeAudio {
         try {
             // Create the pure sine wave
             this.oscillator = this.audioContext.createOscillator();
+            this.guardian.register(this.oscillator, (osc) => osc.disconnect());
             this.gainNode = this.audioContext.createGain();
+            this.guardian.register(this.gainNode, (node) => node.disconnect());
 
             this.oscillator.type = 'sine';
             if (!this.validateAudioParams({ frequency: this.baseFrequency, gain: 0.1 })) {
@@ -395,21 +404,22 @@ export class ClearLodeAudio {
         return 'complete';
     }
 
-    // Add method to clean up audio resources
-    cleanup() {
-        if (this.oscillator) {
-            this.oscillator.stop();
-            this.oscillator = null;
+    /**
+     * Shuts down the audio engine and releases all resources.
+     */
+    destroy() {
+        if (this.isDestroyed) {
+            return;
         }
+        console.log('[ClearLodeAudio] Destroying audio engine...');
+        this.isDestroyed = true;
 
-        if (this.noiseWorklet) {
-            this.noiseWorklet.disconnect();
-            this.noiseWorklet = null;
-        }
-
-        // Close audio context if needed
-        if (this.audioContext.state !== 'closed') {
-            this.audioContext.close();
-        }
+        this.guardian.cleanupAll();
+        
+        // Final nullification
+        this.audioContext = null;
+        this.oscillator = null;
+        this.gainNode = null;
+        this.noiseWorklet = null;
     }
 }

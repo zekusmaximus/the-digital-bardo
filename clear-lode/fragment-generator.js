@@ -3,6 +3,7 @@ import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
 import { manifestElement } from '../src/security/consciousness-purification.js';
 import { createKarmicValidator, thoughtFragmentSchema } from '../src/security/karmic-validation.js';
+import { ResourceGuardian } from './consciousness/resource-guardian.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -49,6 +50,7 @@ export class FragmentGenerator {
         this.isActive = false;
         this.performanceMode = 'normal'; // 'normal', 'reduced', 'minimal'
         this.karmicCallbacks = karmicCallbacks; // Callbacks for karma tracking
+        this.guardian = new ResourceGuardian();
 
         // Feature availability flags
         this.features = {
@@ -122,6 +124,7 @@ export class FragmentGenerator {
                     rootMargin: '50px',
                     threshold: 0
                 });
+                this.guardian.register(this.fragmentObserver, (observer) => observer.disconnect());
 
                 this.features.intersectionObserver = true;
                 console.log('IntersectionObserver initialized - viewport optimization available');
@@ -483,6 +486,7 @@ export class FragmentGenerator {
         this.fragmentInterval = setInterval(() => {
             this.createEdgeFragment();
         }, initialDelay);
+        this.guardian.register(this.fragmentInterval, (intervalId) => clearInterval(intervalId));
 
         consciousness.recordEvent('fragment_field_started', {
             performanceMode: this.performanceMode
@@ -556,7 +560,7 @@ export class FragmentGenerator {
                 console.log('👁️ Memory view karma impact:', karmaImpact);
 
                 // Record the event in consciousness
-                consciousness.recordEvent('memory_viewed', {
+                consciousness.recordEvent(consciousness.karmicEngine.KARMA_EVENTS.MEMORY_VIEW, {
                     content: fragment.textContent,
                     karmaImpact: karmaImpact,
                     timestamp: Date.now()
@@ -572,7 +576,7 @@ export class FragmentGenerator {
                 console.log('🔗 Memory attachment karma impact:', karmaImpact);
 
                 // Record the event in consciousness
-                consciousness.recordEvent('memory_attached', {
+                consciousness.recordEvent(consciousness.karmicEngine.KARMA_EVENTS.MEMORY_ATTACHMENT, {
                     content: fragment.textContent,
                     karmaImpact: karmaImpact,
                     timestamp: Date.now()
@@ -730,28 +734,30 @@ export class FragmentGenerator {
         });
     }
 
-    // Clean shutdown method
+    /**
+     * Shuts down the fragment generator and releases all associated resources.
+     */
     destroy() {
+        if (this.isDestroyed) {
+            return;
+        }
+    
+        console.log('[FragmentGenerator] Destroying fragment generator...');
+        this.isDestroyed = true;
         this.isActive = false;
-
-        // Clear intervals
-        clearInterval(this.fragmentInterval);
-
+    
+        this.guardian.cleanupAll();
+    
         // Clear adaptive monitoring
         if (this.monitoringState.intervalId) {
             clearTimeout(this.monitoringState.intervalId);
         }
-
+    
         // Remove all fragments
         this.activeFragments.forEach(fragment => {
             this.removeFragment(fragment);
         });
-
-        // Disconnect observer (if available)
-        if (this.features.intersectionObserver && this.fragmentObserver) {
-            this.fragmentObserver.disconnect();
-        }
-
+    
         consciousness.recordEvent('fragment_generator_destroyed', {
             metrics: this.performanceMetrics,
             monitoringStats: {
@@ -759,6 +765,12 @@ export class FragmentGenerator {
                 stabilityCounter: this.monitoringState.stabilityCounter
             }
         });
+    
+        // Nullify properties
+        this.activeFragments = [];
+        this.fragmentInterval = null;
+        this.karmicCallbacks = null;
+        this.fragmentObserver = null;
     }
 
     // Get current performance statistics

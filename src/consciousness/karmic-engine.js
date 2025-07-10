@@ -43,25 +43,18 @@ export class KarmicEngine {
             }
         };
 
-        // Legacy karma calculation rules (kept for backward compatibility)
-        this.rules = {
-            // Clear Lode specific
-            perfect_recognition: { computational: 10, emotional: 5, void: -10 },
-            delayed_recognition: { computational: 5, emotional: 3, temporal: -2 },
-            missed_recognition: { void: 5, temporal: -5 },
-            attachment_click: { emotional: -2, computational: -1 },
-            console_enlightenment: { computational: 15, void: -5 },
-
-            // Time-based modifiers
-            quick_decision: { temporal: 3, computational: 2 },
-            hesitation: { temporal: -1, void: 1 },
-            patience: { temporal: 5, emotional: 2 },
-
-            // Degradation impacts
-            full_degradation: { void: 10, computational: -5, emotional: -5 }
+        // Standardized event types for karmic calculations.
+        // This ensures consistency across the application.
+        this.KARMA_EVENTS = {
+            RECOGNITION_ACHIEVED: 'recognition_achieved',
+            MEMORY_VIEW: 'memory_view',
+            MEMORY_ATTACHMENT: 'memory_attachment',
+            INACTION: 'inaction',
+            DEGRADATION_CHOICE: 'degradation_choice',
+            // Add other standardized event types as needed
         };
     }
-    
+
     calculateImpact(action, context = {}) {
         logDataFlow('event', 'karmic_engine', { action, context });
         // Initialize impact object
@@ -87,26 +80,8 @@ export class KarmicEngine {
                 impact = this.calculateInactionKarma(context);
                 break;
             default:
-                // Fall back to legacy rules for backward compatibility
-                impact = { ...this.rules[action] } || impact;
-
-                // Apply legacy contextual modifiers
-                if (context.timeToDecision) {
-                    if (context.timeToDecision < 3000) {
-                        // Too quick - impulsive
-                        impact.temporal = (impact.temporal || 0) - 2;
-                        impact.computational = (impact.computational || 0) - 1;
-                    } else if (context.timeToDecision > 10000) {
-                        // Too slow - heavy attachment
-                        impact.void = (impact.void || 0) + 2;
-                        impact.emotional = (impact.emotional || 0) - 3;
-                    }
-                }
-
-                if (context.degradationLevel) {
-                    // Higher degradation multiplies void karma
-                    impact.void = (impact.void || 0) * (1 + context.degradationLevel);
-                }
+                // Legacy fallback removed. Unrecognized actions will have no karmic impact.
+                console.warn(`[KarmicEngine] Unrecognized action type: ${action}`);
                 break;
         }
 

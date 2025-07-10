@@ -15,14 +15,21 @@ export class DegradationSystem {
         this.orchestrator = orchestrator;
         this.degradationActive = false;
         this.glitchTimeline = null;
+
+        // The degradation system now listens for the FSM to enter the 'failed' state.
+        consciousness.subscribe('clearLode.recognitionFSMState', (newState) => {
+            if (newState === 'failed') {
+                this.beginDegradation();
+            }
+        });
     }
     
     beginDegradation() {
-        if (this.orchestrator.localState.recognized || this.degradationActive) return;
+        if (consciousness.getState('clearLode.recognized') || this.degradationActive) return;
 
         console.log('🌀 Beginning consciousness degradation...');
         this.degradationActive = true;
-        this.orchestrator.localState.degradationStarted = true;
+        consciousness.setState('clearLode.degradationStarted', true);
         
         // Create degradation timeline (migrated from clear-lode.js)
         this.orchestrator.timelines.degradation = gsap.timeline({
@@ -73,13 +80,13 @@ export class DegradationSystem {
         // Record degradation event
         consciousness.recordEvent('consciousness_degradation_started', {
             recognitionMissed: true,
-            hintsShown: this.orchestrator.localState.hintsShown,
-            attempts: this.orchestrator.localState.recognitionAttempts
+            hintsShown: consciousness.getState('clearLode.hintsShown'),
+            attempts: consciousness.getState('clearLode.recognitionAttempts')
         });
         
         // Dispatch degradation complete event
-        this.dispatchEvent('degradation:complete', { 
-            level: this.orchestrator.localState.degradationLevel + 1 
+        this.dispatchEvent('degradation:complete', {
+            level: consciousness.getState('clearLode.degradationLevel') + 1
         });
     }
     
@@ -279,11 +286,11 @@ export class DegradationSystem {
         }
 
         // Record karma event using consciousness system
-        consciousness.recordEvent(eventName, {
+        consciousness.recordEvent(this.orchestrator.karmicEngine.KARMA_EVENTS.DEGRADATION_CHOICE, {
             choice: choice,
             timeToChoice: timeToChoice,
             karmaImpact: karmaImpact,
-            degradationLevel: this.orchestrator.localState.degradationLevel || 0
+            degradationLevel: consciousness.getState('clearLode.degradationLevel') || 0
         });
 
         // Provide visual feedback for the choice
@@ -294,7 +301,7 @@ export class DegradationSystem {
             choice: choice,
             timeToChoice: timeToChoice,
             karmaImpact: karmaImpact,
-            degradationLevel: this.orchestrator.localState.degradationLevel || 0
+            degradationLevel: consciousness.getState('clearLode.degradationLevel') || 0
         });
 
         console.log(`🔮 Degradation choice made: ${choice} (${timeToChoice}ms)`, karmaImpact);
