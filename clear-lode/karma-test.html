@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karma Engine Test - Clear Lode</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #000; 
+            color: #0f0; 
+            line-height: 1.6;
+        }
+        .test { 
+            margin: 15px 0; 
+            padding: 15px; 
+            border: 1px solid #333; 
+            border-radius: 5px;
+        }
+        .pass { border-color: #0f0; }
+        .fail { border-color: #f00; color: #f00; }
+        .result { 
+            margin-left: 20px; 
+            font-size: 0.9em;
+            background: #111;
+            padding: 10px;
+            border-radius: 3px;
+            margin-top: 10px;
+        }
+        h1 { color: #fff; text-align: center; }
+        .summary { 
+            background: #222; 
+            padding: 20px; 
+            border-radius: 5px; 
+            margin: 20px 0;
+            text-align: center;
+        }
+        button {
+            background: #333;
+            color: #0f0;
+            border: 1px solid #666;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin: 5px;
+        }
+        button:hover { background: #444; }
+    </style>
+</head>
+<body>
+    <h1>🔮 Karma Engine Integration Test</h1>
+    <div class="summary">
+        <p>Testing the integrated Karma Engine with Clear Lode orchestrator</p>
+        <button onclick="runTests()">Run All Tests</button>
+        <button onclick="testRecognition()">Test Recognition Karma</button>
+        <button onclick="testFragments()">Test Fragment Karma</button>
+    </div>
+    
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { KarmicEngine } from '../src/consciousness/karmic-engine.js';
+        import { ClearLodeOrchestrator } from './orchestrator.js';
+
+        const results = document.getElementById('test-results');
+        let testCount = 0;
+        let passCount = 0;
+
+        function addTest(name, testFn) {
+            testCount++;
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            
+            try {
+                const result = testFn();
+                const passed = result.passed !== false;
+                if (passed) passCount++;
+                
+                testDiv.className += passed ? ' pass' : ' fail';
+                testDiv.innerHTML = `
+                    <strong>${passed ? '✓' : '✗'} ${name}</strong>
+                    <div class="result">${JSON.stringify(result, null, 2)}</div>
+                `;
+            } catch (error) {
+                testDiv.className += ' fail';
+                testDiv.innerHTML = `
+                    <strong>✗ ${name}</strong>
+                    <div class="result">Error: ${error.message}</div>
+                `;
+            }
+            
+            results.appendChild(testDiv);
+        }
+
+        function clearResults() {
+            results.innerHTML = '';
+            testCount = 0;
+            passCount = 0;
+        }
+
+        function showSummary() {
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'summary';
+            summaryDiv.innerHTML = `
+                <h2>Test Summary</h2>
+                <p>Passed: ${passCount}/${testCount} tests</p>
+                <p>Success Rate: ${Math.round((passCount/testCount) * 100)}%</p>
+            `;
+            results.appendChild(summaryDiv);
+        }
+
+        window.runTests = function() {
+            clearResults();
+            
+            // Initialize components
+            const karmicEngine = new KarmicEngine();
+            const orchestrator = new ClearLodeOrchestrator();
+
+            // Test 1: Basic KarmicEngine functionality
+            addTest('KarmicEngine instantiation', () => {
+                return {
+                    hasConstants: !!karmicEngine.KARMA_CONSTANTS,
+                    hasKarmaTypes: !!karmicEngine.karmaTypes,
+                    hasCalculateImpact: typeof karmicEngine.calculateImpact === 'function',
+                    passed: !!karmicEngine.KARMA_CONSTANTS && !!karmicEngine.karmaTypes
+                };
+            });
+
+            // Test 2: Recognition karma (quick decision)
+            addTest('Recognition karma (quick decision)', () => {
+                const result = karmicEngine.calculateImpact('recognition_achieved', {
+                    timeToDecision: 4000,
+                    perfectTimingBonus: 5
+                });
+                
+                const passed = result.computational === 2 && result.temporal === 5;
+                return { result, expected: { computational: 2, temporal: 5 }, passed };
+            });
+
+            // Test 3: Recognition karma (with rush penalty)
+            addTest('Recognition karma (rush penalty)', () => {
+                const result = karmicEngine.calculateImpact('recognition_achieved', {
+                    timeToDecision: 2000,
+                    perfectTimingBonus: 5
+                });
+                
+                const passed = result.computational === 2 && result.temporal === 2; // 5 - 3 rush penalty
+                return { result, expected: { computational: 2, temporal: 2 }, passed };
+            });
+
+            // Test 4: Memory view karma
+            addTest('Memory view karma', () => {
+                const result = karmicEngine.calculateImpact('memory_view', {
+                    memoryViews: 2,
+                    memoryAttachments: 1
+                });
+                
+                const passed = result.emotional === -1; // (2 * 0.5) + (1 * -2) = -1
+                return { result, expected: { emotional: -1 }, passed };
+            });
+
+            // Test 5: Fragment callbacks
+            addTest('Fragment callbacks', () => {
+                const callbacks = karmicEngine.createFragmentCallbacks();
+                const viewResult = callbacks.onView({ memoryViews: 1, memoryAttachments: 0 });
+                const attachResult = callbacks.onAttach({ memoryViews: 0, memoryAttachments: 1 });
+                
+                const passed = viewResult.emotional === 0.5 && attachResult.emotional === -2;
+                return { 
+                    viewResult, 
+                    attachResult, 
+                    expected: { view: 0.5, attach: -2 }, 
+                    passed 
+                };
+            });
+
+            // Test 6: Orchestrator integration
+            addTest('Orchestrator has KarmicEngine', () => {
+                const hasKarmicEngine = !!orchestrator.karmicEngine;
+                const hasFragmentCallbacks = !!orchestrator.fragments.karmicCallbacks;
+                
+                const passed = hasKarmicEngine && hasFragmentCallbacks;
+                return { hasKarmicEngine, hasFragmentCallbacks, passed };
+            });
+
+            // Test 7: Void karma calculation
+            addTest('Void karma calculation', () => {
+                const result = karmicEngine.calculateImpact('inaction', {
+                    secondsOfInaction: Math.E // log(e) = 1
+                });
+                
+                const passed = Math.abs(result.void - 1.5) < 0.01; // log(e) * 1.5 = 1.5
+                return { result, expected: { void: 1.5 }, passed };
+            });
+
+            showSummary();
+        };
+
+        window.testRecognition = function() {
+            clearResults();
+            const karmicEngine = new KarmicEngine();
+            
+            // Test different recognition scenarios
+            addTest('Quick recognition (3s)', () => {
+                const result = karmicEngine.calculateImpact('recognition_achieved', {
+                    timeToDecision: 3000,
+                    perfectTimingBonus: 5
+                });
+                return { result, note: 'At threshold - no rush penalty' };
+            });
+
+            addTest('Perfect timing (4s)', () => {
+                const result = karmicEngine.calculateImpact('recognition_achieved', {
+                    timeToDecision: 4000,
+                    perfectTimingBonus: 5
+                });
+                return { result, note: 'Quick decision bonus + perfect timing' };
+            });
+
+            addTest('Slow recognition (6s)', () => {
+                const result = karmicEngine.calculateImpact('recognition_achieved', {
+                    timeToDecision: 6000,
+                    perfectTimingBonus: 0
+                });
+                return { result, note: 'Slow decision penalty' };
+            });
+
+            showSummary();
+        };
+
+        window.testFragments = function() {
+            clearResults();
+            const karmicEngine = new KarmicEngine();
+            const callbacks = karmicEngine.createFragmentCallbacks();
+            
+            // Test fragment interactions
+            addTest('Single memory view', () => {
+                const result = callbacks.onView({ memoryViews: 1, memoryAttachments: 0 });
+                return { result, note: '1 view = +0.5 emotional karma' };
+            });
+
+            addTest('Multiple memory views', () => {
+                const result = callbacks.onView({ memoryViews: 3, memoryAttachments: 0 });
+                return { result, note: '3 views = +1.5 emotional karma' };
+            });
+
+            addTest('Memory attachment', () => {
+                const result = callbacks.onAttach({ memoryViews: 0, memoryAttachments: 1 });
+                return { result, note: '1 attachment = -2 emotional karma' };
+            });
+
+            addTest('Mixed interaction', () => {
+                const result = callbacks.onView({ memoryViews: 2, memoryAttachments: 1 });
+                return { result, note: '2 views + 1 attachment = (2*0.5) + (1*-2) = -1' };
+            });
+
+            showSummary();
+        };
+
+        // Auto-run tests on load
+        setTimeout(() => {
+            console.log('🔮 Karma Engine Test Page Loaded');
+            runTests();
+        }, 1000);
+    </script>
+</body>
+</html>

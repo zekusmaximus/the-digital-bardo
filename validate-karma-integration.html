@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karma Integration Validation</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #0f0; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .pass { border-color: #0f0; }
+        .fail { border-color: #f00; color: #f00; }
+        .result { margin-left: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Karmic Engine Integration Validation</h1>
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { KarmicEngine } from './src/consciousness/karmic-engine.js';
+
+        const results = document.getElementById('test-results');
+
+        function addTest(name, testFn) {
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            
+            try {
+                const result = testFn();
+                testDiv.className += ' pass';
+                testDiv.innerHTML = `
+                    <strong>✓ ${name}</strong>
+                    <div class="result">${JSON.stringify(result, null, 2)}</div>
+                `;
+            } catch (error) {
+                testDiv.className += ' fail';
+                testDiv.innerHTML = `
+                    <strong>✗ ${name}</strong>
+                    <div class="result">Error: ${error.message}</div>
+                `;
+            }
+            
+            results.appendChild(testDiv);
+        }
+
+        // Initialize KarmicEngine
+        const karmicEngine = new KarmicEngine();
+
+        // Test 1: Basic instantiation
+        addTest('KarmicEngine instantiation', () => {
+            return {
+                hasConstants: !!karmicEngine.KARMA_CONSTANTS,
+                hasKarmaTypes: !!karmicEngine.karmaTypes,
+                hasCalculateImpact: typeof karmicEngine.calculateImpact === 'function'
+            };
+        });
+
+        // Test 2: Recognition karma with quick decision
+        addTest('Recognition karma (quick decision)', () => {
+            const result = karmicEngine.calculateImpact('recognition_achieved', {
+                timeToDecision: 4000,
+                perfectTimingBonus: 5
+            });
+            
+            const expected = { computational: 2, temporal: 5 };
+            const passed = result.computational === expected.computational && 
+                          result.temporal === expected.temporal;
+            
+            return { result, expected, passed };
+        });
+
+        // Test 3: Recognition karma with rush penalty
+        addTest('Recognition karma (rush penalty)', () => {
+            const result = karmicEngine.calculateImpact('recognition_achieved', {
+                timeToDecision: 2000,
+                perfectTimingBonus: 5
+            });
+            
+            const expected = { computational: 2, temporal: 2 }; // 5 - 3 rush penalty
+            const passed = result.computational === expected.computational && 
+                          result.temporal === expected.temporal;
+            
+            return { result, expected, passed };
+        });
+
+        // Test 4: Memory view karma
+        addTest('Memory view karma calculation', () => {
+            const result = karmicEngine.calculateImpact('memory_view', {
+                memoryViews: 2,
+                memoryAttachments: 1
+            });
+            
+            const expected = { emotional: -1 }; // (2 * 0.5) + (1 * -2) = -1
+            const passed = result.emotional === expected.emotional;
+            
+            return { result, expected, passed };
+        });
+
+        // Test 5: Memory attachment karma
+        addTest('Memory attachment karma calculation', () => {
+            const result = karmicEngine.calculateImpact('memory_attachment', {
+                memoryViews: 0,
+                memoryAttachments: 2
+            });
+            
+            const expected = { emotional: -4 }; // (0 * 0.5) + (2 * -2) = -4
+            const passed = result.emotional === expected.emotional;
+            
+            return { result, expected, passed };
+        });
+
+        // Test 6: Void karma calculation
+        addTest('Void karma calculation', () => {
+            const result = karmicEngine.calculateImpact('inaction', {
+                secondsOfInaction: Math.E // log(e) = 1
+            });
+            
+            const expected = { void: 1.5 }; // log(e) * 1.5 = 1.5
+            const passed = Math.abs(result.void - expected.void) < 0.01;
+            
+            return { result, expected, passed };
+        });
+
+        // Test 7: Void karma cap
+        addTest('Void karma cap at 100', () => {
+            const result = karmicEngine.calculateImpact('inaction', {
+                secondsOfInaction: Math.exp(100) // Very large number
+            });
+            
+            const expected = { void: 100 };
+            const passed = result.void === expected.void;
+            
+            return { result, expected, passed };
+        });
+
+        // Test 8: Fragment callbacks
+        addTest('Fragment callbacks creation', () => {
+            const callbacks = karmicEngine.createFragmentCallbacks();
+            
+            const hasOnView = typeof callbacks.onView === 'function';
+            const hasOnAttach = typeof callbacks.onAttach === 'function';
+            
+            const viewResult = callbacks.onView({ memoryViews: 1, memoryAttachments: 0 });
+            const attachResult = callbacks.onAttach({ memoryViews: 0, memoryAttachments: 1 });
+            
+            return {
+                hasCallbacks: hasOnView && hasOnAttach,
+                viewResult,
+                attachResult,
+                viewCorrect: viewResult.emotional === 0.5,
+                attachCorrect: attachResult.emotional === -2
+            };
+        });
+
+        // Test 9: Legacy rule fallback
+        addTest('Legacy rule fallback', () => {
+            const result = karmicEngine.calculateImpact('perfect_recognition');
+            
+            const expected = { computational: 10, emotional: 5, void: -10 };
+            const passed = result.computational === expected.computational &&
+                          result.emotional === expected.emotional &&
+                          result.void === expected.void;
+            
+            return { result, expected, passed };
+        });
+
+        console.log('Karma integration validation completed!');
+    </script>
+</body>
+</html>

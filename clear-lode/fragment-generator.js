@@ -7,11 +7,12 @@ import { sanitizeText } from '../src/utils/purification.js';
 gsap.registerPlugin(TextPlugin);
 
 export class FragmentGenerator {
-    constructor() {
+    constructor(karmicCallbacks = null) {
         this.activeFragments = [];
         this.fragmentInterval = null;
         this.isActive = false;
         this.performanceMode = 'normal'; // 'normal', 'reduced', 'minimal'
+        this.karmicCallbacks = karmicCallbacks; // Callbacks for karma tracking
 
         // Feature availability flags
         this.features = {
@@ -425,6 +426,41 @@ export class FragmentGenerator {
         // Add to DOM
         document.getElementById('fragment-field').appendChild(fragment);
         this.activeFragments.push(fragment);
+
+        // Add karmic event listeners if callbacks are available
+        if (this.karmicCallbacks) {
+            // Track memory views (mouseenter)
+            fragment.addEventListener('mouseenter', () => {
+                const karmaImpact = this.karmicCallbacks.onView({
+                    memoryViews: 1,
+                    memoryAttachments: 0
+                });
+                console.log('👁️ Memory view karma impact:', karmaImpact);
+
+                // Record the event in consciousness
+                consciousness.recordEvent('memory_viewed', {
+                    content: fragment.textContent,
+                    karmaImpact: karmaImpact,
+                    timestamp: Date.now()
+                });
+            });
+
+            // Track memory attachments (click)
+            fragment.addEventListener('click', () => {
+                const karmaImpact = this.karmicCallbacks.onAttach({
+                    memoryViews: 0,
+                    memoryAttachments: 1
+                });
+                console.log('🔗 Memory attachment karma impact:', karmaImpact);
+
+                // Record the event in consciousness
+                consciousness.recordEvent('memory_attached', {
+                    content: fragment.textContent,
+                    karmaImpact: karmaImpact,
+                    timestamp: Date.now()
+                });
+            });
+        }
 
         // Start observing for viewport exit (if available)
         if (this.features.intersectionObserver && this.fragmentObserver) {

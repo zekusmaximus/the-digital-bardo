@@ -7,6 +7,7 @@ import { DegradationSystem } from './degradation-system.js';
 import { consciousness } from '../src/consciousness/digital-soul.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator.js';
+import { KarmicEngine } from '../src/consciousness/karmic-engine.js';
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { sanitizeText, sanitizeHTML } from '../src/utils/purification.js';
@@ -61,7 +62,13 @@ export class ClearLodeOrchestrator {
         // Sub-systems
         this.recognition = null;
         this.degradation = null;
-        this.fragments = new FragmentGenerator(); // Migrated from clear-lode.js
+        this.karmicEngine = new KarmicEngine(); // Initialize Karma calculation engine first
+
+        // Create fragment generator with karmic callbacks
+        this.fragments = new FragmentGenerator(
+            this.karmicEngine.createFragmentCallbacks()
+        ); // Migrated from clear-lode.js
+
         this.audio = new ClearLodeAudio(); // Migrated from clear-lode.js
 
         // Resource tracking for cleanup
@@ -127,6 +134,20 @@ export class ClearLodeOrchestrator {
         document.documentElement.style.setProperty('--recognition-scale', '1.2');
         document.documentElement.style.setProperty('--recognition-opacity', '1');
 
+        // Calculate karma impact using the new KarmicEngine
+        const karmaImpact = this.karmicEngine.calculateImpact('recognition_achieved', {
+            timeToDecision: karmaData?.elapsedTime || 0,
+            perfectTimingBonus: karmaData?.perfectTimingBonus || 0
+        });
+
+        console.log('🔮 Karma impact calculated:', karmaImpact);
+        console.log('📊 Recognition timing:', {
+            timeToDecision: karmaData?.elapsedTime,
+            perfectTimingBonus: karmaData?.perfectTimingBonus,
+            wasQuickDecision: (karmaData?.elapsedTime || 0) < 5000,
+            hadRushPenalty: (karmaData?.elapsedTime || 0) < 3000
+        });
+
         // Update consciousness with karma data
         consciousness.state.recognitions.clear_light = true;
         consciousness.recordEvent('recognition_achieved', {
@@ -135,10 +156,9 @@ export class ClearLodeOrchestrator {
             hintsNeeded: this.localState.hintsShown,
             attempts: this.localState.recognitionAttempts,
             perfectTiming: karmaData?.perfectTimingBonus > 0,
-            karmaData: karmaData // Store full karma data for future use
+            karmaData: karmaData, // Store full karma data for future use
+            karmaImpact: karmaImpact // Store calculated karma impact
         });
-
-        console.log('Karma data received:', karmaData); // Placeholder for later karma calculations
 
         this.executeRecognitionSequence(method);
     }
@@ -177,29 +197,34 @@ export class ClearLodeOrchestrator {
         beginPrompt.setAttribute('aria-labelledby', 'begin-title');
         beginPrompt.setAttribute('aria-describedby', 'begin-desc');
 
-        // Sanitize HTML content with explicit allowed tags and classes
-        const sanitizedContent = this.sanitizeHTML(`
-            <div class="begin-content">
-                <h1 id="begin-title">The Digital Bardo</h1>
-                <p id="begin-desc">A journey through consciousness and dissolution</p>
-                <button class="begin-button">
-                    Begin Experience
-                </button>
-                <small id="begin-note">Click to enable audio and start</small>
-            </div>
-        `, {
-            tags: ['div', 'h1', 'p', 'button', 'small'],
-            classes: ['begin-content', 'begin-button']
-        });
+        // Create content directly to avoid sanitization issues
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'begin-content';
 
-        beginPrompt.innerHTML = sanitizedContent;
+        const title = document.createElement('h1');
+        title.id = 'begin-title';
+        title.textContent = 'The Digital Bardo';
 
-        // Set accessibility attributes after sanitization (since sanitizeHTML strips them)
-        const beginButton = beginPrompt.querySelector('.begin-button');
-        if (beginButton) {
-            beginButton.setAttribute('aria-label', 'Click to begin the Digital Bardo experience and enable audio');
-            beginButton.style.cssText = 'min-height: 48px; min-width: 120px;';
-        }
+        const description = document.createElement('p');
+        description.id = 'begin-desc';
+        description.textContent = 'A journey through consciousness and dissolution';
+
+        const button = document.createElement('button');
+        button.className = 'begin-button';
+        button.textContent = 'Begin Experience';
+        button.setAttribute('aria-label', 'Click to begin the Digital Bardo experience and enable audio');
+        button.style.cssText = 'min-height: 48px; min-width: 120px; padding: 12px 24px; font-size: 16px; background: #333; color: #fff; border: 1px solid #666; cursor: pointer; border-radius: 4px;';
+
+        const note = document.createElement('small');
+        note.id = 'begin-note';
+        note.textContent = 'Click to enable audio and start';
+
+        // Assemble the content
+        contentDiv.appendChild(title);
+        contentDiv.appendChild(description);
+        contentDiv.appendChild(button);
+        contentDiv.appendChild(note);
+        beginPrompt.appendChild(contentDiv);
         document.body.appendChild(beginPrompt);
 
         // Apply CSS styling using CSS variables from reality.css
@@ -217,11 +242,16 @@ export class ClearLodeOrchestrator {
             z-index: 9999;
         `;
 
-        const button = beginPrompt.querySelector('.begin-button');
-        button.focus(); // Accessibility: Auto-focus for keyboard navigation
+        const beginButton = beginPrompt.querySelector('.begin-button');
+        if (beginButton) {
+            beginButton.focus(); // Accessibility: Auto-focus for keyboard navigation
+        } else {
+            console.warn('Warning: Begin button not found, this should not happen with direct DOM creation');
+        }
 
         // Enhanced click handler with proper error handling
-        button.addEventListener('click', async () => {
+        if (button) {
+            button.addEventListener('click', async () => {
             try {
                 console.log('🎭 User gesture received - initializing audio context...');
 
@@ -250,14 +280,17 @@ export class ClearLodeOrchestrator {
                 this.showAudioError(beginPrompt);
             }
         });
+        }
 
         // Keyboard accessibility
-        button.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                button.click();
-            }
-        });
+        if (button) {
+            button.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    button.click();
+                }
+            });
+        }
     }
 
     /**

@@ -37,39 +37,51 @@ export function sanitizeHTML(html, allowedConfig = {
     try {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        
+
+        // Check if parsing was successful
+        if (!doc || !doc.body) {
+            console.warn('Warning: DOMParser failed to create valid document');
+            return '';
+        }
+
         const walkNodes = (node) => {
+            if (!node || !node.nodeType) return;
+
             if (node.nodeType === Node.ELEMENT_NODE) {
                 // Remove disallowed tags
                 if (!allowedConfig.tags.includes(node.tagName.toLowerCase())) {
                     // Replace with text content to preserve meaning
                     const textNode = document.createTextNode(node.textContent || '');
-                    node.parentNode.replaceChild(textNode, node);
+                    if (node.parentNode) {
+                        node.parentNode.replaceChild(textNode, node);
+                    }
                     return;
                 }
-                
+
                 // Filter classes - only keep allowed ones
                 if (node.className) {
-                    const classes = node.className.split(' ').filter(cls => 
+                    const classes = node.className.split(' ').filter(cls =>
                         allowedConfig.classes.includes(cls.trim())
                     );
                     node.className = classes.join(' ');
                 }
-                
+
                 // Remove all attributes except class, id, data-*
-                Array.from(node.attributes).forEach(attr => {
+                Array.from(node.attributes || []).forEach(attr => {
                     if (!['class', 'id'].includes(attr.name) && !attr.name.startsWith('data-')) {
                         node.removeAttribute(attr.name);
                     }
                 });
             }
-            
-            // Process child nodes
-            Array.from(node.childNodes).forEach(walkNodes);
+
+            // Process child nodes safely
+            if (node.childNodes) {
+                Array.from(node.childNodes).forEach(walkNodes);
+            }
         };
-        
+
         walkNodes(doc.body);
-        return doc.body.innerHTML;
+        return doc.body.innerHTML || '';
     } catch (error) {
         console.warn('Warning: HTML sanitization failed, returning empty string:', error.message);
         return '';
