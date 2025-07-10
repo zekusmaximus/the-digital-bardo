@@ -5,6 +5,7 @@
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
+import { AnimationGuardian } from '../src/utils/animation-guardian.js';
 import { manifestElement } from '../src/security/consciousness-purification.js';
 
 // Register GSAP plugins
@@ -13,6 +14,7 @@ gsap.registerPlugin(TextPlugin);
 export class DegradationSystem {
     constructor(orchestrator) {
         this.orchestrator = orchestrator;
+        this.guardian = orchestrator.guardian;
         this.degradationActive = false;
         this.glitchTimeline = null;
         this.glitchSequenceInterval = null;
@@ -36,24 +38,6 @@ export class DegradationSystem {
         this.degradationActive = true;
         consciousness.setState('clearLode.degradationStarted', true);
         
-        // Create degradation timeline (migrated from clear-lode.js)
-        this.orchestrator.timelines.degradation = gsap.timeline({
-            repeat: -1
-        });
-        
-        // Increasingly chaotic visual degradation
-        this.orchestrator.timelines.degradation
-            .to('body', {
-                filter: 'contrast(1.2) saturate(0.8)',
-                duration: 2,
-                ease: 'sine.inOut'
-            })
-            .to('body', {
-                filter: 'contrast(0.8) saturate(1.2) hue-rotate(10deg)',
-                duration: 2,
-                ease: 'sine.inOut'
-            });
-        
         // Start audio degradation
         this.orchestrator.audio.startDegradation();
         
@@ -63,13 +47,8 @@ export class DegradationSystem {
             choicePrompt.classList.remove('hidden'); // Remove hidden class first
         }
 
-        gsap.set('#choice-prompt', {
+        AnimationGuardian.safeAnimate('#choice-prompt', {
             display: 'block',
-            opacity: 0,
-            y: 50
-        });
-        
-        gsap.to('#choice-prompt', {
             opacity: 1,
             y: 0,
             duration: 1,
@@ -118,9 +97,9 @@ export class DegradationSystem {
         this.corruptionLevel = 0;
         this.choiceMade = false;
 
-        this.glitchSequenceInterval = setInterval(() => {
+        const intervalId = setInterval(() => {
             if (this.choiceMade) {
-                clearInterval(this.glitchSequenceInterval);
+                clearInterval(intervalId);
                 return;
             }
 
@@ -134,6 +113,8 @@ export class DegradationSystem {
             promptElement.textContent = corruptedText;
 
         }, 2000); // Switch language every 2 seconds
+        this.guardian.registerTimer(intervalId, true);
+        this.glitchSequenceInterval = intervalId;
 
         this.setupChoiceListener();
     }
@@ -182,7 +163,7 @@ export class DegradationSystem {
             }
         };
 
-        document.addEventListener('keydown', this.choiceListener);
+        this.guardian.registerEventListener(document, 'keydown', this.choiceListener);
     }
 
     /**
@@ -239,17 +220,18 @@ export class DegradationSystem {
 
         let feedbackText = choice === 'yes' ? '...CONTINUING...' : '...DISSOLVING...';
         
-        gsap.timeline()
-            .to(promptElement, {
-                duration: 0.5,
-                text: { value: feedbackText, speed: 0.5 },
-                ease: "none"
-            })
-            .to(promptElement, {
-                opacity: 0,
-                duration: 1,
-                delay: 1
-            });
+        AnimationGuardian.safeAnimate(promptElement, {
+            duration: 0.5,
+            text: { value: feedbackText, speed: 0.5 },
+            ease: "none",
+            onComplete: () => {
+                AnimationGuardian.safeAnimate(promptElement, {
+                    opacity: 0,
+                    duration: 1,
+                    delay: 1
+                });
+            }
+        });
     }
 
     dispatchEvent(type, detail = {}) {
@@ -260,13 +242,8 @@ export class DegradationSystem {
     intensifyEffects() {
         console.log('🌀 Intensifying degradation effects...');
 
-        // Increase visual degradation
-        if (this.orchestrator.timelines.degradation) {
-            this.orchestrator.timelines.degradation.timeScale(2); // Double speed
-        }
-
         // Add more intense visual effects
-        gsap.to('body', {
+        AnimationGuardian.safeAnimate('body', {
             filter: 'contrast(1.5) saturate(0.5) hue-rotate(45deg)',
             duration: 1,
             ease: 'power2.out'
@@ -278,7 +255,7 @@ export class DegradationSystem {
         }
 
         // Add screen shake effect
-        gsap.to('body', {
+        AnimationGuardian.safeAnimate('body', {
             x: () => Math.random() * 10 - 5,
             y: () => Math.random() * 10 - 5,
             duration: 0.1,
@@ -286,7 +263,7 @@ export class DegradationSystem {
             yoyo: true,
             ease: 'power2.inOut',
             onComplete: () => {
-                gsap.set('body', { x: 0, y: 0 });
+                AnimationGuardian.safeAnimate('body', { x: 0, y: 0, duration: 0 });
             }
         });
     }
@@ -301,45 +278,7 @@ export class DegradationSystem {
         }
         this._destroyed = true;
 
-        // Clean up glitch sequence
-        if (this.glitchSequenceInterval) {
-            clearInterval(this.glitchSequenceInterval);
-            this.glitchSequenceInterval = null;
-        }
-        if (this.choiceListener) {
-            document.removeEventListener('keydown', this.choiceListener);
-            this.choiceListener = null;
-        }
-
-        // Stop glitch timeline (if any other part uses it)
-        if (this.glitchTimeline) {
-            this.glitchTimeline.kill();
-            this.glitchTimeline = null;
-        }
-
-        // Kill any GSAP animations on degradation elements
-        if (window.gsap) {
-            window.gsap.killTweensOf('#choice-prompt');
-            window.gsap.killTweensOf('.glitch-text');
-            window.gsap.killTweensOf('body'); // For screen shake and filter effects
-        }
-
-        // Kill degradation timeline from orchestrator if it exists
-        if (this.orchestrator && this.orchestrator.timelines && this.orchestrator.timelines.degradation) {
-            this.orchestrator.timelines.degradation.kill();
-            this.orchestrator.timelines.degradation = null;
-        }
-
-        // Clear any remaining timeouts (if re-introduced later)
-        if (this.timeoutId) { // Safety check
-            clearTimeout(this.timeoutId);
-            this.timeoutId = null;
-        }
-
-        if (this.bufferClearTimeout) {
-            clearTimeout(this.bufferClearTimeout);
-            this.bufferClearTimeout = null;
-        }
+        this.guardian.cleanupAll();
 
         // Nullify all properties to break references
         this.orchestrator = null;

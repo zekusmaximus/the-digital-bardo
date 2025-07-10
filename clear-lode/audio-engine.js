@@ -2,9 +2,13 @@
 import { createKarmicValidator, audioParamsSchema } from '../src/security/karmic-validation.js';
 import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
 import { consciousness } from '../src/consciousness/digital-soul.js';
+import { ConsciousnessCompatibility } from '../src/utils/consciousness-compatibility.js';
 
 export class ClearLodeAudio {
     constructor() {
+        const capabilities = ConsciousnessCompatibility.checkCapabilities();
+        this.silentMode = !capabilities.webAudio;
+
         this.guardian = new ResourceGuardian();
         this.audioContext = null;
         this.oscillator = null;
@@ -42,6 +46,7 @@ export class ClearLodeAudio {
     }
 
     setupUserGestureListener() {
+        if (this.silentMode) return;
         const initAudio = async () => {
             if (!this.userGestureReceived) {
                 this.userGestureReceived = true;
@@ -61,6 +66,10 @@ export class ClearLodeAudio {
     }
 
     async initializeAudioContext() {
+        if (this.silentMode) {
+            console.log('Silent mode enabled. Audio will not be initialized.');
+            return;
+        }
         try {
             // Handle browser compatibility
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -108,9 +117,11 @@ export class ClearLodeAudio {
 
     async startPureTone() {
         // If audio isn't initialized yet, queue the start for later
-        if (!this.audioInitialized) {
-            console.log('Audio not initialized - queueing pure tone start');
-            this.pendingPureTone = true;
+        if (this.silentMode || !this.audioInitialized) {
+            if (!this.silentMode) {
+                console.log('Audio not initialized - queueing pure tone start');
+                this.pendingPureTone = true;
+            }
             return;
         }
 
@@ -143,6 +154,7 @@ export class ClearLodeAudio {
     }
     
     startDegradation() {
+        if (this.silentMode) return;
         console.log('🔊 Starting audio degradation...');
         // This function is now a trigger. The actual degradation is handled by updateAudioFromKarma.
         
@@ -312,8 +324,8 @@ export class ClearLodeAudio {
     }
     
     achieveResonance() {
+        if (this.silentMode || !this.oscillator) return;
         // Perfect recognition: the tone becomes a celestial chord
-        if (!this.oscillator) return;
         
         const chord = [528, 639, 741]; // Solfeggio frequencies
         const oscillators = [];

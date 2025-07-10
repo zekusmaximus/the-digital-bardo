@@ -10,6 +10,7 @@ import { FragmentGenerator } from './fragment-generator.js';
 import { KarmicEngine } from '../src/consciousness/karmic-engine.js';
 import { recognitionFSM } from '../src/consciousness/recognition-fsm.js';
 import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+import { AnimationGuardian } from '../src/utils/animation-guardian.js';
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { sanitizeText, sanitizeHTML } from '../src/utils/purification.js';
@@ -46,13 +47,6 @@ export class ClearLodeOrchestrator {
         // Local state has been centralized in digital-soul.js.
         // All state access is now through consciousness.getState() and consciousness.setState().
 
-        // GSAP timelines for complex animations
-        this.timelines = {
-            manifestation: null,
-            recognition: null,
-            degradation: null
-        };
-        
         // Sub-systems
         this.recognition = null;
         this.degradation = null;
@@ -116,28 +110,16 @@ export class ClearLodeOrchestrator {
         ];
 
         events.forEach(([event, handler]) => {
-            window.addEventListener(event, handler);
-            this.guardian.register(
-                { event, handler },
-                ({ event, handler }) => window.removeEventListener(event, handler)
-            );
+            this.guardian.registerEventListener(window, event, handler);
         });
     }
 
     setupWindowLifecycleListeners() {
         const beforeUnloadHandler = () => this.destroy();
-        window.addEventListener('beforeunload', beforeUnloadHandler);
-        this.guardian.register(
-            { event: 'beforeunload', handler: beforeUnloadHandler },
-            ({ event, handler }) => window.removeEventListener(event, handler)
-        );
+        this.guardian.registerEventListener(window, 'beforeunload', beforeUnloadHandler);
 
         const pageHideHandler = () => this.destroy();
-        window.addEventListener('pagehide', pageHideHandler);
-        this.guardian.register(
-            { event: 'pagehide', handler: pageHideHandler },
-            ({ event, handler }) => window.removeEventListener(event, handler)
-        );
+        this.guardian.registerEventListener(window, 'pagehide', pageHideHandler);
     }
 
     handleFSMStateChange(newState) {
@@ -214,9 +196,8 @@ export class ClearLodeOrchestrator {
         consciousness.setState('clearLode.degradationChoice', choice);
 
         // Handle transition based on choice
-        gsap.delayedCall(2, () => {
-            this.handleDegradationTransition(choice);
-        });
+        const timerId = setTimeout(() => this.handleDegradationTransition(choice), 2000);
+        this.guardian.registerTimer(timerId);
     }
 
     handleDegradationTransition(choice) {
@@ -250,7 +231,7 @@ export class ClearLodeOrchestrator {
 
     transitionToDatascape(reason) {
         // Fade out current experience
-        gsap.to('body', {
+        AnimationGuardian.safeAnimate('body', {
             opacity: 0,
             duration: 2,
             ease: 'power2.in',
@@ -274,10 +255,11 @@ export class ClearLodeOrchestrator {
         }
 
         // Eventually force transition after showing consequences
-        gsap.delayedCall(5, () => {
+        const timerId = setTimeout(() => {
             console.log('⚡ Forced transition due to refusal...');
             this.transitionToDatascape('forced_after_refusal');
-        });
+        }, 5000);
+        this.guardian.registerTimer(timerId);
     }
 
     handleTimeoutConsequences() {
@@ -286,20 +268,18 @@ export class ClearLodeOrchestrator {
 
         // Show timeout feedback
         const body = document.body;
-        gsap.timeline()
-            .to(body, {
-                filter: 'grayscale(1) contrast(0.5)',
-                duration: 1,
-                ease: 'power2.out'
-            })
-            .to(body, {
-                opacity: 0.5,
-                duration: 1,
-                ease: 'power2.out'
-            })
-            .call(() => {
-                this.transitionToDatascape('timeout_void');
-            });
+        AnimationGuardian.safeAnimate(body, {
+            filter: 'grayscale(1) contrast(0.5)',
+            duration: 1,
+            ease: 'power2.out'
+        });
+        AnimationGuardian.safeAnimate(body, {
+            opacity: 0.5,
+            duration: 1,
+            ease: 'power2.out',
+            delay: 1,
+            onComplete: () => this.transitionToDatascape('timeout_void')
+        });
     }
 
     /**
@@ -380,7 +360,7 @@ export class ClearLodeOrchestrator {
                 }
 
                 // Fade out with GSAP
-                gsap.to(beginPrompt, {
+                AnimationGuardian.safeAnimate(beginPrompt, {
                     opacity: 0,
                     duration: 0.5,
                     ease: 'power2.inOut',
@@ -436,76 +416,49 @@ export class ClearLodeOrchestrator {
         console.log('🌟 Starting light manifestation...');
         consciousness.setState('clearLode.lightManifested', true);
 
-        // Create GSAP timeline for light manifestation
-        const timeline = gsap.timeline({
+        AnimationGuardian.safeAnimate('#pre-light', {
+            opacity: 0,
+            duration: 0.5,
+            ease: 'power2.inOut',
+            onComplete: () => document.getElementById('pre-light').classList.add('hidden')
+        });
+
+        AnimationGuardian.safeAnimate('#clear-light', {
+            display: 'block',
+            opacity: 1,
+            duration: 0,
+            delay: 0.5,
+            onComplete: () => document.getElementById('clear-light').classList.remove('hidden')
+        });
+
+        AnimationGuardian.safeAnimate('.light-core', {
+            scale: 1,
+            opacity: 1,
+            duration: 3,
+            ease: 'power2.out',
+            delay: 0.5
+        });
+
+        AnimationGuardian.safeAnimate('body', {
+            backgroundColor: '#ffffff',
+            duration: 2,
+            ease: 'power2.inOut',
+            delay: 2.5, // 0.5 + 3 - 1
+            onStart: () => document.body.classList.remove('approaching-light'),
             onComplete: () => {
+                document.body.classList.add('light-manifested');
                 console.log('✨ Light manifestation sequence complete, transitioning FSM...');
                 recognitionFSM.transition('onLightManifested');
             }
         });
-        this.guardian.register(timeline, (tl) => tl.kill());
-        this.timelines.manifestation = timeline;
 
-        console.log('🎬 GSAP timeline created, starting light manifestation sequence...');
-        
-        // Orchestrate the transition with GSAP - keep background dark while light grows
-        this.timelines.manifestation
-            // Fade out the void first
-            .to('#pre-light', {
-                opacity: 0,
-                duration: 0.5,
-                ease: 'power2.inOut',
-                onComplete: () => {
-                    document.getElementById('pre-light').classList.add('hidden');
-                }
-            })
-            // Immediately show the light container but invisible
-            .set('#clear-light', {
-                display: 'block',
-                opacity: 1,
-                onComplete: () => {
-                    document.getElementById('clear-light').classList.remove('hidden');
-                }
-            })
-            // Start with light core at center, very small
-            .set('.light-core', {
-                scale: 0,
-                opacity: 0
-            })
-            // Grow the light from center outward FIRST (much slower)
-            .to('.light-core', {
-                scale: 1,
-                opacity: 1,
-                duration: 3,
-                ease: 'power2.out',
-                onComplete: () => {
-                    console.log('🌟 Light core animation complete');
-                }
-            })
-            // THEN transition background to white (after light is visible, much later)
-            .to('body', {
-                backgroundColor: '#ffffff',
-                duration: 2,
-                ease: 'power2.inOut',
-                onStart: () => {
-                    document.body.classList.remove('approaching-light');
-                    // Don't add light-manifested class immediately - it changes background
-                }
-            }, '-=1')
-            // Add the light-manifested class after background transition
-            .call(() => {
-                document.body.classList.add('light-manifested');
-                console.log('✨ Light manifestation sequence complete - dispatching event...');
-                console.log('✨ Light manifestation sequence complete, transitioning FSM...');
-                recognitionFSM.transition('onLightManifested');
-            })
-            // Start the gentle rotation
-            .to('.light-core', {
-                rotation: 360,
-                duration: 20,
-                repeat: -1,
-                ease: 'none'
-            }, '-=0.8');
+        AnimationGuardian.safeAnimate('.light-core', {
+            rotation: 360,
+            duration: 20,
+            repeat: -1,
+            ease: 'none',
+            delay: 3.7 // 2.5 + 2 - 0.8
+        });
         
         // Only start audio if user has already interacted (audio initialized)
         if (this.audio.audioInitialized) {
@@ -514,18 +467,18 @@ export class ClearLodeOrchestrator {
         }
 
         // Start fragments after light is fully visible (4 seconds to ensure light is established)
-        gsap.delayedCall(4, () => {
-            this.fragments.startFragmentField();
-        });
+        const timerId = setTimeout(() => this.fragments.startFragmentField(), 4000);
+        this.guardian.registerTimer(timerId);
 
         // The FSM now handles the window, but we still need a timeout for the 'failed' state.
         const recognitionWindowDuration = (this.config.recognitionWindow.end - this.config.recognitionWindow.start) / 1000;
-        gsap.delayedCall(recognitionWindowDuration, () => {
-             if (recognitionFSM.getState() === 'window_open') {
+        const timerId = setTimeout(() => {
+            if (recognitionFSM.getState() === 'window_open') {
                 console.log('⏰ Recognition window timeout - transitioning FSM to failed...');
                 recognitionFSM.transition('onTimeout');
             }
-        });
+        }, recognitionWindowDuration * 1000);
+        this.guardian.registerTimer(timerId);
 
         consciousness.recordEvent('clear_light_manifested', {
             timestamp: Date.now()
@@ -536,7 +489,7 @@ export class ClearLodeOrchestrator {
         consciousness.setState('clearLode.recognitionActive', true);
 
         // Animate recognition zone activation
-        gsap.to('.recognition-zone', {
+        AnimationGuardian.safeAnimate('.recognition-zone', {
             scale: 1.05,
             duration: 0.5,
             ease: 'back.out(1.7)',
@@ -558,32 +511,30 @@ export class ClearLodeOrchestrator {
             if (!consciousness.getState('clearLode.recognitionActive') || consciousness.getState('clearLode.recognized')) break;
 
             // GSAP-powered hint animation
-            await gsap.timeline()
-                .set(hintElement, {
-                    opacity: 0,
-                    y: 10
-                })
-                .call(() => {
-                    hintElement.textContent = hint; // Use textContent instead of innerHTML for safety
-                    consciousness.setState('clearLode.hintsShown', consciousness.getState('clearLode.hintsShown') + 1);
-                })
-                .to(hintElement, {
-                    opacity: 0.4,
-                    y: 0,
-                    duration: 0.5,
-                    ease: 'power2.out'
-                })
-                .to(hintElement, {
+            hintElement.textContent = hint;
+            consciousness.setState('clearLode.hintsShown', consciousness.getState('clearLode.hintsShown') + 1);
+
+            AnimationGuardian.safeAnimate(hintElement, {
+                opacity: 0.4,
+                y: 0,
+                duration: 0.5,
+                ease: 'power2.out'
+            });
+
+            await new Promise(resolve => {
+                AnimationGuardian.safeAnimate(hintElement, {
                     opacity: 0,
                     y: -10,
                     duration: 0.5,
                     delay: this.config.hintFadeTime / 1000,
-                    ease: 'power2.in'
-                })
-                .then();
+                    ease: 'power2.in',
+                    onComplete: resolve
+                });
+            });
 
             // Wait between hints
-            await this.wait(this.config.hintDelay);
+            const timerId = await this.wait(this.config.hintDelay);
+            this.guardian.registerTimer(timerId);
         }
     }
 
@@ -595,7 +546,7 @@ export class ClearLodeOrchestrator {
         consciousness.setState('clearLode.recognitionActive', false);
 
         // Animate recognition zone deactivation
-        gsap.to('.recognition-zone', {
+        AnimationGuardian.safeAnimate('.recognition-zone', {
             scale: 1,
             duration: 0.3,
             ease: 'power2.in',
@@ -610,10 +561,11 @@ export class ClearLodeOrchestrator {
         // Begin degradation if not recognized
         if (!consciousness.getState('clearLode.recognized')) {
             console.log('🌀 Recognition timeout - beginning degradation in 1 second...');
-            gsap.delayedCall(1, () => {
+            const timerId = setTimeout(() => {
                 console.log('🌀 Triggering degradation now...');
                 this.degradation.beginDegradation();
-            });
+            }, 1000);
+            this.guardian.registerTimer(timerId);
         } else {
             console.log('✨ Recognition achieved - skipping degradation');
         }
@@ -621,49 +573,46 @@ export class ClearLodeOrchestrator {
 
     // Execute recognition achievement sequence (migrated from clear-lode.js)
     executeRecognitionSequence() {
-        // Create recognition achievement timeline
-        const timeline = gsap.timeline();
-        this.guardian.register(timeline, (tl) => tl.kill());
-        this.timelines.recognition = timeline;
+        AnimationGuardian.safeAnimate('body', {
+            filter: 'brightness(2) contrast(2)',
+            duration: 0.3,
+            yoyo: true,
+            repeat: 1,
+            ease: 'power2.inOut'
+        });
 
-        this.timelines.recognition
-            // Flash of enlightenment
-            .to('body', {
-                filter: 'brightness(2) contrast(2)',
-                duration: 0.3,
-                yoyo: true,
-                repeat: 1,
-                ease: 'power2.inOut'
-            })
-            // Expand the light
-            .to('.light-core', {
-                scale: 2,
-                opacity: 0.5,
-                duration: 1,
-                ease: 'power2.out'
-            })
-            // Show enlightenment message - no longer method-dependent as FSM handles state
-            .set('.recognition-hint', {
-                innerHTML: this.sanitizeHTML("Recognition Achieved"),
-                className: 'recognition-hint visible enlightenment'
-            })
-            .fromTo('.recognition-hint',
-                { opacity: 0, scale: 0.8 },
-                { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }
-            )
-            // Prepare for transition
-            .to('body', {
-                opacity: 0,
-                duration: 2,
-                delay: 1,
-                ease: 'power2.in',
-                onComplete: () => {
-                    consciousness.recordEvent('transitioning_to_datascape', {
-                        fromState: 'recognized'
-                    });
-                    window.location.href = '/datascape/';
-                }
-            });
+        AnimationGuardian.safeAnimate('.light-core', {
+            scale: 2,
+            opacity: 0.5,
+            duration: 1,
+            ease: 'power2.out',
+            delay: 0.6
+        });
+
+        const hintElement = document.querySelector('.recognition-hint');
+        hintElement.innerHTML = this.sanitizeHTML("Recognition Achieved");
+        hintElement.className = 'recognition-hint visible enlightenment';
+
+        AnimationGuardian.safeAnimate(hintElement, {
+            opacity: 1,
+            scale: 1,
+            duration: 0.5,
+            ease: 'back.out(1.7)',
+            delay: 1.6
+        });
+
+        AnimationGuardian.safeAnimate('body', {
+            opacity: 0,
+            duration: 2,
+            delay: 3.1, // 0.6 + 1 + 0.5 + 1
+            ease: 'power2.in',
+            onComplete: () => {
+                consciousness.recordEvent('transitioning_to_datascape', {
+                    fromState: 'recognized'
+                });
+                window.location.href = '/datascape/';
+            }
+        });
 
         // Audio resonance
         this.audio.achieveResonance();
@@ -689,23 +638,23 @@ export class ClearLodeOrchestrator {
             ...data
         });
 
-        // GSAP-powered glitch effect
-        gsap.timeline()
-            .to('body', {
-                filter: 'hue-rotate(90deg)',
-                x: -5,
-                duration: 0.1
-            })
-            .to('body', {
-                filter: 'hue-rotate(-90deg)',
-                x: 5,
-                duration: 0.1
-            })
-            .to('body', {
-                filter: 'hue-rotate(0deg)',
-                x: 0,
-                duration: 0.1
-            });
+        AnimationGuardian.safeAnimate('body', {
+            filter: 'hue-rotate(90deg)',
+            x: -5,
+            duration: 0.1
+        });
+        AnimationGuardian.safeAnimate('body', {
+            filter: 'hue-rotate(-90deg)',
+            x: 5,
+            duration: 0.1,
+            delay: 0.1
+        });
+        AnimationGuardian.safeAnimate('body', {
+            filter: 'hue-rotate(0deg)',
+            x: 0,
+            duration: 0.1,
+            delay: 0.2
+        });
 
         // Accelerate degradation
         if (consciousness.getState('clearLode.recognitionActive')) {
@@ -751,7 +700,6 @@ export class ClearLodeOrchestrator {
         this.fragments = null;
         this.audio = null;
         this.karmicEngine = null;
-        this.timelines = null;
         this.config = null;
         this.guardian = null;
         this.sanitizeText = null;

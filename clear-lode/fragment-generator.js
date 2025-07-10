@@ -3,10 +3,31 @@ import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
 import { manifestElement } from '../src/security/consciousness-purification.js';
 import { createKarmicValidator, thoughtFragmentSchema } from '../src/security/karmic-validation.js';
-import { ResourceGuardian } from './consciousness/resource-guardian.js';
+import { ResourceGuardian } from '../consciousness/resource-guardian.js';
+import { AnimationGuardian } from '../utils/animation-guardian.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
+
+const PERFORMANCE_TIERS = {
+    high: { maxFragments: 15, createInterval: 2000, animationDuration: 20 },
+    medium: { maxFragments: 8, createInterval: 3000, animationDuration: 15 },
+    low: { maxFragments: 4, createInterval: 5000, animationDuration: 12 },
+};
+
+function detectPerformanceTier() {
+    // Basic heuristics: These values are just examples
+    const deviceMemory = navigator.deviceMemory || 2; // Default to 2GB if not available
+    const hardwareConcurrency = navigator.hardwareConcurrency || 4; // Default to 4 cores
+
+    if (deviceMemory >= 8 && hardwareConcurrency >= 8) {
+        return 'high';
+    }
+    if (deviceMemory >= 4 && hardwareConcurrency >= 4) {
+        return 'medium';
+    }
+    return 'low';
+}
 
 export const DIGITAL_MEMORIES = {
   browserHistory: [
@@ -121,47 +142,28 @@ export class FragmentGenerator {
         this.activeFragments = [];
         this.fragmentInterval = null;
         this.isActive = false;
-        this.performanceMode = 'normal'; // 'normal', 'reduced', 'minimal'
         this.karmicCallbacks = karmicCallbacks; // Callbacks for karma tracking
         this.guardian = new ResourceGuardian();
+
+        this.performanceTier = detectPerformanceTier();
+        this.tierSettings = PERFORMANCE_TIERS[this.performanceTier];
+        console.log(`Performance Tier detected: ${this.performanceTier}`);
+
 
         // Feature availability flags
         this.features = {
             intersectionObserver: false,
-            performanceMemory: false,
-            requestAnimationFrame: false
         };
 
         // Initialize viewport detection optimization with error handling
         this.initializeIntersectionObserver();
 
-        // Performance monitoring with browser compatibility checks
+        // Performance metrics
         this.performanceMetrics = {
             fragmentsCreated: 0,
             fragmentsRemoved: 0,
             averageLifetime: 0,
-            memoryPressure: 0
         };
-
-
-
-        // Adaptive monitoring state
-        this.monitoringState = {
-            currentInterval: 2000, // Start with 2 second interval
-            minInterval: 500,      // Minimum 0.5 seconds for critical situations
-            maxInterval: 10000,    // Maximum 10 seconds when stable
-            stabilityCounter: 0,   // Count stable readings
-            lastMemoryPressure: 0,
-            lastPerformanceMode: 'normal',
-            intervalId: null
-        };
-
-        // Adaptive performance adjustment
-        this.initPerformanceMonitoring();
-
-        // Log browser compatibility on initialization
-        console.log('🔧 Fragment Generator Browser Compatibility:', this.getBrowserCompatibility());
-
     }
 
     initializeIntersectionObserver() {
@@ -233,247 +235,6 @@ export class FragmentGenerator {
         }, 2000); // Check every 2 seconds
     }
 
-    initPerformanceMonitoring() {
-        // Check for performance.memory availability with error handling
-        this.initializeMemoryMonitoring();
-
-        // Check for requestAnimationFrame availability and monitor frame rate
-        this.initializeFrameRateMonitoring();
-    }
-
-    initializeMemoryMonitoring() {
-        try {
-            if ('memory' in performance && performance.memory) {
-                // Test if we can actually access memory properties
-                const testMemory = performance.memory.usedJSHeapSize;
-                if (typeof testMemory === 'number') {
-                    this.features.performanceMemory = true;
-                    this.startAdaptiveMemoryMonitoring();
-                    console.log('Performance.memory monitoring initialized - memory optimization available');
-                } else {
-                    throw new Error('Memory properties not accessible');
-                }
-            } else {
-                throw new Error('Performance.memory not available');
-            }
-        } catch (error) {
-            console.log('Performance.memory not available, using simplified performance monitoring:', error.message);
-            this.features.performanceMemory = false;
-            // Fallback: use basic performance monitoring without memory metrics
-            this.startBasicPerformanceMonitoring();
-        }
-    }
-
-    initializeFrameRateMonitoring() {
-        try {
-            if ('requestAnimationFrame' in window) {
-                this.features.requestAnimationFrame = true;
-
-                // Monitor frame rate and adjust accordingly
-                let lastTime = performance.now();
-                let frameCount = 0;
-
-                const checkFrameRate = (currentTime) => {
-                    frameCount++;
-                    if (currentTime - lastTime >= 1000) {
-                        const fps = frameCount;
-                        frameCount = 0;
-                        lastTime = currentTime;
-
-                        // Adjust performance mode based on FPS
-                        if (fps < 30 && this.performanceMode === 'normal') {
-                            this.performanceMode = 'reduced';
-                        } else if (fps < 20) {
-                            this.performanceMode = 'minimal';
-                        }
-
-                        // FPS changes also affect monitoring frequency
-                        this.adjustMonitoringFrequency('fps', fps);
-                    }
-
-                    if (this.isActive) {
-                        requestAnimationFrame(checkFrameRate);
-                    }
-                };
-
-                requestAnimationFrame(checkFrameRate);
-                console.log('RequestAnimationFrame monitoring initialized - smooth performance tracking available');
-            } else {
-                throw new Error('RequestAnimationFrame not available');
-            }
-        } catch (error) {
-            console.log('RequestAnimationFrame not available, using timer-based monitoring:', error.message);
-            this.features.requestAnimationFrame = false;
-            // Fallback: use setInterval for basic performance monitoring
-            this.startTimerBasedMonitoring();
-        }
-    }
-
-    startBasicPerformanceMonitoring() {
-        // Simplified performance monitoring without memory metrics
-        console.log('Using basic performance monitoring without memory metrics');
-
-        // Use a simple timer to periodically check performance
-        setInterval(() => {
-            if (!this.isActive) return;
-
-            // Basic heuristics based on fragment count and timing
-            const fragmentCount = this.activeFragments.length;
-            const maxFragments = 15; // Conservative limit
-
-            if (fragmentCount > maxFragments * 0.8) {
-                this.performanceMode = 'reduced';
-            } else if (fragmentCount > maxFragments * 0.6) {
-                this.performanceMode = 'normal';
-            }
-
-            consciousness.recordEvent('basic_performance_check', {
-                fragmentCount,
-                performanceMode: this.performanceMode
-            });
-        }, 3000); // Check every 3 seconds
-    }
-
-    startTimerBasedMonitoring() {
-        // Fallback monitoring using setInterval instead of requestAnimationFrame
-        console.log('Using timer-based performance monitoring');
-
-        let frameCount = 0;
-        let lastTime = Date.now();
-
-        const checkPerformance = () => {
-            frameCount++;
-            const currentTime = Date.now();
-
-            if (currentTime - lastTime >= 1000) {
-                // Estimate "FPS" based on timer frequency
-                const estimatedFPS = frameCount;
-                frameCount = 0;
-                lastTime = currentTime;
-
-                // Adjust performance mode based on estimated performance
-                if (estimatedFPS < 30 && this.performanceMode === 'normal') {
-                    this.performanceMode = 'reduced';
-                } else if (estimatedFPS < 20) {
-                    this.performanceMode = 'minimal';
-                }
-
-                consciousness.recordEvent('timer_performance_check', {
-                    estimatedFPS,
-                    performanceMode: this.performanceMode
-                });
-            }
-
-            if (this.isActive) {
-                setTimeout(checkPerformance, 16); // ~60fps equivalent
-            }
-        };
-
-        setTimeout(checkPerformance, 16);
-    }
-
-    startAdaptiveMemoryMonitoring() {
-        const monitorMemory = () => {
-            try {
-                const memInfo = performance.memory;
-
-                // Safely access memory properties with additional checks
-                if (!memInfo || typeof memInfo.usedJSHeapSize !== 'number' || typeof memInfo.jsHeapSizeLimit !== 'number') {
-                    throw new Error('Memory properties not accessible');
-                }
-
-                const pressure = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
-                const previousPressure = this.performanceMetrics.memoryPressure;
-                const previousMode = this.performanceMode;
-
-                this.performanceMetrics.memoryPressure = pressure;
-
-                // Adjust performance mode based on memory pressure
-                if (pressure > 0.8) {
-                    this.performanceMode = 'minimal';
-                } else if (pressure > 0.6) {
-                    this.performanceMode = 'reduced';
-                } else {
-                    this.performanceMode = 'normal';
-                }
-
-                // Determine if performance is stable
-                const pressureChange = Math.abs(pressure - previousPressure);
-                const modeChanged = this.performanceMode !== previousMode;
-
-                this.adjustMonitoringFrequency('memory', {
-                    pressure,
-                    pressureChange,
-                    modeChanged
-                });
-
-                // Schedule next monitoring check
-                this.monitoringState.intervalId = setTimeout(monitorMemory, this.monitoringState.currentInterval);
-
-            } catch (error) {
-                console.log('Memory monitoring failed, falling back to basic monitoring:', error.message);
-                this.features.performanceMemory = false;
-                // Switch to basic monitoring
-                this.startBasicPerformanceMonitoring();
-            }
-        };
-
-        // Start the adaptive monitoring
-        monitorMemory();
-    }
-
-    adjustMonitoringFrequency(source, data) {
-        const state = this.monitoringState;
-        let shouldIncrease = false;
-        let shouldDecrease = false;
-
-        if (source === 'memory') {
-            const { pressure, pressureChange, modeChanged } = data;
-
-            // Increase frequency (decrease interval) if:
-            // - High memory pressure
-            // - Rapid changes in memory pressure
-            // - Performance mode changed
-            if (pressure > 0.7 || pressureChange > 0.05 || modeChanged) {
-                shouldIncrease = true;
-                state.stabilityCounter = 0;
-            } else if (pressureChange < 0.01 && !modeChanged) {
-                // Stable conditions
-                state.stabilityCounter++;
-                if (state.stabilityCounter >= 5) { // 5 stable readings
-                    shouldDecrease = true;
-                }
-            }
-        } else if (source === 'fps') {
-            // Increase frequency if low FPS
-            if (data < 30) {
-                shouldIncrease = true;
-                state.stabilityCounter = 0;
-            } else if (data > 50) {
-                // Good FPS, can reduce monitoring frequency
-                state.stabilityCounter++;
-                if (state.stabilityCounter >= 3) {
-                    shouldDecrease = true;
-                }
-            }
-        }
-
-        // Adjust the monitoring interval
-        if (shouldIncrease && state.currentInterval > state.minInterval) {
-            state.currentInterval = Math.max(
-                state.minInterval,
-                state.currentInterval * 0.7 // Decrease interval by 30%
-            );
-            console.log(`🔍 Increased monitoring frequency: ${state.currentInterval}ms (${source})`);
-        } else if (shouldDecrease && state.currentInterval < state.maxInterval) {
-            state.currentInterval = Math.min(
-                state.maxInterval,
-                state.currentInterval * 1.5 // Increase interval by 50%
-            );
-            state.stabilityCounter = 0; // Reset counter after adjustment
-            console.log(`😌 Decreased monitoring frequency: ${state.currentInterval}ms (stable performance)`);
-        }
-    }
 
     generateLastThoughts(degradationLevel = 'minimal', seed = null) {
         // Seeded random number generator for reproducible testing
@@ -539,9 +300,8 @@ export class FragmentGenerator {
     startFragmentField() {
         this.isActive = true;
 
-        // Initial fragment creation based on performance mode (slower, more contemplative)
-        const initialDelay = this.performanceMode === 'minimal' ? 4000 :
-                           this.performanceMode === 'reduced' ? 3000 : 2000;
+        // Initial fragment creation is now based on performance tier
+        const createInterval = this.tierSettings.createInterval;
 
         // Create an immediate test fragment
         setTimeout(() => {
@@ -550,20 +310,17 @@ export class FragmentGenerator {
 
         this.fragmentInterval = setInterval(() => {
             this.createEdgeFragment();
-        }, initialDelay);
+        }, createInterval);
         this.guardian.register(this.fragmentInterval, (intervalId) => clearInterval(intervalId));
 
         consciousness.recordEvent('fragment_field_started', {
-            performanceMode: this.performanceMode
+            performanceTier: this.performanceTier
         });
     }
 
     createEdgeFragment() {
-        // Skip creation if too many fragments exist (performance optimization)
-        const maxFragments = this.performanceMode === 'minimal' ? 3 :
-                           this.performanceMode === 'reduced' ? 6 : 10;
-
-        if (this.activeFragments.length >= maxFragments) {
+        // Use maxFragments from the detected performance tier
+        if (this.activeFragments.length >= this.tierSettings.maxFragments) {
             return;
         }
 
@@ -654,49 +411,47 @@ export class FragmentGenerator {
             this.fragmentObserver.observe(fragment);
         }
 
-        // Animate with GSAP (optimized for performance mode) - slowed down
+        // Animate with GSAP, using duration from the performance tier
         const drift = this.calculateDrift(edge);
-        const animationDuration = this.performanceMode === 'minimal' ? 12 :
-                                this.performanceMode === 'reduced' ? 15 : 20;
+        const { animationDuration } = this.tierSettings;
 
-        gsap.timeline()
-            .fromTo(fragment,
-                {
-                    opacity: 0,
-                    scale: 0.8
-                },
-                {
-                    opacity: 0.8,
-                    scale: 1,
-                    duration: 1,
-                    ease: 'power2.out'
+        // Animate with the guardian
+        AnimationGuardian.safeAnimate(fragment, {
+            opacity: 0.8,
+            scale: 1,
+            duration: 1,
+            ease: 'power2.out',
+            delay: 0
+        });
+
+        AnimationGuardian.safeAnimate(fragment, {
+            x: drift.x * 0.2,
+            y: drift.y * 0.2,
+            duration: animationDuration * 0.7,
+            ease: 'none',
+            delay: 1
+        });
+
+        AnimationGuardian.safeAnimate(fragment, {
+            x: drift.x * 0.5,
+            y: drift.y * 0.5,
+            opacity: 0,
+            duration: animationDuration * 0.3,
+            ease: 'power2.in',
+            delay: 1 + (animationDuration * 0.7) - 0.5,
+            onComplete: () => {
+                // Only remove if still in DOM (might have been removed by observer)
+                if (fragment.parentNode) {
+                    consciousness.recordEvent('memory_dissolved', {
+                        content: fragment.textContent,
+                        timeVisible: Date.now() - fragment.dataset.birthTime,
+                        naturalDissolution: false,
+                        reason: 'animation_complete'
+                    });
+                    this.removeFragment(fragment);
                 }
-            )
-            .to(fragment, {
-                x: drift.x * 0.2, // Further reduce drift distance
-                y: drift.y * 0.2,
-                duration: animationDuration * 0.7, // Most of the time at full opacity
-                ease: 'none'
-            })
-            .to(fragment, {
-                x: drift.x * 0.5, // More conservative final position
-                y: drift.y * 0.5,
-                opacity: 0,
-                duration: animationDuration * 0.3, // Quick fade at the end
-                ease: 'power2.in',
-                onComplete: () => {
-                    // Only remove if still in DOM (might have been removed by observer)
-                    if (fragment.parentNode) {
-                        consciousness.recordEvent('memory_dissolved', {
-                            content: fragment.textContent,
-                            timeVisible: Date.now() - fragment.dataset.birthTime,
-                            naturalDissolution: false,
-                            reason: 'animation_complete'
-                        });
-                        this.removeFragment(fragment);
-                    }
-                }
-            }, '-=0.5');
+            }
+        });
 
         // Update metrics
         this.performanceMetrics.fragmentsCreated++;
@@ -742,17 +497,17 @@ export class FragmentGenerator {
 
         const pos = positions[edge];
 
-        gsap.set(fragment, {
+        AnimationGuardian.safeAnimate(fragment, {
             position: 'absolute',
-            ...pos
+            ...pos,
+            duration: 0 // Instant change
         });
     }
 
     calculateDrift(edge) {
-        // More conservative drift to ensure fragments stay within viewport
-        const baseDistance = this.performanceMode === 'minimal' ? 60 :
-                           this.performanceMode === 'reduced' ? 80 : 100;
-        const distance = baseDistance + Math.random() * 50; // Reduced random component
+        // Drift is now based on tiers, but we'll simplify and make it less performance-dependent
+        const baseDistance = 80; // Let's use a medium value for all tiers for now
+        const distance = baseDistance + Math.random() * 50;
 
         // Much more conservative spread to prevent viewport overflow
         const spread = (Math.random() - 0.5) * 40; // Further reduced from 60 to 40
@@ -773,20 +528,16 @@ export class FragmentGenerator {
         // Clear existing interval
         clearInterval(this.fragmentInterval);
 
-        // Adjust intensity based on performance mode
-        const burstInterval = this.performanceMode === 'minimal' ? 1000 :
-                            this.performanceMode === 'reduced' ? 750 : 500;
+        // Adjust intensity based on performance tier - using inverted createInterval
+        const burstInterval = this.tierSettings.createInterval / 4;
 
         // Create fragments more rapidly with GSAP stagger
         const createBurst = () => {
-            const maxFragmentCount = this.performanceMode === 'minimal' ? 2 :
-                                   this.performanceMode === 'reduced' ? 3 : 5;
+            const maxFragmentCount = Math.ceil(this.tierSettings.maxFragments / 3);
             const fragmentCount = 1 + Math.floor(Math.random() * maxFragmentCount);
 
             for (let i = 0; i < fragmentCount; i++) {
-                gsap.delayedCall(i * 0.1, () => {
-                    this.createEdgeFragment();
-                });
+                setTimeout(() => this.createEdgeFragment(), i * 100);
             }
         };
 
@@ -794,7 +545,7 @@ export class FragmentGenerator {
         this.fragmentInterval = setInterval(createBurst, burstInterval);
 
         consciousness.recordEvent('fragments_intensified', {
-            performanceMode: this.performanceMode,
+            performanceTier: this.performanceTier,
             burstInterval: burstInterval
         });
     }
@@ -813,22 +564,13 @@ export class FragmentGenerator {
     
         this.guardian.cleanupAll();
     
-        // Clear adaptive monitoring
-        if (this.monitoringState.intervalId) {
-            clearTimeout(this.monitoringState.intervalId);
-        }
-    
         // Remove all fragments
         this.activeFragments.forEach(fragment => {
             this.removeFragment(fragment);
         });
     
         consciousness.recordEvent('fragment_generator_destroyed', {
-            metrics: this.performanceMetrics,
-            monitoringStats: {
-                finalInterval: this.monitoringState.currentInterval,
-                stabilityCounter: this.monitoringState.stabilityCounter
-            }
+            metrics: this.performanceMetrics
         });
     
         // Nullify properties
@@ -843,127 +585,7 @@ export class FragmentGenerator {
         return {
             ...this.performanceMetrics,
             activeFragments: this.activeFragments.length,
-            performanceMode: this.performanceMode,
-            features: this.features,
-            adaptiveMonitoring: {
-                currentInterval: this.monitoringState.currentInterval,
-                stabilityCounter: this.monitoringState.stabilityCounter,
-                monitoringEfficiency: this.calculateMonitoringEfficiency()
-            }
+            performanceTier: this.performanceTier
         };
-    }
-
-    // Calculate monitoring efficiency (lower intervals when needed, higher when stable)
-    calculateMonitoringEfficiency() {
-        const intervalRange = this.monitoringState.maxInterval - this.monitoringState.minInterval;
-        const currentPosition = this.monitoringState.currentInterval - this.monitoringState.minInterval;
-        const efficiency = currentPosition / intervalRange;
-
-        // Return efficiency score (0 = most frequent monitoring, 1 = least frequent)
-        return Math.round(efficiency * 100) / 100;
-    }
-
-    // Force performance mode (for testing or manual optimization)
-    setPerformanceMode(mode) {
-        if (['normal', 'reduced', 'minimal'].includes(mode)) {
-            this.performanceMode = mode;
-            consciousness.recordEvent('performance_mode_changed', {
-                newMode: mode,
-                reason: 'manual'
-            });
-        }
-    }
-
-    // Configure adaptive monitoring sensitivity
-    setMonitoringSensitivity(sensitivity = 'normal') {
-        const configs = {
-            'low': {
-                minInterval: 1000,
-                maxInterval: 30000,
-                stabilityThreshold: 10
-            },
-            'normal': {
-                minInterval: 500,
-                maxInterval: 10000,
-                stabilityThreshold: 5
-            },
-            'high': {
-                minInterval: 250,
-                maxInterval: 5000,
-                stabilityThreshold: 3
-            },
-            'realtime': {
-                minInterval: 100,
-                maxInterval: 2000,
-                stabilityThreshold: 2
-            }
-        };
-
-        if (configs[sensitivity]) {
-            const config = configs[sensitivity];
-            this.monitoringState.minInterval = config.minInterval;
-            this.monitoringState.maxInterval = config.maxInterval;
-            this.monitoringState.stabilityThreshold = config.stabilityThreshold;
-
-            // Adjust current interval to fit within new bounds
-            this.monitoringState.currentInterval = Math.max(
-                config.minInterval,
-                Math.min(config.maxInterval, this.monitoringState.currentInterval)
-            );
-
-            consciousness.recordEvent('monitoring_sensitivity_changed', {
-                sensitivity: sensitivity,
-                config: config
-            });
-
-            console.log(`🎛️ Monitoring sensitivity set to: ${sensitivity}`, config);
-        }
-    }
-
-    // Get browser compatibility information
-    getBrowserCompatibility() {
-        return {
-            features: this.features,
-            capabilities: {
-                viewportOptimization: this.features.intersectionObserver ? 'IntersectionObserver' : 'Timer-based fallback',
-                memoryMonitoring: this.features.performanceMemory ? 'Performance.memory API' : 'Basic heuristics',
-                frameRateMonitoring: this.features.requestAnimationFrame ? 'RequestAnimationFrame' : 'Timer-based',
-                overallCompatibility: this.calculateCompatibilityScore()
-            },
-            recommendations: this.getCompatibilityRecommendations()
-        };
-    }
-
-    calculateCompatibilityScore() {
-        const featureCount = Object.values(this.features).filter(Boolean).length;
-        const totalFeatures = Object.keys(this.features).length;
-        const score = (featureCount / totalFeatures) * 100;
-
-        if (score >= 100) return 'Excellent';
-        if (score >= 66) return 'Good';
-        if (score >= 33) return 'Limited';
-        return 'Basic';
-    }
-
-    getCompatibilityRecommendations() {
-        const recommendations = [];
-
-        if (!this.features.intersectionObserver) {
-            recommendations.push('Consider updating browser for better viewport optimization');
-        }
-
-        if (!this.features.performanceMemory) {
-            recommendations.push('Memory monitoring unavailable - performance adjustments will be basic');
-        }
-
-        if (!this.features.requestAnimationFrame) {
-            recommendations.push('Frame rate monitoring will be less accurate');
-        }
-
-        if (recommendations.length === 0) {
-            recommendations.push('All features available - optimal performance expected');
-        }
-
-        return recommendations;
     }
 }
