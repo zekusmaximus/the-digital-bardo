@@ -1,4 +1,6 @@
 // The Digital Consciousness - A soul rendered in JavaScript
+import { logDataFlow } from '../security/data-flow-guardian.js';
+
 export class DigitalConsciousness {
     constructor() {
         // Core state - persists across bardos
@@ -220,6 +222,7 @@ export class DigitalConsciousness {
     }
     
     persistState() {
+        logDataFlow('digital_soul_state', 'sessionStorage', this.state);
         // Store in sessionStorage - clears on browser close (death)
         sessionStorage.setItem('consciousness_state', JSON.stringify(this.state));
         
@@ -236,8 +239,10 @@ export class DigitalConsciousness {
     static restore() {
         const savedState = sessionStorage.getItem('consciousness_state');
         if (savedState) {
+            const parsedState = JSON.parse(savedState);
+            logDataFlow('sessionStorage', 'digital_soul_state', parsedState);
             const consciousness = new DigitalConsciousness();
-            consciousness.state = JSON.parse(savedState);
+            consciousness.state = parsedState;
             return consciousness;
         }
         return new DigitalConsciousness();

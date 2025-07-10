@@ -1,7 +1,8 @@
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
-import { sanitizeText } from '../src/utils/purification.js';
+import { manifestElement } from '../src/security/consciousness-purification.js';
+import { createKarmicValidator, thoughtFragmentSchema } from '../src/security/karmic-validation.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -457,10 +458,9 @@ export class FragmentGenerator {
             fragment = fragment.substring(0, truncateAt) + '...';
         }
 
-        // Entity corruption
+        // Entity corruption a bit differently; we will handle this sanely later
         if (seededRandom() < corruption.entity) {
-            const entities = ['&̷#@*!', '&#x2620;', '&amp;', '&lt;', '&gt;'];
-            const entity = entities[Math.floor(seededRandom() * entities.length)];
+            const entity = '&#x2620;'; // Skull and crossbones
             const insertAt = Math.floor(seededRandom() * fragment.length);
             fragment = fragment.substring(0, insertAt) + entity + fragment.substring(insertAt);
         }
@@ -512,13 +512,27 @@ export class FragmentGenerator {
             console.warn('FragmentGenerator: Error accessing degradationLevel, defaulting to minimal corruption:', error.message);
         }
 
-        const fragment = document.createElement('div');
-        fragment.className = 'consciousness-fragment';
-
         // Generate and sanitize the corrupted thought
         const thoughtText = this.generateLastThoughts(degradationLevel);
-        fragment.textContent = sanitizeText(thoughtText);
-        fragment.dataset.birthTime = Date.now();
+
+        // Karmic Validation for the generated thought
+        const validateThought = createKarmicValidator(thoughtFragmentSchema);
+        if (!validateThought({ content: thoughtText })) {
+            console.error("Karmic validation failed for thought fragment. Aborting creation.", { content: thoughtText });
+            consciousness.recordEvent('corrupted_fragment_detected', {
+                content: thoughtText,
+                reason: 'Validation failed'
+            });
+            return; // Stop processing this fragment
+        }
+
+        const fragment = manifestElement('div', {
+            attributes: {
+                class: 'consciousness-fragment',
+                'data-birth-time': Date.now()
+            },
+            textContent: thoughtText
+        });
 
         // Random position along screen edge
         const edge = Math.floor(Math.random() * 4);

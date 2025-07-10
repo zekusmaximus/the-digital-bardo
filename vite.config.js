@@ -1,5 +1,35 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
+import { randomBytes } from 'crypto'
+
+// Plugin to apply a nonce-based CSP during development
+const cspNoncePlugin = () => {
+  return {
+    name: 'csp-nonce-plugin',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const nonce = randomBytes(16).toString('base64');
+        // Make nonce available to the HTML transformer
+        res.locals = res.locals || {};
+        res.locals.cspNonce = nonce;
+        
+        // Set CSP header for development
+        res.setHeader(
+          'Content-Security-Policy',
+          `default-src 'self'; script-src 'self' 'nonce-${nonce}' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:;`
+        );
+        next();
+      });
+    },
+    transformIndexHtml(html, { res }) {
+       const nonce = res.locals.cspNonce;
+       // Add nonce to all script tags.
+       // Vite injects its own script tags, so we need to ensure they get the nonce.
+       return html.replace(/<script/g, `<script nonce="${nonce}"`);
+    }
+  }
+}
+
 
 export default defineConfig({
   build: {
@@ -18,5 +48,6 @@ export default defineConfig({
     port: 8888,
   },
   // Ensure audio worklets are copied to dist
-  publicDir: 'public'
+  publicDir: 'public',
+  plugins: [cspNoncePlugin()]
 })

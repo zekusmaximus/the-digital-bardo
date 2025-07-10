@@ -1,4 +1,6 @@
 // The Karmic Engine - Calculating the weight of digital actions
+import { logDataFlow } from '../security/data-flow-guardian.js';
+
 export class KarmicEngine {
     constructor() {
         this.karmaTypes = {
@@ -61,6 +63,7 @@ export class KarmicEngine {
     }
     
     calculateImpact(action, context = {}) {
+        logDataFlow('event', 'karmic_engine', { action, context });
         // Initialize impact object
         let impact = {
             computational: 0,

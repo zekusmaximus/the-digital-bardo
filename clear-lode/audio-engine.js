@@ -1,4 +1,6 @@
 // Audio subsystem for the Clear Lode
+import { createKarmicValidator, audioParamsSchema } from '../src/security/karmic-validation.js';
+
 export class ClearLodeAudio {
     constructor() {
         this.audioContext = null;
@@ -16,6 +18,9 @@ export class ClearLodeAudio {
 
         // Set up user gesture listener
         this.setupUserGestureListener();
+
+        // Karmic Validator for Audio Params
+        this.validateAudioParams = createKarmicValidator(audioParamsSchema);
     }
 
     setupUserGestureListener() {
@@ -92,6 +97,10 @@ export class ClearLodeAudio {
             this.gainNode = this.audioContext.createGain();
 
             this.oscillator.type = 'sine';
+            if (!this.validateAudioParams({ frequency: this.baseFrequency, gain: 0.1 })) {
+                console.error("Karmic validation failed for pure tone audio params. Aborting.", { frequency: this.baseFrequency, gain: 0.1 });
+                return;
+            }
             this.oscillator.frequency.setValueAtTime(this.baseFrequency, this.audioContext.currentTime);
 
             this.gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
@@ -143,10 +152,15 @@ export class ClearLodeAudio {
             if (this.oscillator && this.audioContext) {
                 try {
                     const frequencyShift = Math.sin(Date.now() * 0.001) * this.degradationLevel * 50;
-                    this.oscillator.frequency.setValueAtTime(
-                        this.baseFrequency + frequencyShift,
-                        this.audioContext.currentTime
-                    );
+                    const newFrequency = this.baseFrequency + frequencyShift;
+                    if (this.validateAudioParams({ frequency: newFrequency, gain: this.gainNode.gain.value })) {
+                        this.oscillator.frequency.setValueAtTime(
+                            newFrequency,
+                            this.audioContext.currentTime
+                        );
+                    } else {
+                        console.warn('Karmic validation failed for frequency shift, skipping update.');
+                    }
                 } catch (error) {
                     console.warn('Audio degradation failed:', error);
                 }
@@ -156,7 +170,11 @@ export class ClearLodeAudio {
             if (this.gainNode && this.audioContext) {
                 try {
                     const newGain = Math.max(0.05, 0.3 - (this.degradationLevel * 0.1));
-                    this.gainNode.gain.setValueAtTime(newGain, this.audioContext.currentTime);
+                    if(this.validateAudioParams({ frequency: this.oscillator.frequency.value, gain: newGain })) {
+                        this.gainNode.gain.setValueAtTime(newGain, this.audioContext.currentTime);
+                    } else {
+                        console.warn('Karmic validation failed for gain adjustment, skipping update.');
+                    }
                 } catch (error) {
                     console.warn('Audio gain adjustment failed:', error);
                 }
@@ -330,6 +348,10 @@ export class ClearLodeAudio {
             const osc = this.audioContext.createOscillator();
             const gain = this.audioContext.createGain();
             
+            if (!this.validateAudioParams({ frequency: freq, gain: 0.2 })) {
+                console.error(`Karmic validation failed for resonance frequency ${freq}. Skipping chord note.`);
+                return;
+            }
             osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
             gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
             

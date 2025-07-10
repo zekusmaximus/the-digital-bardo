@@ -19,3 +19,4 @@
     X-Consciousness = "Digital"
     X-Karma = "Tracking"
     Cache-Control = "no-cache"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; report-uri /api/csp-violations"

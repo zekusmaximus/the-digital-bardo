@@ -9,6 +9,8 @@ const RECOGNITION_WINDOW = { min: 3000, max: 7000 }; // ms per critique
 const CENTER_RADIUS = 50; // px
 const HOLD_SWEET_SPOT = { min: 2800, max: 3200 }; // ms
 const KEYWORDS = ['RECOGNIZE', 'SELF', 'HOME']; // Case-insensitive
+import { manifestElement } from '../src/security/consciousness-purification.js';
+import { createKarmicValidator, mouseEventSchema, keyboardEventSchema, touchEventSchema } from '../src/security/karmic-validation.js';
 
 export class RecognitionHandler {
     constructor(orchestrator) {
@@ -288,7 +290,16 @@ export class RecognitionHandler {
         const handler = (e) => {
             if (!this.isInWindow() || this.recognitionAchieved) return;
 
-            const point = e.type.includes('touch') ?
+            const isTouch = e.type.includes('touch');
+            const validateEvent = createKarmicValidator(isTouch ? touchEventSchema : mouseEventSchema);
+
+            if (!validateEvent(e)) {
+                console.error("Karmic validation failed for click/touch event. Aborting.", e);
+                this.recordAttachment('invalid_event_stream', { eventType: e.type });
+                return;
+            }
+
+            const point = isTouch ?
                 { x: e.touches[0].clientX, y: e.touches[0].clientY } :
                 { x: e.clientX, y: e.clientY };
 
@@ -318,21 +329,12 @@ export class RecognitionHandler {
      */
     createRipple(point) {
         const frameId = requestAnimationFrame(() => {
-            const ripple = document.createElement('span');
-            ripple.className = 'recognition-ripple';
-            ripple.style.cssText = `
-                position: fixed;
-                left: ${point.x}px;
-                top: ${point.y}px;
-                width: 20px;
-                height: 20px;
-                border: 2px solid rgba(255,255,255,0.6);
-                border-radius: 50%;
-                pointer-events: none;
-                z-index: 1000;
-                transform: translate(-50%, -50%);
-                animation: ripple-expand 0.6s ease-out forwards;
-            `;
+           const ripple = manifestElement('span', {
+               attributes: {
+                   class: 'recognition-ripple',
+                   style: `position: fixed; left: ${point.x}px; top: ${point.y}px; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; pointer-events: none; z-index: 1000; transform: translate(-50%, -50%); animation: ripple-expand 0.6s ease-out forwards;`
+               }
+           });
             document.body.appendChild(ripple);
             ripple.addEventListener('animationend', () => ripple.remove());
 
@@ -349,29 +351,23 @@ export class RecognitionHandler {
      * Buddhist concept: Mantras and sacred words
      */
     bindKeywordTyping() {
-        // Create typing display element
-        const display = document.createElement('div');
-        display.id = 'recognition-typing';
-        display.setAttribute('aria-live', 'polite');
-        display.style.cssText = `
-            position: fixed;
-            top: 60%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-family: monospace;
-            font-size: 18px;
-            color: rgba(0,0,0,0.7);
-            background: rgba(255,255,255,0.1);
-            padding: 8px 16px;
-            border-radius: 4px;
-            pointer-events: none;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        `;
+       const display = manifestElement('div', {
+           attributes: {
+               id: 'recognition-typing',
+               'aria-live': 'polite',
+               style: `position: fixed; top: 60%; left: 50%; transform: translateX(-50%); font-family: monospace; font-size: 18px; color: rgba(0,0,0,0.7); background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 4px; pointer-events: none; z-index: 1000; opacity: 0; transition: opacity 0.3s ease;`
+           }
+       });
         document.body.appendChild(display);
 
         const handler = (e) => {
+            const validateEvent = createKarmicValidator(keyboardEventSchema);
+            if (!validateEvent(e)) {
+                console.error("Karmic validation failed for key event. Aborting.", e);
+                this.recordAttachment('invalid_event_stream', { eventType: e.type });
+                return;
+            }
+
             if (!this.isInWindow() || this.recognitionAchieved || !e.key.match(/^[a-zA-Z]$/)) return;
 
             const now = Date.now();
@@ -419,7 +415,17 @@ export class RecognitionHandler {
         this.createProgressCircle();
 
         const downHandler = (e) => {
-            if ((e.code === 'Space' || e.type === 'touchstart') &&
+            const isTouch = e.type === 'touchstart';
+            const schema = isTouch ? touchEventSchema : keyboardEventSchema;
+            const validateEvent = createKarmicValidator(schema);
+
+            if (!validateEvent(e)) {
+                console.error("Karmic validation failed for spacebar/touch event. Aborting.", e);
+                this.recordAttachment('invalid_event_stream', { eventType: e.type });
+                return;
+            }
+
+            if ((e.code === 'Space' || isTouch) &&
                 !this.spacebarDownTime &&
                 this.isInWindow() &&
                 !this.recognitionAchieved) {
@@ -466,29 +472,26 @@ export class RecognitionHandler {
      * Create SVG progress circle around the light core
      */
     createProgressCircle() {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.id = 'progress-circle';
-        svg.setAttribute('viewBox', '0 0 402 402');
-        svg.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 200px;
-            height: 200px;
-            pointer-events: none;
-            z-index: 999;
-        `;
+       const svg = manifestElement('svg', {
+           attributes: {
+               id: 'progress-circle',
+               viewBox: '0 0 402 402',
+               style: `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; pointer-events: none; z-index: 999;`
+           }
+       });
 
-        this.progressCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        this.progressCircle.setAttribute('cx', '201');
-        this.progressCircle.setAttribute('cy', '201');
-        this.progressCircle.setAttribute('r', '200');
-        this.progressCircle.setAttribute('fill', 'none');
-        this.progressCircle.setAttribute('stroke-width', '2');
-        this.progressCircle.setAttribute('stroke', '#ffffff');
-        this.progressCircle.setAttribute('stroke-dasharray', `${2 * Math.PI * 200}`);
-        this.progressCircle.setAttribute('stroke-dashoffset', `${2 * Math.PI * 200}`);
+       this.progressCircle = manifestElement('circle', {
+           attributes: {
+               cx: '201',
+               cy: '201',
+               r: '200',
+               fill: 'none',
+               'stroke-width': '2',
+               stroke: '#ffffff',
+               'stroke-dasharray': `${2 * Math.PI * 200}`,
+               'stroke-dashoffset': `${2 * Math.PI * 200}`
+           }
+       });
 
         svg.appendChild(this.progressCircle);
         (document.querySelector('.light-core') || document.body).appendChild(svg);
@@ -539,7 +542,7 @@ export class RecognitionHandler {
         if (this.progressCircle) {
             this.progressCircle.setAttribute('stroke-dashoffset', 2 * Math.PI * 200);
             this.progressCircle.setAttribute('stroke', '#ffffff');
-            this.progressCircle.style.animation = '';
+            this.progress_circle.style.animation = '';
         }
     }
 

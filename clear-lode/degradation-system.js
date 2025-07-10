@@ -5,6 +5,7 @@
 import { gsap } from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { consciousness } from '../src/consciousness/digital-soul.js';
+import { manifestElement } from '../src/security/consciousness-purification.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -100,9 +101,12 @@ export class DegradationSystem {
         this.inputListeners = [];
 
         // Create interactive HTML structure with clickable Y/N spans
-        const promptHTML = `CONTINUE TO NEXT LIFE? <span id="degradation-choice-yes" class="choice-option">Y</span>/<span id="degradation-choice-no" class="choice-option">N</span>`;
-        // Bypass sanitization for this controlled HTML string
-        glitchText.innerHTML = promptHTML;
+        glitchText.textContent = 'CONTINUE TO NEXT LIFE? ';
+        const yesSpan = manifestElement('span', { attributes: { id: 'degradation-choice-yes', class: 'choice-option' }, textContent: 'Y' });
+        const noSpan = manifestElement('span', { attributes: { id: 'degradation-choice-no', class: 'choice-option' }, textContent: 'N' });
+        glitchText.appendChild(yesSpan);
+        glitchText.append('/');
+        glitchText.appendChild(noSpan);
 
         // Get choice elements
         const yesChoice = document.getElementById('degradation-choice-yes');
