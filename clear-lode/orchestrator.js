@@ -16,6 +16,7 @@ import { RecognitionHandler } from './recognition-handler.js';
 import { DegradationSystem } from './degradation-system.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator.js';
+import { dataGuardian } from '../src/security/data-flow-guardian.js';
 
 // Consciousness & Karmic Systems
 import { consciousness } from '../src/consciousness/digital-soul.js';
@@ -34,6 +35,7 @@ export class ClearLodeOrchestrator {
         
         // The ResourceGuardian manages all disposables (event listeners, timers, etc.).
         this.guardian = new ResourceGuardian();
+        this.dataGuardian = dataGuardian;
 
         // 1. Central Event Bus
         this.eventBridge = new ClearLodeEventBridge();
@@ -88,6 +90,9 @@ export class ClearLodeOrchestrator {
 
             this.setupInternalEventListeners();
             this.setupWindowLifecycleListeners();
+
+            // Perform a boundary audit once all systems are initialized
+            this.dataGuardian.auditDataBoundaries();
 
             // Record entry into Clear Lode
             consciousness.recordEvent('clear_lode_entered', {

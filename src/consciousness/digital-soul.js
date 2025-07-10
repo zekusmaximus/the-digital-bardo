@@ -1,6 +1,6 @@
 // The Digital Consciousness - A soul rendered in JavaScript
-// TODO: Re-enable after fixing circular dependency
-// import { initializeDataGuardian, logDataFlow } from '../security/data-flow-guardian.js';
+import { DataGuardianFactory } from '../security/data-guardian-factory.js';
+import { initializeDataGuardian } from '../security/data-flow-guardian.js';
 
 // Define the comprehensive shape of our application's state
 const STATE_SCHEMA = {
@@ -99,8 +99,12 @@ export class DigitalConsciousness {
             this.state.incarnation_seed = this.generateSeed();
             // Begin the journey
             this.initialize();
+
+            // Initialize data guardian with late binding to avoid circular imports
+            this.dataGuardian = DataGuardianFactory.createGuardian();
+            this.dataGuardian.initializeWithConsciousness(this);
         }
-    }''
+    }
 
     /**
      * Safely retrieves a value from the state using a dot-notation path.
@@ -108,8 +112,9 @@ export class DigitalConsciousness {
      * @returns {*} The value at the specified path, or undefined if not found.
      */
     getState(path) {
-        // TODO: Re-enable after fixing circular dependency
-        // logDataFlow('getState', 'digital_soul_state', { path });
+        if (this.dataGuardian) {
+            this.dataGuardian.logDataFlow('getState', 'digital_soul_state', { path });
+        }
         return path.split('.').reduce((acc, part) => acc && acc[part], this.state);
     }
 
@@ -119,9 +124,9 @@ export class DigitalConsciousness {
      * @param {*} value - The new value to set.
      */
     setState(path, value) {
-        // Basic validation could be added here against STATE_SCHEMA in a real scenario
-        // TODO: Re-enable after fixing circular dependency
-        // logDataFlow('setState', 'digital_soul_state', { path, value });
+        if (this.dataGuardian) {
+            this.dataGuardian.logDataFlow('setState', 'digital_soul_state', { path, value });
+        }
         const pathParts = path.split('.');
         const lastPart = pathParts.pop();
         let currentState = this.state;
@@ -345,8 +350,9 @@ export class DigitalConsciousness {
     }
     
     persistState() {
-        // TODO: Re-enable after fixing circular dependency
-        // logDataFlow('digital_soul_state', 'sessionStorage', this.state);
+        if (this.dataGuardian) {
+            this.dataGuardian.logDataFlow('digital_soul_state', 'sessionStorage', this.state);
+        }
         // Store in sessionStorage - clears on browser close (death)
         sessionStorage.setItem('consciousness_state', JSON.stringify(this.state));
         
@@ -365,9 +371,10 @@ export class DigitalConsciousness {
         if (savedState) {
             try {
                 const parsedState = JSON.parse(savedState);
-                // TODO: Re-enable after fixing circular dependency
-                // logDataFlow('sessionStorage', 'digital_soul_state', parsedState);
                 const consciousness = new DigitalConsciousness(isBrowser);
+                if (consciousness.dataGuardian) {
+                    consciousness.dataGuardian.logDataFlow('sessionStorage', 'digital_soul_state', parsedState);
+                }
                 
                 // Deep merge saved state with default state to prevent errors
                 // if the state shape has changed between versions.
@@ -412,8 +419,7 @@ if (!isBrowser) {
     consciousness = DigitalConsciousness.restore(isBrowser);
 
     // Initialize modules that depend on the consciousness instance
-    // TODO: Re-enable data guardian after fixing circular dependency
-    // initializeDataGuardian(consciousness);
+    initializeDataGuardian(consciousness);
 
     // Make it accessible for debugging
     if (window.location.search.includes('debug')) {
@@ -421,4 +427,4 @@ if (!isBrowser) {
     }
 }
 
-export { consciousness };''
+export { consciousness };

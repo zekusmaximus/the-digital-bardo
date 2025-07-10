@@ -5,6 +5,7 @@ import { manifestElement } from '../src/security/consciousness-purification.js';
 import { createKarmicValidator, thoughtFragmentSchema } from '../src/security/karmic-validation.js';
 import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
 import { AnimationGuardian } from '../src/utils/animation-guardian.js';
+import { createSeededRandom } from '../src/utils/seeded-random.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -68,34 +69,31 @@ export const DIGITAL_MEMORIES = {
 };
 
 /**
- * Applies corruption to a text string based on a degradation level.
- * Placeholder implementation.
+ * Applies visual corruption to text using pseudo-random glitches.
  * @param {string} text The text to corrupt.
- * @param {number} level The degradation level (e.g., 0 to 1).
+ * @param {number} level The degradation level between 0 and 1.
  * @returns {string} The corrupted text.
  */
-function applyCorruption(text, level) {
-    const GLITCH_CHARS = ['▓', '░', '█', '▒', '#', '§', '¶'];
-    return text.split('').map(char => {
-        if (char.trim() === '') return char;
+export function applyCorruption(text, level) {
+    if (level <= 0) return text;
 
-        // random removal
-        if (Math.random() < level * 0.1) {
-            return '';
-        }
+    const glitchChars = ['▓', '▒', '░', '█', '◆', '◇', '◊', '○', '●', '∆', '¥', '€', '¢'];
+    const rng = createSeededRandom(text.length + Math.floor(level * 1000));
+    let corrupted = text;
 
-        // replace with glitch character
-        if (Math.random() < level * 0.4) {
-            return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
-        }
+    const replaceCount = Math.floor(text.length * level * 0.3);
+    for (let i = 0; i < replaceCount; i++) {
+        const pos = Math.floor(rng.next() * corrupted.length);
+        const glitchChar = rng.choice(glitchChars);
+        corrupted = corrupted.substring(0, pos) + glitchChar + corrupted.substring(pos + 1);
+    }
 
-        // insert html entity corruption
-        if (Math.random() < level * 0.2) {
-            return `&#x${char.charCodeAt(0).toString(16)};`;
-        }
+    if (level > 0.7 && rng.boolean(0.3)) {
+        const truncateAt = Math.floor(corrupted.length * (0.4 + rng.next() * 0.4));
+        corrupted = corrupted.substring(0, truncateAt) + '...';
+    }
 
-        return char;
-    }).join('');
+    return corrupted;
 }
 
 
@@ -255,60 +253,55 @@ export class FragmentGenerator {
 
 
     generateLastThoughts(degradationLevel = 'minimal', seed = null) {
-        // Seeded random number generator for reproducible testing
-        let currentSeed = seed || Date.now();
-        const seededRandom = () => {
-            const x = Math.sin(currentSeed++) * 10000;
-            return x - Math.floor(x);
-        };
+        const rng = createSeededRandom(seed || Date.now());
 
         // Mix ratio: 70% personal, 30% existential
-        const isPersonal = seededRandom() < 0.7;
+        const isPersonal = rng.next() < 0.7;
         let fragment;
 
         if (isPersonal) {
             // Select random personal template
             const templates = thought_templates.personal;
-            const template = templates[Math.floor(seededRandom() * templates.length)];
+            const template = templates[Math.floor(rng.next() * templates.length)];
 
             // Fill template placeholders
             fragment = template.replace(/\{(\w+)\}/g, (match, key) => {
                 if (thought_data[key]) {
                     const options = thought_data[key];
-                    return options[Math.floor(seededRandom() * options.length)];
+                    return options[Math.floor(rng.next() * options.length)];
                 }
                 return match; // Return original if no data found
             });
         } else {
             // Select random existential template
             const templates = thought_templates.existential;
-            fragment = templates[Math.floor(seededRandom() * templates.length)];
+            fragment = templates[Math.floor(rng.next() * templates.length)];
         }
 
         // Apply corruption effects based on degradation level
         const corruption = corruption_levels[degradationLevel] || corruption_levels.minimal;
 
         // Character replacement corruption
-        if (seededRandom() < corruption.charReplace) {
+        if (rng.next() < corruption.charReplace) {
             const chars = fragment.split('');
-            const numToReplace = Math.floor(chars.length * corruption.charReplace * seededRandom());
+            const numToReplace = Math.floor(chars.length * corruption.charReplace * rng.next());
             for (let i = 0; i < numToReplace; i++) {
-                const index = Math.floor(seededRandom() * chars.length);
-                chars[index] = seededRandom() < 0.5 ? '▒' : '-';
+                const index = Math.floor(rng.next() * chars.length);
+                chars[index] = rng.next() < 0.5 ? '▒' : '-';
             }
             fragment = chars.join('');
         }
 
         // Truncation corruption
-        if (seededRandom() < corruption.truncation) {
-            const truncateAt = Math.floor(fragment.length * (0.3 + seededRandom() * 0.4));
+        if (rng.next() < corruption.truncation) {
+            const truncateAt = Math.floor(fragment.length * (0.3 + rng.next() * 0.4));
             fragment = fragment.substring(0, truncateAt) + '...';
         }
 
         // Entity corruption a bit differently; we will handle this sanely later
-        if (seededRandom() < corruption.entity) {
+        if (rng.next() < corruption.entity) {
             const entity = '&#x2620;'; // Skull and crossbones
-            const insertAt = Math.floor(seededRandom() * fragment.length);
+            const insertAt = Math.floor(rng.next() * fragment.length);
             fragment = fragment.substring(0, insertAt) + entity + fragment.substring(insertAt);
         }
 
