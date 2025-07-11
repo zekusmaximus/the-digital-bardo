@@ -4,7 +4,8 @@ import { initializeDataGuardian } from '../security/data-flow-guardian.js';
 
 // Define the comprehensive shape of our application's state
 const STATE_SCHEMA = {
-    phase: 'clear-lode' | 'datascape' | 'incarnation', // Current Bardo
+    // Current Bardo – initial value will be updated as the journey progresses
+    phase: 'clear-lode',
     clearLode: {
         lightManifested: false,
         recognitionActive: false,

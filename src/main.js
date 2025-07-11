@@ -1,6 +1,5 @@
-// Test if JavaScript is working at all
+/* Bootstrap check */
 console.log('[Main] JavaScript is loading!');
-alert('JavaScript is working!');
 
 // Import CSS - Vite will bundle it
 import './styles/reality.css';

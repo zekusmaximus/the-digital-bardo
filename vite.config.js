@@ -51,18 +51,11 @@ export default defineConfig({
     }
   },
   server: {
-    port: 8888,
-    // Add rewrites to direct all paths to the root index.html for SPA routing
-    rewrites: [
-      { from: /^\/$/, to: '/index.html' },
-      { from: /^\/void\/$/, to: '/void/index.html' },
-      { from: /^\/clear-lode\/$/, to: '/clear-lode/index.html' },
-      { from: /^\/datascape\/$/, to: '/datascape/index.html' },
-      { from: /^\/incarnation\/$/, to: '/incarnation/index.html' },
-      { from: /^\/limbo\/$/, to: '/limbo/index.html' }
-    ]
+    port: 8888
   },
   // Ensure audio worklets are copied to dist
   publicDir: 'public',
-  plugins: [cspNoncePlugin()]
+  // Disable the CSP-nonce plugin during local development so scripts can execute.
+  // Re-enable or tighten CSP in production builds as needed.
+  plugins: []
 });

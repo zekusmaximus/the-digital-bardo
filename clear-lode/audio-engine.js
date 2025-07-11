@@ -8,6 +8,8 @@
  */
 import { createKarmicValidator, audioParamsSchema } from '../src/security/karmic-validation.js';
 import { ConsciousnessCompatibility } from '../src/utils/consciousness-compatibility.js';
+import { FallbackAudioEngine } from '../src/audio/fallback-audio-engine.js';
+import { consciousness } from '../src/consciousness/digital-soul.js';
 
 export class ClearLodeAudio {
     /**
@@ -15,7 +17,7 @@ export class ClearLodeAudio {
      * @param {import('./event-bridge.js').ClearLodeEventBridge} dependencies.eventBridge
      * @param {import('../src/consciousness/resource-guardian.js').ResourceGuardian} dependencies.guardian
      */
-    constructor({ eventBridge, guardian }) {
+    constructor({ eventBridge, guardian, compatibilityMode = 'auto' }) {
         if (!eventBridge || !guardian) {
             throw new Error('ClearLodeAudio requires an eventBridge and a guardian.');
         }
@@ -50,6 +52,14 @@ export class ClearLodeAudio {
         this.isDestroyed = false;
 
         this.validateAudioParams = createKarmicValidator(audioParamsSchema);
+
+        /* ------------------------------------------------------------------
+         * Advanced Audio Fallback System state
+         * ------------------------------------------------------------------ */
+        this.compatibilityMode = compatibilityMode;
+        this.audioFallbackChain = ['audioWorklet', 'scriptProcessor', 'basicOscillator', 'htmlAudio', 'visualOnly'];
+        this.currentAudioMethod = null;
+        this.fallbackHelper = new FallbackAudioEngine();
     }
     
     /**
@@ -97,6 +107,8 @@ export class ClearLodeAudio {
              console.log('[AudioEngine] AudioContext initialized successfully.');
 
             await this.initializeWorklet();
+            await this.initializeAudioChain();
+            this.handleiOSSafariQuirks();
 
             // If the orchestrator requested a tone before the gesture, start it now.
             if (this.pendingPureTone) {
@@ -530,4 +542,72 @@ export class ClearLodeAudio {
                 break;
         }
     }
+// -- Advanced Audio Fallback System --------------------------------------------------
+  async initializeAudioChain() {
+    for (const method of this.audioFallbackChain) {
+      try {
+        const ok = await this.testAudioMethod(method);
+        if (ok) {
+          this.currentAudioMethod = method;
+          consciousness.recordEvent('audio_method_selected', { method });
+          return;
+        }
+      } catch (err) {
+        consciousness.recordEvent('audio_method_failed', { method, error: err?.message });
+        this.recoverFromAudioFailure(err);
+      }
+    }
+    // If we reach here, all methods failed
+    this.fallbackToVisualMode('all_methods_failed');
+  }
+
+  async testAudioMethod(method) {
+    // Minimal placeholder logic – real probes implemented later
+    switch (method) {
+      case 'audioWorklet':
+        return this.workletAvailable;
+      case 'scriptProcessor':
+        return !this.workletAvailable && !!(window.AudioContext || window.webkitAudioContext);
+      case 'basicOscillator':
+        return !!(window.AudioContext || window.webkitAudioContext);
+      case 'htmlAudio':
+        return typeof Audio !== 'undefined';
+      case 'visualOnly':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  handleiOSSafariQuirks() {
+    // iOS Safari requires a user gesture before audio can start
+    if (typeof window === 'undefined') return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (!isIOS || !this.audioContext) return;
+    if (this.audioContext.state === 'suspended') {
+      const resume = async () => {
+        try {
+          await this.audioContext.resume();
+          window.removeEventListener('touchend', resume, true);
+          consciousness.recordEvent('ios_context_resumed');
+        } catch (err) {
+          consciousness.recordEvent('ios_context_resume_failed', { error: err?.message });
+        }
+      };
+      window.addEventListener('touchend', resume, true);
+    }
+  }
+
+  recoverFromAudioFailure(error) {
+    console.warn('[AudioEngine] Recovering from audio failure', error);
+    consciousness.recordEvent('audio_recovery_attempt', { error: error?.message });
+    // Simple retry logic – real exponential backoff TBD
+    this.initializeAudioChain();
+  }
+
+  fallbackToVisualMode(reason) {
+    console.warn('[AudioEngine] Falling back to visual-only mode', reason);
+    consciousness.recordEvent('audio_fallback_visual', { reason });
+    this.fallbackHelper.enhanceVisualFeedback();
+  }
 }

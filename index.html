@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Override overly strict CSP that blocks inline & module scripts when served locally -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <title>Loading Consciousness...</title>
     <meta name="description" content="A digital journey through the space between death and rebirth">
     <meta name="terms" content="By manifesting in this digital space, you accept the karmic consequences">
@@ -13,7 +15,21 @@
             <span class="cursor">█</span>
         </div>
     </div>
+<!-- Diagnostic inline script: logs immediately and surfaces early errors -->
+<script>
+  console.log('[Diagnostic] Inline script executed at', new Date().toISOString());
 
+  /* Expose any early errors that prevent JS from running */
+  window.addEventListener('error', (e) => {
+    const msg = '[Early-Error] ' + (e.message || e.type) +
+                (e.filename ? ' @ ' + e.filename + ':' + e.lineno : '');
+    /* eslint-disable no-alert */
+    alert(msg);
+    console.error(msg, e);
+  });
+</script>
+
+    <!-- Load Vite entry (absolute path expected by dev server) -->
     <script type="module" src="/src/main.js"></script>
 </body>
 </html>
