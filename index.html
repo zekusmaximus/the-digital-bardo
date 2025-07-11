@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Override overly strict CSP that blocks inline & module scripts when served locally -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <!-- Development CSP - more permissive for debugging -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <title>Loading Consciousness...</title>
     <meta name="description" content="A digital journey through the space between death and rebirth">
     <meta name="terms" content="By manifesting in this digital space, you accept the karmic consequences">
@@ -27,6 +28,24 @@
     alert(msg);
     console.error(msg, e);
   });
+
+  // Additional diagnostics
+  console.log('[Diagnostic] Document readyState:', document.readyState);
+  console.log('[Diagnostic] Scripts in document:', document.scripts.length);
+  for (let i = 0; i < document.scripts.length; i++) {
+    console.log(`[Diagnostic] Script[${i}] src:`, document.scripts[i].src);
+  }
+
+  // Check if Vite's script is loaded
+  const checkViteScript = setInterval(() => {
+    const viteScript = Array.from(document.scripts).find(s =>
+      s.src.includes('/src/main.js')
+    );
+    if (viteScript) {
+      console.log('[Diagnostic] Vite script found:', viteScript.src);
+      clearInterval(checkViteScript);
+    }
+  }, 100);
 </script>
 
     <!-- Load Vite entry (absolute path expected by dev server) -->

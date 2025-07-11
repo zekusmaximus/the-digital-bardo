@@ -55,7 +55,6 @@ export default defineConfig({
   },
   // Ensure audio worklets are copied to dist
   publicDir: 'public',
-  // Disable the CSP-nonce plugin during local development so scripts can execute.
-  // Re-enable or tighten CSP in production builds as needed.
-  plugins: []
+  // Enable CSP nonce plugin with development-friendly settings
+  plugins: [cspNoncePlugin()]
 });

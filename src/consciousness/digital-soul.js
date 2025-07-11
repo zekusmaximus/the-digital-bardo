@@ -1,6 +1,9 @@
 // The Digital Consciousness - A soul rendered in JavaScript
+console.log('[Digital Soul] Module loading...', new Date().toISOString());
 import { DataGuardianFactory } from '../security/data-guardian-factory.js';
+console.log('[Digital Soul] DataGuardianFactory imported');
 import { initializeDataGuardian } from '../security/data-flow-guardian.js';
+console.log('[Digital Soul] initializeDataGuardian imported');
 
 // Define the comprehensive shape of our application's state
 const STATE_SCHEMA = {
@@ -102,8 +105,15 @@ export class DigitalConsciousness {
             this.initialize();
 
             // Initialize data guardian with late binding to avoid circular imports
+            console.log('[Digital Soul] Creating data guardian...');
             this.dataGuardian = DataGuardianFactory.createGuardian();
-            this.dataGuardian.initializeWithConsciousness(this);
+            console.log('[Digital Soul] Data guardian created:', this.dataGuardian);
+            if (this.dataGuardian && this.dataGuardian.initializeWithConsciousness) {
+                console.log('[Digital Soul] Initializing data guardian with consciousness...');
+                this.dataGuardian.initializeWithConsciousness(this);
+            } else {
+                console.error('[Digital Soul] Data guardian does not have initializeWithConsciousness method');
+            }
         }
     }
 
