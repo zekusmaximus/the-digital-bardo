@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2 Daemon Mechanics - Browser Validation Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .test-section {
+            border: 1px solid #333;
+            margin: 20px 0;
+            padding: 15px;
+            background: #111;
+        }
+        
+        .test-result {
+            margin: 10px 0;
+            padding: 5px;
+        }
+        
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffff00; }
+        .info { color: #00ffff; }
+        
+        .memory-display {
+            border: 1px solid #444;
+            padding: 10px;
+            margin: 10px 0;
+            background: #222;
+        }
+        
+        .attachment-meter {
+            border: 2px solid #666;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .attachment-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border: 1px solid #666;
+            position: relative;
+            margin: 10px 0;
+        }
+        
+        .attachment-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.5s ease;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #666;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button:hover {
+            background: #444;
+        }
+        
+        .interaction-log {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            padding: 10px;
+            background: #111;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 Phase 2 Daemon Mechanics - Browser Validation Test</h1>
+    <p>Testing the four JavaScript modules in a browser environment with full DOM support.</p>
+
+    <div class="test-section">
+        <h2>📊 System Status</h2>
+        <div id="system-status"></div>
+        <div id="attachment-visual"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 Interactive Controls</h2>
+        <div class="controls">
+            <button onclick="testDeprecatedFunction()">Try Deprecated Function</button>
+            <button onclick="accessRandomMemory()">Access Memory</button>
+            <button onclick="practiceAvoidance()">Practice Avoidance</button>
+            <button onclick="attemptLiberation()">Attempt Liberation</button>
+            <button onclick="resetSystem()">Reset System</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>💾 Memory Fragment Display</h2>
+        <div id="memory-display"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Interaction Log</h2>
+        <div id="interaction-log" class="interaction-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Automated Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script type="module">
+        // Import all modules
+        import { calculateReputationScore, getReputationClass } from './reputation-metrics.js';
+        import { MemoryFragments, MemoryInteractionHandler } from './memory-fragments.js';
+        import { DeprecatedFunctions, getAllDeprecatedFunctions } from './deprecated-functions.js';
+        import { ArchiveInteractionSystem } from './archive-interactions.js';
+
+        // Global system instance
+        let archiveSystem;
+        let testResults = [];
+
+        // Initialize system
+        function initializeSystem() {
+            archiveSystem = new ArchiveInteractionSystem();
+            updateSystemDisplay();
+            logInteraction('System initialized', 'info');
+        }
+
+        // Update system status display
+        function updateSystemDisplay() {
+            const status = archiveSystem.getSystemStatus();
+            
+            document.getElementById('system-status').innerHTML = `
+                <div class="test-result success">Attachment Score: ${Math.round(status.attachmentScore * 100) / 100}</div>
+                <div class="test-result info">Liberation Progress: ${Math.round(status.liberationProgress)}%</div>
+                <div class="test-result info">Reputation: ${status.reputation.classification}</div>
+                <div class="test-result info">Energy: ${status.consciousness.energy}%</div>
+                <div class="test-result ${status.liberationStatus === 'LIBERATION POSSIBLE' ? 'success' : 'warning'}">
+                    Status: ${status.liberationStatus}
+                </div>
+            `;
+            
+            // Update attachment visual
+            document.getElementById('attachment-visual').innerHTML = archiveSystem.createAttachmentVisual();
+        }
+
+        // Test deprecated function
+        window.testDeprecatedFunction = function() {
+            const functions = ['phoneCall', 'smallTalk', 'handwriting', 'deepConversation', 'mentalMath'];
+            const randomFunction = functions[Math.floor(Math.random() * functions.length)];
+            
+            const result = archiveSystem.runDeprecatedFunction(randomFunction);
+            
+            logInteraction(`Attempted ${randomFunction}: ${result.error}`, 'error');
+            logInteraction(`Attachment Impact: +${result.attachmentImpact}`, 'warning');
+            
+            updateSystemDisplay();
+        };
+
+        // Access random memory
+        window.accessRandomMemory = function() {
+            const memoryIds = ['first_login', 'digital_pet_death', 'last_physical_letter', 'relationship_status_change', 'final_text_message', 'first_email_signature', 'first_online_purchase'];
+            const randomMemoryId = memoryIds[Math.floor(Math.random() * memoryIds.length)];
+            
+            const result = archiveSystem.memoryHandler.accessMemory(randomMemoryId);
+            
+            if (result.success) {
+                document.getElementById('memory-display').innerHTML = `
+                    <div class="memory-display">
+                        <h3>Memory: ${randomMemoryId}</h3>
+                        <div>View Count: ${result.viewCount}</div>
+                        <div>Corruption Level: ${Math.round(result.memory.corruptionLevel * 100)}%</div>
+                        <div>Emotional Weight: ${Math.round(result.memory.emotionalWeight * 100)}%</div>
+                        ${result.corruptionWarning ? `<div class="error">${result.corruptionWarning}</div>` : ''}
+                        <div class="memory-content">${result.memory.content}</div>
+                    </div>
+                `;
+                
+                logInteraction(`Accessed memory: ${randomMemoryId} (View #${result.viewCount})`, 'info');
+                if (result.corruptionWarning) {
+                    logInteraction(result.corruptionWarning, 'warning');
+                }
+            } else {
+                logInteraction(`Failed to access memory: ${result.error}`, 'error');
+            }
+            
+            updateSystemDisplay();
+        };
+
+        // Practice avoidance
+        window.practiceAvoidance = function() {
+            const avoidanceTypes = ['aversionBonus', 'swiftPassage', 'massRelease'];
+            const randomType = avoidanceTypes[Math.floor(Math.random() * avoidanceTypes.length)];
+            
+            const context = {
+                temptationLevel: Math.random() * 2,
+                speedMultiplier: Math.random() * 2,
+                releaseCount: Math.floor(Math.random() * 5) + 1
+            };
+            
+            const result = archiveSystem.implementAvoidanceMechanics(randomType, context);
+            
+            logInteraction(`${randomType}: ${result.message}`, 'success');
+            updateSystemDisplay();
+        };
+
+        // Attempt liberation
+        window.attemptLiberation = function() {
+            const result = archiveSystem.attemptLiberation();
+            
+            if (result.success) {
+                logInteraction(`🕊️ LIBERATION SUCCESS: ${result.message}`, 'success');
+                logInteraction(`Transcendence Level: ${result.transcendenceLevel}`, 'success');
+            } else {
+                logInteraction(`Liberation failed: ${result.message}`, 'warning');
+                logInteraction(`Probability was: ${result.liberationProbability}%`, 'info');
+            }
+            
+            updateSystemDisplay();
+        };
+
+        // Reset system
+        window.resetSystem = function() {
+            initializeSystem();
+            document.getElementById('memory-display').innerHTML = '<p>No memory accessed yet.</p>';
+            logInteraction('System reset', 'info');
+        };
+
+        // Log interaction
+        function logInteraction(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `test-result ${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            
+            const logContainer = document.getElementById('interaction-log');
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Run automated tests
+        function runAutomatedTests() {
+            const results = [];
+            
+            // Test 1: Visual corruption effects
+            try {
+                archiveSystem.attachmentScore = 200; // High attachment
+                archiveSystem.updateGlobalState();
+                
+                const body = document.body;
+                const hasHighAttachmentClass = body.classList.contains('attachment-high');
+                
+                results.push({
+                    test: 'Visual Corruption Effects',
+                    passed: hasHighAttachmentClass,
+                    message: hasHighAttachmentClass ? 'High attachment visual effects applied' : 'Visual effects not applied'
+                });
+                
+                // Reset for next test
+                archiveSystem.attachmentScore = 50;
+                archiveSystem.updateGlobalState();
+            } catch (error) {
+                results.push({
+                    test: 'Visual Corruption Effects',
+                    passed: false,
+                    message: `Error: ${error.message}`
+                });
+            }
+
+            // Test 2: Memory corruption with DOM
+            try {
+                const memoryHandler = new MemoryInteractionHandler({ attachmentScore: 0 });
+                const testMemory = {
+                    content: '<div><p>Test memory content</p></div>',
+                    corruptionLevel: 0.8,
+                    emotionalWeight: 0.5
+                };
+                
+                const corruptedContent = memoryHandler.corruptText(testMemory.content, testMemory.corruptionLevel);
+                const hasCorruption = corruptedContent.includes('█');
+                
+                results.push({
+                    test: 'Memory Corruption with DOM',
+                    passed: hasCorruption,
+                    message: hasCorruption ? 'Memory corruption working correctly' : 'Memory corruption not working'
+                });
+            } catch (error) {
+                results.push({
+                    test: 'Memory Corruption with DOM',
+                    passed: false,
+                    message: `Error: ${error.message}`
+                });
+            }
+
+            // Test 3: Attachment visual generation
+            try {
+                const attachmentHTML = archiveSystem.createAttachmentVisual();
+                const hasAttachmentMeter = attachmentHTML.includes('attachment-meter');
+                
+                results.push({
+                    test: 'Attachment Visual Generation',
+                    passed: hasAttachmentMeter,
+                    message: hasAttachmentMeter ? 'Attachment visual generated correctly' : 'Attachment visual generation failed'
+                });
+            } catch (error) {
+                results.push({
+                    test: 'Attachment Visual Generation',
+                    passed: false,
+                    message: `Error: ${error.message}`
+                });
+            }
+
+            // Test 4: Style injection
+            try {
+                const styleElements = document.querySelectorAll('style');
+                const hasInjectedStyles = Array.from(styleElements).some(style => 
+                    style.textContent.includes('attachment-high') || 
+                    style.textContent.includes('digitalGlitch')
+                );
+                
+                results.push({
+                    test: 'Style Injection',
+                    passed: hasInjectedStyles,
+                    message: hasInjectedStyles ? 'Styles injected correctly' : 'Style injection failed'
+                });
+            } catch (error) {
+                results.push({
+                    test: 'Style Injection',
+                    passed: false,
+                    message: `Error: ${error.message}`
+                });
+            }
+
+            // Display results
+            const resultsContainer = document.getElementById('test-results');
+            const passedTests = results.filter(r => r.passed).length;
+            const totalTests = results.length;
+            
+            resultsContainer.innerHTML = `
+                <div class="test-result info">Automated Tests: ${passedTests}/${totalTests} passed</div>
+                ${results.map(result => `
+                    <div class="test-result ${result.passed ? 'success' : 'error'}">
+                        ${result.passed ? '✅' : '❌'} ${result.test}: ${result.message}
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSystem();
+            runAutomatedTests();
+            
+            logInteraction('Phase 2 Daemon Mechanics browser test initialized', 'success');
+            logInteraction('All four modules loaded successfully', 'success');
+            logInteraction('DOM-dependent functionality ready for testing', 'info');
+        });
+    </script>
+</body>
+</html>
