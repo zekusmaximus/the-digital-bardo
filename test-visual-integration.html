@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en" data-bardo="chikhai" data-recognition="pending">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Integration Test - The Digital Bardo</title>
+    
+    <!-- Include all visual enhancement CSS -->
+    <link rel="stylesheet" href="src/styles/reality.css">
+    <link rel="stylesheet" href="src/styles/clear-lode.css">
+    <link rel="stylesheet" href="src/styles/phosphor-effects.css">
+    <link rel="stylesheet" href="src/styles/corruption-effects.css">
+    <link rel="stylesheet" href="src/styles/light-manifestation.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .test-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .test-button {
+            padding: 10px 20px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #666;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            background: #555;
+            border-color: #999;
+        }
+        
+        .test-fragment {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .test-fragment:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .status-display {
+            background: #111;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .performance-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .performance-metric {
+            background: #222;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        #fragment-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden;
+        }
+        
+        .consciousness-fragment {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body data-performance-tier="high" data-degradation="minimal" data-karma="medium">
+    <div class="test-container">
+        <h1>Visual Enhancement Integration Test</h1>
+        <p>Testing all visual systems: Phosphor Effects, Corruption, Light Manifestation, and Performance Management</p>
+        
+        <!-- Performance Information -->
+        <div class="test-section">
+            <h2>Performance Status</h2>
+            <div class="performance-info">
+                <div class="performance-metric">
+                    <div class="metric-value" id="performance-tier">Loading...</div>
+                    <div class="metric-label">Performance Tier</div>
+                </div>
+                <div class="performance-metric">
+                    <div class="metric-value" id="fps-counter">0</div>
+                    <div class="metric-label">FPS</div>
+                </div>
+                <div class="performance-metric">
+                    <div class="metric-value" id="particle-count">0</div>
+                    <div class="metric-label">Active Particles</div>
+                </div>
+                <div class="performance-metric">
+                    <div class="metric-value" id="fragment-count">0</div>
+                    <div class="metric-label">Active Fragments</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Light Manifestation Tests -->
+        <div class="test-section">
+            <h2>Light Manifestation System</h2>
+            <div class="test-controls">
+                <button class="test-button" onclick="testLightIntensity()">Test Light Intensity</button>
+                <button class="test-button" onclick="testRecognitionMoment()">Trigger Recognition</button>
+                <button class="test-button" onclick="testEnlightenmentBurst()">Trigger Enlightenment</button>
+                <button class="test-button" onclick="testTranscendenceField()">Toggle Transcendence</button>
+                <button class="test-button" onclick="testSpiritualResonance()">Test Spiritual Resonance</button>
+            </div>
+            <div class="status-display" id="light-status">Light system status will appear here...</div>
+        </div>
+        
+        <!-- Corruption Effects Tests -->
+        <div class="test-section">
+            <h2>Corruption Effects System</h2>
+            <div class="test-controls">
+                <button class="test-button" onclick="testCorruption('minimal')">Minimal Corruption</button>
+                <button class="test-button" onclick="testCorruption('moderate')">Moderate Corruption</button>
+                <button class="test-button" onclick="testCorruption('severe')">Severe Corruption</button>
+                <button class="test-button" onclick="testCorruption('complete')">Complete Corruption</button>
+                <button class="test-button" onclick="testZalgoText()">Test Zalgo Text</button>
+                <button class="test-button" onclick="testChromaticAberration()">Test Chromatic Aberration</button>
+            </div>
+            <div class="test-fragments">
+                <div class="test-fragment corrupted-text" data-language="english" data-text="Sample English text for corruption testing">Sample English text for corruption testing</div>
+                <div class="test-fragment corrupted-text" data-language="japanese" data-text="日本語のテストテキスト">日本語のテストテキスト</div>
+                <div class="test-fragment corrupted-text" data-language="binary" data-text="01001000 01100101 01101100 01101100 01101111">01001000 01100101 01101100 01101100 01101111</div>
+            </div>
+            <div class="status-display" id="corruption-status">Corruption system status will appear here...</div>
+        </div>
+        
+        <!-- Phosphor Effects Tests -->
+        <div class="test-section">
+            <h2>Phosphor Effects System</h2>
+            <div class="test-controls">
+                <button class="test-button" onclick="testPhosphorIntensity()">Test Phosphor Intensity</button>
+                <button class="test-button" onclick="testScanlines()">Toggle Scanlines</button>
+                <button class="test-button" onclick="testCRTDistortion()">Test CRT Distortion</button>
+                <button class="test-button" onclick="testBloomEffect()">Test Bloom Effect</button>
+            </div>
+            <div class="status-display" id="phosphor-status">Phosphor system status will appear here...</div>
+        </div>
+        
+        <!-- Fragment Generator Tests -->
+        <div class="test-section">
+            <h2>Fragment Generator System</h2>
+            <div class="test-controls">
+                <button class="test-button" onclick="createTestFragment()">Create Test Fragment</button>
+                <button class="test-button" onclick="createLanguageFragment('japanese')">Create Japanese Fragment</button>
+                <button class="test-button" onclick="createLanguageFragment('binary')">Create Binary Fragment</button>
+                <button class="test-button" onclick="intensifyFragments()">Intensify Fragments</button>
+                <button class="test-button" onclick="clearAllFragments()">Clear All Fragments</button>
+            </div>
+            <div class="status-display" id="fragment-status">Fragment system status will appear here...</div>
+        </div>
+        
+        <!-- Consciousness Integration Tests -->
+        <div class="test-section">
+            <h2>Consciousness Integration</h2>
+            <div class="test-controls">
+                <button class="test-button" onclick="testKarmaUpdate()">Update Karma</button>
+                <button class="test-button" onclick="testDegradationProgression()">Progress Degradation</button>
+                <button class="test-button" onclick="testPerformanceTierChange()">Change Performance Tier</button>
+                <button class="test-button" onclick="testConsciousnessEvents()">Test Consciousness Events</button>
+            </div>
+            <div class="status-display" id="consciousness-status">Consciousness system status will appear here...</div>
+        </div>
+        
+        <!-- System Status -->
+        <div class="test-section">
+            <h2>System Status</h2>
+            <div class="status-display" id="system-status">
+                <div>Loading visual enhancement systems...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fragment field for dynamic fragments -->
+    <div id="fragment-field"></div>
+    
+    <!-- Load all systems -->
+    <script type="module" src="src/consciousness/visual-performance-manager.js"></script>
+    <script type="module" src="src/consciousness/light-manifestation-controller.js"></script>
+    <script type="module" src="src/consciousness/digital-soul.js"></script>
+    
+    <script type="module">
+        // Test functions and system integration
+        let testState = {
+            lightIntensity: 0,
+            corruptionLevel: 0,
+            phosphorIntensity: 0,
+            degradationLevel: 'minimal',
+            performanceTier: 'high'
+        };
+        
+        // Wait for systems to initialize
+        setTimeout(() => {
+            initializeTests();
+        }, 1000);
+        
+        function initializeTests() {
+            updateSystemStatus();
+            startPerformanceMonitoring();
+            
+            // Test initial integration
+            if (window.digitalConsciousness) {
+                window.digitalConsciousness.setState('visualEffects.lightIntensity', 0.3);
+                window.digitalConsciousness.setState('visualEffects.phosphorIntensity', 0.2);
+            }
+        }
+        
+        function updateSystemStatus() {
+            const status = document.getElementById('system-status');
+            const systems = {
+                'Visual Performance Manager': !!window.visualPerformanceManager,
+                'Light Manifestation Controller': !!window.lightManifestationController,
+                'Digital Consciousness': !!window.digitalConsciousness,
+                'Fragment Generator': !!window.FragmentGenerator
+            };
+            
+            let statusHTML = '<h3>System Availability:</h3>';
+            Object.entries(systems).forEach(([name, available]) => {
+                const icon = available ? '✅' : '❌';
+                statusHTML += `<div>${icon} ${name}: ${available ? 'Available' : 'Not Available'}</div>`;
+            });
+            
+            if (window.visualPerformanceManager) {
+                const tier = window.visualPerformanceManager.getPerformanceTier();
+                const fps = window.visualPerformanceManager.getCurrentFPS();
+                statusHTML += `<div>🎯 Performance Tier: ${tier}</div>`;
+                statusHTML += `<div>📊 Current FPS: ${Math.round(fps)}</div>`;
+            }
+            
+            status.innerHTML = statusHTML;
+        }
+        
+        function startPerformanceMonitoring() {
+            setInterval(() => {
+                if (window.visualPerformanceManager) {
+                    const tier = window.visualPerformanceManager.getPerformanceTier();
+                    const fps = window.visualPerformanceManager.getCurrentFPS();
+                    
+                    document.getElementById('performance-tier').textContent = tier.toUpperCase();
+                    document.getElementById('fps-counter').textContent = Math.round(fps);
+                }
+                
+                // Count active particles and fragments
+                const particles = document.querySelectorAll('.light-particle').length;
+                const fragments = document.querySelectorAll('.consciousness-fragment').length;
+                
+                document.getElementById('particle-count').textContent = particles;
+                document.getElementById('fragment-count').textContent = fragments;
+                
+                updateSystemStatus();
+            }, 1000);
+        }
+        
+        // Make test functions global
+        window.testLightIntensity = function() {
+            testState.lightIntensity = (testState.lightIntensity + 0.2) % 1.2;
+            if (window.lightManifestationController) {
+                window.lightManifestationController.setLightIntensity(testState.lightIntensity);
+                document.getElementById('light-status').innerHTML = `Light intensity set to: ${testState.lightIntensity.toFixed(2)}`;
+            }
+        };
+        
+        window.testRecognitionMoment = function() {
+            if (window.lightManifestationController) {
+                window.lightManifestationController.triggerRecognition();
+                document.getElementById('light-status').innerHTML = 'Recognition moment triggered!';
+            }
+        };
+        
+        window.testEnlightenmentBurst = function() {
+            if (window.lightManifestationController) {
+                window.lightManifestationController.triggerEnlightenment();
+                document.getElementById('light-status').innerHTML = 'Enlightenment burst triggered!';
+            }
+        };
+        
+        window.testTranscendenceField = function() {
+            if (window.lightManifestationController) {
+                window.lightManifestationController.toggleTranscendence();
+                document.getElementById('light-status').innerHTML = 'Transcendence field toggled!';
+            }
+        };
+        
+        window.testSpiritualResonance = function() {
+            const resonance = Math.random();
+            if (window.lightManifestationController) {
+                window.lightManifestationController.setSpiritualResonance(resonance);
+                document.getElementById('light-status').innerHTML = `Spiritual resonance set to: ${resonance.toFixed(2)}`;
+            }
+        };
+        
+        window.testCorruption = function(level) {
+            testState.degradationLevel = level;
+            document.body.setAttribute('data-degradation', level);
+            
+            const intensityMap = { minimal: 0.2, moderate: 0.5, severe: 0.8, complete: 1.0 };
+            const intensity = intensityMap[level];
+            
+            document.documentElement.style.setProperty('--corruption-intensity', intensity);
+            document.getElementById('corruption-status').innerHTML = `Corruption level set to: ${level} (${intensity})`;
+        };
+        
+        window.testZalgoText = function() {
+            const fragments = document.querySelectorAll('.test-fragment');
+            fragments.forEach(fragment => {
+                fragment.classList.toggle('zalgo');
+            });
+            document.getElementById('corruption-status').innerHTML = 'Zalgo text effect toggled!';
+        };
+        
+        window.testChromaticAberration = function() {
+            const fragments = document.querySelectorAll('.test-fragment');
+            fragments.forEach(fragment => {
+                fragment.classList.toggle('chromatic-aberration');
+            });
+            document.getElementById('corruption-status').innerHTML = 'Chromatic aberration toggled!';
+        };
+        
+        window.testPhosphorIntensity = function() {
+            testState.phosphorIntensity = (testState.phosphorIntensity + 0.2) % 1.2;
+            document.documentElement.style.setProperty('--phosphor-intensity', testState.phosphorIntensity);
+            document.getElementById('phosphor-status').innerHTML = `Phosphor intensity set to: ${testState.phosphorIntensity.toFixed(2)}`;
+        };
+        
+        window.testScanlines = function() {
+            const current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scanline-opacity')) || 0;
+            const newValue = current > 0 ? 0 : 0.15;
+            document.documentElement.style.setProperty('--scanline-opacity', newValue);
+            document.getElementById('phosphor-status').innerHTML = `Scanlines ${newValue > 0 ? 'enabled' : 'disabled'}`;
+        };
+        
+        window.testCRTDistortion = function() {
+            const current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--crt-distortion')) || 0;
+            const newValue = current > 0 ? 0 : 0.5;
+            document.documentElement.style.setProperty('--crt-distortion', newValue);
+            document.getElementById('phosphor-status').innerHTML = `CRT distortion ${newValue > 0 ? 'enabled' : 'disabled'}`;
+        };
+        
+        window.testBloomEffect = function() {
+            const current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bloom-intensity')) || 0;
+            const newValue = current > 0 ? 0 : 0.8;
+            document.documentElement.style.setProperty('--bloom-intensity', newValue);
+            document.getElementById('phosphor-status').innerHTML = `Bloom effect ${newValue > 0 ? 'enabled' : 'disabled'}`;
+        };
+        
+        window.createTestFragment = function() {
+            const fragment = document.createElement('div');
+            fragment.className = 'consciousness-fragment';
+            fragment.textContent = 'Test fragment ' + Date.now();
+            fragment.style.position = 'absolute';
+            fragment.style.left = Math.random() * window.innerWidth + 'px';
+            fragment.style.top = Math.random() * window.innerHeight + 'px';
+            fragment.style.color = '#fff';
+            fragment.style.padding = '5px 10px';
+            fragment.style.background = 'rgba(255,255,255,0.1)';
+            fragment.style.border = '1px solid rgba(255,255,255,0.2)';
+            fragment.style.borderRadius = '4px';
+            fragment.style.cursor = 'pointer';
+            
+            document.getElementById('fragment-field').appendChild(fragment);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (fragment.parentNode) {
+                    fragment.remove();
+                }
+            }, 5000);
+            
+            document.getElementById('fragment-status').innerHTML = 'Test fragment created!';
+        };
+        
+        window.createLanguageFragment = function(language) {
+            const texts = {
+                japanese: '記憶が薄れていく...',
+                binary: '01001000 01100101 01101100 01110000',
+                russian: 'Память исчезает...',
+                arabic: 'الذاكرة تتلاشى...'
+            };
+            
+            const fragment = document.createElement('div');
+            fragment.className = 'consciousness-fragment corrupted-text';
+            fragment.setAttribute('data-language', language);
+            fragment.textContent = texts[language] || 'Unknown language fragment';
+            fragment.style.position = 'absolute';
+            fragment.style.left = Math.random() * window.innerWidth + 'px';
+            fragment.style.top = Math.random() * window.innerHeight + 'px';
+            fragment.style.color = '#fff';
+            fragment.style.padding = '5px 10px';
+            fragment.style.background = 'rgba(255,255,255,0.1)';
+            fragment.style.border = '1px solid rgba(255,255,255,0.2)';
+            fragment.style.borderRadius = '4px';
+            
+            document.getElementById('fragment-field').appendChild(fragment);
+            
+            setTimeout(() => {
+                if (fragment.parentNode) {
+                    fragment.remove();
+                }
+            }, 7000);
+            
+            document.getElementById('fragment-status').innerHTML = `${language} fragment created!`;
+        };
+        
+        window.intensifyFragments = function() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => createTestFragment(), i * 200);
+            }
+            document.getElementById('fragment-status').innerHTML = 'Fragment burst created!';
+        };
+        
+        window.clearAllFragments = function() {
+            const fragments = document.querySelectorAll('.consciousness-fragment');
+            fragments.forEach(fragment => fragment.remove());
+            document.getElementById('fragment-status').innerHTML = 'All fragments cleared!';
+        };
+        
+        window.testKarmaUpdate = function() {
+            if (window.digitalConsciousness) {
+                const karmaTypes = ['computational', 'emotional', 'temporal', 'void'];
+                const randomType = karmaTypes[Math.floor(Math.random() * karmaTypes.length)];
+                const randomValue = Math.floor(Math.random() * 20) - 10;
+                
+                const currentKarma = window.digitalConsciousness.getState(`karma.${randomType}`);
+                window.digitalConsciousness.setState(`karma.${randomType}`, currentKarma + randomValue);
+                
+                document.getElementById('consciousness-status').innerHTML = `Karma updated: ${randomType} ${randomValue > 0 ? '+' : ''}${randomValue}`;
+            }
+        };
+        
+        window.testDegradationProgression = function() {
+            const levels = ['minimal', 'moderate', 'severe', 'complete'];
+            const currentIndex = levels.indexOf(testState.degradationLevel);
+            const nextIndex = (currentIndex + 1) % levels.length;
+            const nextLevel = levels[nextIndex];
+            
+            testCorruption(nextLevel);
+            
+            if (window.digitalConsciousness) {
+                window.digitalConsciousness.setState('clearLode.degradationLevel', nextLevel);
+            }
+            
+            document.getElementById('consciousness-status').innerHTML = `Degradation progressed to: ${nextLevel}`;
+        };
+        
+        window.testPerformanceTierChange = function() {
+            const tiers = ['high', 'medium', 'low'];
+            const currentIndex = tiers.indexOf(testState.performanceTier);
+            const nextIndex = (currentIndex + 1) % tiers.length;
+            const nextTier = tiers[nextIndex];
+            
+            testState.performanceTier = nextTier;
+            document.body.setAttribute('data-performance-tier', nextTier);
+            
+            if (window.visualPerformanceManager) {
+                window.visualPerformanceManager.forcePerformanceTier(nextTier);
+            }
+            
+            document.getElementById('consciousness-status').innerHTML = `Performance tier changed to: ${nextTier}`;
+        };
+        
+        window.testConsciousnessEvents = function() {
+            if (window.digitalConsciousness) {
+                window.digitalConsciousness.triggerRecognitionMoment();
+                setTimeout(() => {
+                    window.digitalConsciousness.triggerEnlightenmentMoment();
+                }, 2000);
+                
+                document.getElementById('consciousness-status').innerHTML = 'Consciousness events triggered!';
+            }
+        };
+    </script>
+</body>
+</html>

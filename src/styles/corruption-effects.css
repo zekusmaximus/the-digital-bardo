@@ -1,0 +1,359 @@
+/* Corruption Effects - The Digital Bardo */
+/* Progressive degradation and glitch effects driven by consciousness state */
+
+:root {
+    /* Corruption Variables - State-driven */
+    --corruption-intensity: 0;
+    --zalgo-probability: 0;
+    --fragment-corruption: 0;
+    --text-stability: 1;
+    --glitch-displacement: 0px;
+    --chromatic-aberration: 0px;
+    --digital-noise: 0;
+    --reality-coherence: 1;
+    
+    /* Language-specific corruption settings */
+    --english-corruption: 0.3;
+    --japanese-corruption: 0.4;
+    --russian-corruption: 0.35;
+    --binary-corruption: 0.6;
+    --arabic-corruption: 0.45;
+}
+
+/* Base Corruption Classes */
+.corrupted-text {
+    position: relative;
+    display: inline-block;
+    will-change: transform, filter;
+}
+
+.corrupted-text.zalgo {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    text-shadow: 
+        1px 0 0 rgba(255, 0, 0, var(--corruption-intensity)),
+        -1px 0 0 rgba(0, 255, 255, var(--corruption-intensity)),
+        0 1px 0 rgba(0, 255, 0, var(--corruption-intensity));
+    animation: zalgo-flicker 0.1s infinite;
+}
+
+/* Fragment Corruption Levels */
+.consciousness-fragment.corrupted-minimal {
+    --fragment-corruption: 0.2;
+    filter: contrast(1.1) brightness(0.95);
+}
+
+.consciousness-fragment.corrupted-moderate {
+    --fragment-corruption: 0.5;
+    filter: contrast(1.3) brightness(0.8) hue-rotate(15deg);
+    animation: fragment-glitch 2s infinite;
+}
+
+.consciousness-fragment.corrupted-severe {
+    --fragment-corruption: 0.8;
+    filter: contrast(1.8) brightness(0.6) hue-rotate(45deg) saturate(1.5);
+    animation: fragment-chaos 1s infinite;
+}
+
+.consciousness-fragment.corrupted-complete {
+    --fragment-corruption: 1.0;
+    filter: contrast(3) brightness(0.3) hue-rotate(90deg) saturate(2) invert(0.2);
+    animation: fragment-dissolution 0.5s infinite;
+}
+
+/* Language-Specific Corruption Styles */
+.corrupted-text[data-language="english"] {
+    --corruption-chars: '▓▒░█';
+    font-family: 'Courier New', monospace;
+}
+
+.corrupted-text[data-language="japanese"] {
+    --corruption-chars: '◆◇◊○●';
+    font-family: 'MS Gothic', monospace;
+    writing-mode: horizontal-tb;
+}
+
+.corrupted-text[data-language="russian"] {
+    --corruption-chars: '█▄▀■□';
+    font-family: 'Consolas', monospace;
+}
+
+.corrupted-text[data-language="binary"] {
+    --corruption-chars: '01X';
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.2em;
+    color: #00ff00;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+.corrupted-text[data-language="arabic"] {
+    --corruption-chars: '◊○●∆';
+    font-family: 'Courier New', monospace;
+    direction: rtl;
+}
+
+/* Progressive Glitch Effects */
+@keyframes zalgo-flicker {
+    0%, 90%, 100% { 
+        transform: translate(0, 0) skew(0deg);
+        filter: none;
+    }
+    5% { 
+        transform: translate(calc(var(--corruption-intensity) * 2px), 0) skew(0.5deg);
+        filter: hue-rotate(90deg);
+    }
+    10% { 
+        transform: translate(0, calc(var(--corruption-intensity) * -1px)) skew(-0.3deg);
+        filter: hue-rotate(-45deg);
+    }
+    15% { 
+        transform: translate(calc(var(--corruption-intensity) * -1px), 0) skew(0.2deg);
+        filter: hue-rotate(180deg);
+    }
+}
+
+@keyframes fragment-glitch {
+    0%, 95%, 100% { 
+        transform: translate(0, 0);
+        opacity: var(--fragment-opacity);
+    }
+    2% { 
+        transform: translate(2px, 0);
+        opacity: calc(var(--fragment-opacity) * 0.8);
+    }
+    4% { 
+        transform: translate(-1px, 1px);
+        opacity: calc(var(--fragment-opacity) * 1.2);
+    }
+    6% { 
+        transform: translate(0, -1px);
+        opacity: var(--fragment-opacity);
+    }
+}
+
+@keyframes fragment-chaos {
+    0%, 85%, 100% { 
+        transform: translate(0, 0) scale(1);
+        filter: contrast(1.8) brightness(0.6);
+    }
+    5% { 
+        transform: translate(3px, -2px) scale(1.05);
+        filter: contrast(2.5) brightness(0.3) hue-rotate(90deg);
+    }
+    10% { 
+        transform: translate(-2px, 3px) scale(0.95);
+        filter: contrast(3) brightness(0.8) hue-rotate(-45deg);
+    }
+    15% { 
+        transform: translate(1px, -1px) scale(1.02);
+        filter: contrast(1.5) brightness(0.4) hue-rotate(180deg);
+    }
+}
+
+@keyframes fragment-dissolution {
+    0%, 70%, 100% { 
+        transform: translate(0, 0) scale(1);
+        opacity: calc(var(--fragment-opacity) * 0.3);
+        filter: contrast(3) brightness(0.3);
+    }
+    10% { 
+        transform: translate(5px, -3px) scale(1.1);
+        opacity: calc(var(--fragment-opacity) * 0.8);
+        filter: contrast(5) brightness(0.1) invert(0.5);
+    }
+    20% { 
+        transform: translate(-4px, 4px) scale(0.9);
+        opacity: calc(var(--fragment-opacity) * 0.1);
+        filter: contrast(8) brightness(0.05) invert(1);
+    }
+    30% { 
+        transform: translate(2px, -2px) scale(1.05);
+        opacity: calc(var(--fragment-opacity) * 0.6);
+        filter: contrast(2) brightness(0.2) invert(0.3);
+    }
+}
+
+/* Chromatic Aberration Effect */
+.chromatic-aberration {
+    position: relative;
+}
+
+.chromatic-aberration::before,
+.chromatic-aberration::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.chromatic-aberration::before {
+    color: rgba(255, 0, 0, 0.8);
+    transform: translateX(calc(var(--chromatic-aberration) * -1));
+    z-index: -1;
+}
+
+.chromatic-aberration::after {
+    color: rgba(0, 255, 255, 0.8);
+    transform: translateX(var(--chromatic-aberration));
+    z-index: -2;
+}
+
+/* Digital Noise Overlay */
+.digital-noise {
+    position: relative;
+    overflow: hidden;
+}
+
+.digital-noise::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 1px,
+            rgba(255, 255, 255, var(--digital-noise)) 1px,
+            rgba(255, 255, 255, var(--digital-noise)) 2px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 1px,
+            rgba(0, 0, 0, var(--digital-noise)) 1px,
+            rgba(0, 0, 0, var(--digital-noise)) 2px
+        );
+    animation: noise-scroll 0.1s infinite linear;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+
+@keyframes noise-scroll {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(2px, 2px); }
+}
+
+/* State-Based Corruption Triggers */
+body[data-degradation="minimal"] {
+    --corruption-intensity: 0.2;
+    --zalgo-probability: 0.1;
+    --chromatic-aberration: 1px;
+    --digital-noise: 0.05;
+}
+
+body[data-degradation="moderate"] {
+    --corruption-intensity: 0.5;
+    --zalgo-probability: 0.3;
+    --chromatic-aberration: 2px;
+    --digital-noise: 0.1;
+}
+
+body[data-degradation="severe"] {
+    --corruption-intensity: 0.8;
+    --zalgo-probability: 0.6;
+    --chromatic-aberration: 4px;
+    --digital-noise: 0.2;
+}
+
+body[data-degradation="complete"] {
+    --corruption-intensity: 1.0;
+    --zalgo-probability: 0.9;
+    --chromatic-aberration: 8px;
+    --digital-noise: 0.4;
+}
+
+/* Karma-Based Corruption */
+body[data-karma="void"] .corrupted-text {
+    animation-duration: 0.05s;
+    filter: invert(0.3) hue-rotate(180deg);
+}
+
+body[data-karma="high"] .corrupted-text {
+    animation-duration: 2s;
+    filter: brightness(1.2) contrast(0.8);
+}
+
+/* Recognition State Effects */
+body.recognized .corrupted-text {
+    animation: corruption-purification 2s ease-out forwards;
+}
+
+@keyframes corruption-purification {
+    0% {
+        filter: contrast(var(--corruption-intensity)) brightness(calc(1 - var(--corruption-intensity)));
+        text-shadow: 
+            1px 0 0 rgba(255, 0, 0, var(--corruption-intensity)),
+            -1px 0 0 rgba(0, 255, 255, var(--corruption-intensity));
+    }
+    50% {
+        filter: contrast(2) brightness(2);
+        text-shadow: 
+            0 0 10px rgba(255, 255, 255, 0.8),
+            0 0 20px rgba(255, 255, 255, 0.6);
+    }
+    100% {
+        filter: contrast(1) brightness(1);
+        text-shadow: 
+            0 0 5px rgba(255, 255, 255, 0.3);
+    }
+}
+
+/* Performance Optimizations */
+body[data-performance-tier="low"] .corrupted-text {
+    animation: none;
+    filter: none;
+}
+
+body[data-performance-tier="low"] .digital-noise::before {
+    display: none;
+}
+
+body[data-performance-tier="medium"] .corrupted-text {
+    animation-duration: calc(var(--corruption-intensity) * 2s);
+}
+
+/* Accessibility Support */
+@media (prefers-reduced-motion: reduce) {
+    .corrupted-text,
+    .consciousness-fragment {
+        animation: none !important;
+    }
+    
+    .digital-noise::before {
+        animation: none;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .corrupted-text {
+        text-shadow: none;
+        filter: contrast(2);
+    }
+    
+    .digital-noise::before {
+        opacity: 0.1;
+    }
+}
+
+/* Screen Reader Support */
+.corrupted-text[aria-label] {
+    speak: literal-punctuation;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

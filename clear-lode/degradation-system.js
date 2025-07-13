@@ -51,6 +51,18 @@ export class DegradationSystem {
 
         /** @private */
         this.randomSeed = Date.now();
+        
+        /** @private */
+        this.visualEnhancements = {
+            corruptionEffectsEnabled: true,
+            lightManifestationEnabled: true,
+            phosphorEffectsEnabled: true
+        };
+        
+        /** @private */
+        this.degradationLevels = ['minimal', 'moderate', 'severe', 'complete'];
+        /** @private */
+        this.currentDegradationIndex = 0;
     }
     
      /**
@@ -65,7 +77,63 @@ export class DegradationSystem {
         this.eventBridge.on('audio:whiteNoiseStarted', () => this.beginDegradation());
         this.guardian.registerCleanup(() => this.eventBridge.off('audio:whiteNoiseStarted', () => this.beginDegradation()));
 
+        // Initialize visual enhancement integration
+        this.initializeVisualEnhancements();
+
         console.log('[DegradationSystem] Initialized.');
+    }
+    
+    /**
+     * Initializes integration with visual enhancement systems
+     * @private
+     */
+    initializeVisualEnhancements() {
+        // Check for visual performance manager
+        if (window.visualPerformanceManager) {
+            const tier = window.visualPerformanceManager.getPerformanceTier();
+            this.adjustVisualEnhancementsForPerformance(tier);
+        }
+        
+        // Set up consciousness state integration
+        if (consciousness) {
+            consciousness.subscribe('performance', (state) => {
+                if (state.tier) {
+                    this.adjustVisualEnhancementsForPerformance(state.tier);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Adjusts visual enhancements based on performance tier
+     * @private
+     */
+    adjustVisualEnhancementsForPerformance(tier) {
+        switch (tier) {
+            case 'high':
+                this.visualEnhancements = {
+                    corruptionEffectsEnabled: true,
+                    lightManifestationEnabled: true,
+                    phosphorEffectsEnabled: true
+                };
+                break;
+            case 'medium':
+                this.visualEnhancements = {
+                    corruptionEffectsEnabled: true,
+                    lightManifestationEnabled: true,
+                    phosphorEffectsEnabled: false
+                };
+                break;
+            case 'low':
+                this.visualEnhancements = {
+                    corruptionEffectsEnabled: false,
+                    lightManifestationEnabled: false,
+                    phosphorEffectsEnabled: false
+                };
+                break;
+        }
+        
+        console.log(`[DegradationSystem] Visual enhancements adjusted for ${tier} tier:`, this.visualEnhancements);
     }
     
     /**
@@ -78,6 +146,13 @@ export class DegradationSystem {
         this.degradationActive = true;
         consciousness.setState('clearLode.degradationStarted', true);
         
+        // Initialize degradation level
+        const currentLevel = this.degradationLevels[this.currentDegradationIndex];
+        consciousness.setState('clearLode.degradationLevel', currentLevel);
+        
+        // Apply visual degradation effects
+        this.applyVisualDegradationEffects(currentLevel);
+        
         this.eventBridge.emit('degradation:started');
 
         const choicePrompt = document.getElementById('choice-prompt');
@@ -85,6 +160,9 @@ export class DegradationSystem {
             choicePrompt.classList.remove('hidden');
             choicePrompt.style.display = 'block';
             choicePrompt.style.opacity = '0';
+            
+            // Add degradation class for visual effects
+            choicePrompt.setAttribute('data-degradation', currentLevel);
         }
 
         AnimationGuardian.safeAnimate('#choice-prompt', {
@@ -104,8 +182,121 @@ export class DegradationSystem {
         consciousness.recordEvent('consciousness_degradation_started', {
             recognitionMissed: true,
             hintsShown: consciousness.getState('clearLode.hintsShown'),
-            attempts: consciousness.getState('clearLode.recognitionAttempts')
+            attempts: consciousness.getState('clearLode.recognitionAttempts'),
+            degradationLevel: currentLevel
         });
+    }
+    
+    /**
+     * Applies visual degradation effects based on current level
+     * @private
+     */
+    applyVisualDegradationEffects(level) {
+        // Update body data attribute for CSS targeting
+        document.body.setAttribute('data-degradation', level);
+        
+        // Update consciousness state for other systems
+        consciousness.setState('degradation', level);
+        
+        // Apply corruption effects if enabled
+        if (this.visualEnhancements.corruptionEffectsEnabled) {
+            this.applyCorruptionEffects(level);
+        }
+        
+        // Trigger light manifestation effects if enabled
+        if (this.visualEnhancements.lightManifestationEnabled && window.lightManifestationController) {
+            this.triggerLightDegradationEffects(level);
+        }
+        
+        // Apply phosphor effects if enabled
+        if (this.visualEnhancements.phosphorEffectsEnabled) {
+            this.applyPhosphorDegradationEffects(level);
+        }
+        
+        console.log(`[DegradationSystem] Applied visual effects for degradation level: ${level}`);
+    }
+    
+    /**
+     * Applies corruption visual effects
+     * @private
+     */
+    applyCorruptionEffects(level) {
+        const intensityMap = {
+            minimal: 0.2,
+            moderate: 0.5,
+            severe: 0.8,
+            complete: 1.0
+        };
+        
+        const intensity = intensityMap[level] || 0.2;
+        
+        // Update CSS variables for corruption effects
+        document.documentElement.style.setProperty('--corruption-intensity', intensity);
+        document.documentElement.style.setProperty('--zalgo-probability', intensity * 0.6);
+        document.documentElement.style.setProperty('--chromatic-aberration', `${intensity * 4}px`);
+        document.documentElement.style.setProperty('--digital-noise', intensity * 0.3);
+        
+        // Add corruption classes to existing fragments
+        const fragments = document.querySelectorAll('.consciousness-fragment');
+        fragments.forEach(fragment => {
+            fragment.classList.add('corrupted-text');
+            if (intensity >= 0.5) {
+                fragment.classList.add('chromatic-aberration');
+            }
+            if (intensity >= 0.8) {
+                fragment.classList.add('zalgo', 'digital-noise');
+            }
+        });
+    }
+    
+    /**
+     * Triggers light manifestation effects for degradation
+     * @private
+     */
+    triggerLightDegradationEffects(level) {
+        const lightController = window.lightManifestationController;
+        if (!lightController) return;
+        
+        const intensityMap = {
+            minimal: 0.1,
+            moderate: 0.3,
+            severe: 0.6,
+            complete: 0.9
+        };
+        
+        const intensity = intensityMap[level] || 0.1;
+        
+        // Set light intensity based on degradation
+        lightController.setLightIntensity(intensity);
+        
+        // Adjust spiritual resonance inversely to degradation
+        lightController.setSpiritualResonance(1 - intensity);
+        
+        // Trigger specific effects for severe degradation
+        if (level === 'severe' || level === 'complete') {
+            lightController.toggleTranscendence();
+        }
+    }
+    
+    /**
+     * Applies phosphor degradation effects
+     * @private
+     */
+    applyPhosphorDegradationEffects(level) {
+        const intensityMap = {
+            minimal: 0.1,
+            moderate: 0.3,
+            severe: 0.6,
+            complete: 0.9
+        };
+        
+        const intensity = intensityMap[level] || 0.1;
+        
+        // Update phosphor effect variables
+        document.documentElement.style.setProperty('--phosphor-intensity', intensity);
+        document.documentElement.style.setProperty('--scanline-opacity', intensity * 0.2);
+        document.documentElement.style.setProperty('--crt-distortion', intensity);
+        document.documentElement.style.setProperty('--bloom-intensity', intensity * 0.8);
     }
     
     /**
@@ -174,7 +365,7 @@ export class DegradationSystem {
         const bracketStart = bracketMatch ? bracketMatch.index : -1;
         const bracketEnd = bracketMatch ? bracketStart + bracketMatch[0].length : -1;
 
-        return text.split('').map((char, idx) => {
+        const corruptedText = text.split('').map((char, idx) => {
             if (char.trim() === '') return char; // Preserve whitespace
 
             if (idx >= bracketStart && idx < bracketEnd && corruptionLevel < 0.6) {
@@ -191,6 +382,21 @@ export class DegradationSystem {
             }
             return char;
         }).join('');
+        
+        // Update visual corruption level in real-time
+        if (this.visualEnhancements.corruptionEffectsEnabled) {
+            document.documentElement.style.setProperty('--corruption-intensity', corruptionLevel);
+            
+            // Apply Zalgo effects for high corruption
+            if (corruptionLevel > 0.7) {
+                const promptElement = document.querySelector('.prompt-text');
+                if (promptElement) {
+                    promptElement.classList.add('corrupted-text', 'zalgo');
+                }
+            }
+        }
+        
+        return corruptedText;
     }
 
     /**
@@ -338,6 +544,9 @@ export class DegradationSystem {
 
         console.log(`User selected: ${choice} (time: ${timeToChoice}ms)`);
 
+        // Progress degradation level based on choice
+        this.progressDegradationLevel(choice);
+
         // Calculate Karma based on choice type
         let eventType = 'degradation_choice';
         if (choice === 'timeout') {
@@ -366,18 +575,42 @@ export class DegradationSystem {
             timeToChoice: timeToChoice,
             promptLanguage: this.activePrompt,
             corruptionLevel: this.corruptionLevel,
-            karmaImpact: karmaImpact
+            karmaImpact: karmaImpact,
+            degradationLevel: this.degradationLevels[this.currentDegradationIndex]
         });
 
         this.eventBridge.emit('degradation:choice', {
             choice,
             timeToChoice,
             karmaImpact,
-            degradationLevel: (consciousness.getState('clearLode.degradationLevel') || 0) + 1
+            degradationLevel: this.degradationLevels[this.currentDegradationIndex]
         });
 
-        // Visual feedback for the choice
-        this.showChoiceFeedback(choice);
+        // Visual feedback for the choice with enhanced effects
+        this.showEnhancedChoiceFeedback(choice);
+    }
+    
+    /**
+     * Progresses the degradation level based on user choice
+     * @private
+     */
+    progressDegradationLevel(choice) {
+        if (choice === 'yes' || choice === 'timeout') {
+            // Progress to next degradation level
+            this.currentDegradationIndex = Math.min(
+                this.currentDegradationIndex + 1,
+                this.degradationLevels.length - 1
+            );
+        }
+        // 'no' choice doesn't progress degradation
+        
+        const newLevel = this.degradationLevels[this.currentDegradationIndex];
+        consciousness.setState('clearLode.degradationLevel', newLevel);
+        
+        // Apply new visual effects
+        this.applyVisualDegradationEffects(newLevel);
+        
+        console.log(`[DegradationSystem] Degradation progressed to: ${newLevel}`);
     }
 
     // Show visual feedback for the user's choice
@@ -412,6 +645,90 @@ export class DegradationSystem {
                 });
             }
         });
+    }
+    
+    /**
+     * Enhanced visual feedback with new visual effects
+     * @private
+     */
+    showEnhancedChoiceFeedback(choice) {
+        // Call original feedback
+        this.showChoiceFeedback(choice);
+        
+        // Add enhanced visual effects based on choice
+        if (this.visualEnhancements.lightManifestationEnabled && window.lightManifestationController) {
+            switch (choice) {
+                case 'yes':
+                    // Trigger recognition moment for acceptance
+                    window.lightManifestationController.triggerRecognition();
+                    break;
+                case 'no':
+                    // Trigger enlightenment burst for refusal
+                    window.lightManifestationController.triggerEnlightenment();
+                    break;
+                case 'timeout':
+                    // Activate transcendence field for void
+                    window.lightManifestationController.toggleTranscendence();
+                    break;
+            }
+        }
+        
+        // Apply choice-specific corruption effects
+        if (this.visualEnhancements.corruptionEffectsEnabled) {
+            this.applyChoiceCorruptionEffects(choice);
+        }
+        
+        // Trigger custom events for other systems
+        document.dispatchEvent(new CustomEvent('degradation-choice-made', {
+            detail: {
+                choice,
+                degradationLevel: this.degradationLevels[this.currentDegradationIndex],
+                corruptionLevel: this.corruptionLevel
+            }
+        }));
+    }
+    
+    /**
+     * Applies choice-specific corruption effects
+     * @private
+     */
+    applyChoiceCorruptionEffects(choice) {
+        const choicePrompt = document.getElementById('choice-prompt');
+        if (!choicePrompt) return;
+        
+        switch (choice) {
+            case 'yes':
+                // Intensify corruption for acceptance
+                choicePrompt.classList.add('corrupted-severe');
+                document.documentElement.style.setProperty('--corruption-intensity', '0.8');
+                break;
+            case 'no':
+                // Purification effect for refusal
+                choicePrompt.classList.add('corruption-purification');
+                document.documentElement.style.setProperty('--corruption-intensity', '0.2');
+                break;
+            case 'timeout':
+                // Complete corruption for void
+                choicePrompt.classList.add('corrupted-complete');
+                document.documentElement.style.setProperty('--corruption-intensity', '1.0');
+                break;
+        }
+    }
+    
+    /**
+     * Gets the current degradation level
+     * @returns {string} Current degradation level
+     */
+    getDegradationLevel() {
+        return this.degradationLevels[this.currentDegradationIndex];
+    }
+    
+    /**
+     * Gets the current degradation state for external systems
+     * @returns {string} Current degradation state
+     */
+    getDegradationState() {
+        return this.getDegradationLevel();
     }
 
     /**

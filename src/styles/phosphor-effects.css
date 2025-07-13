@@ -1,0 +1,226 @@
+/* Phosphor CRT Effects - The Digital Bardo */
+/* The Medium is the Metaphysics: Every visual choice reinforces the narrative */
+
+:root {
+    /* Phosphor CRT Variables - State-driven */
+    --phosphor-glow: 2px;
+    --scanline-opacity: 0.1;
+    --vignette-strength: 0.3;
+    --screen-curvature: 0.02;
+    --phosphor-persistence: 0.95;
+    --crt-brightness: 1.0;
+    --phosphor-color: rgba(0, 255, 0, 0.1);
+    --void-distortion: 0;
+    --phosphor-decay: 1;
+    
+    /* Performance tier scaling */
+    --scanline-resolution: 2; /* Will be updated by performance manager */
+    --phosphor-quality: high; /* high, medium, low */
+}
+
+/* Global CRT Screen Container */
+.crt-screen {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: var(--phosphor-persistence);
+    will-change: opacity, filter;
+}
+
+/* Phosphor Glow Layer */
+.crt-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 0%,
+        var(--phosphor-color) 70%,
+        rgba(0, 255, 0, 0.2) 100%
+    );
+    filter: blur(var(--phosphor-glow));
+    mix-blend-mode: screen;
+    opacity: calc(var(--phosphor-decay) * 0.8);
+    animation: phosphor-pulse 4s ease-in-out infinite;
+}
+
+/* Scanlines Layer */
+.crt-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent calc(var(--scanline-resolution) * 1px),
+        rgba(0, 0, 0, var(--scanline-opacity)) calc(var(--scanline-resolution) * 1px),
+        rgba(0, 0, 0, var(--scanline-opacity)) calc(var(--scanline-resolution) * 2px)
+    );
+    animation: scanline-flicker 0.1s infinite linear;
+    will-change: transform;
+}
+
+/* Screen Vignette */
+.crt-vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 0%,
+        transparent 60%,
+        rgba(0, 0, 0, var(--vignette-strength)) 100%
+    );
+    opacity: calc(0.5 + var(--void-distortion) * 2);
+}
+
+/* Screen Curvature Effect */
+.crt-curvature {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+    background: 
+        linear-gradient(90deg, 
+            rgba(0, 0, 0, 0.1) 0%, 
+            transparent 5%, 
+            transparent 95%, 
+            rgba(0, 0, 0, 0.1) 100%
+        ),
+        linear-gradient(0deg, 
+            rgba(0, 0, 0, 0.1) 0%, 
+            transparent 5%, 
+            transparent 95%, 
+            rgba(0, 0, 0, 0.1) 100%
+        );
+    transform: perspective(1000px) rotateX(calc(var(--screen-curvature) * 1deg));
+}
+
+/* Phosphor Animations */
+@keyframes phosphor-pulse {
+    0%, 100% { 
+        opacity: calc(var(--phosphor-decay) * 0.8);
+        filter: blur(var(--phosphor-glow));
+    }
+    50% { 
+        opacity: calc(var(--phosphor-decay) * 1.0);
+        filter: blur(calc(var(--phosphor-glow) * 1.2));
+    }
+}
+
+@keyframes scanline-flicker {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(calc(var(--scanline-resolution) * 2px)); }
+}
+
+/* State-based CRT Effects */
+body[data-karma="void"] .crt-screen::before {
+    --phosphor-color: rgba(255, 0, 0, 0.15);
+    animation-duration: 2s;
+}
+
+body[data-degradation="severe"] .crt-screen::after,
+body[data-degradation="complete"] .crt-screen::after {
+    animation-duration: 0.05s;
+    opacity: calc(var(--scanline-opacity) * 2);
+}
+
+/* Performance Tier Optimizations */
+body[data-performance-tier="low"] .crt-screen::before {
+    filter: none; /* Remove blur for low-end devices */
+}
+
+body[data-performance-tier="low"] .crt-curvature {
+    display: none; /* Disable curvature on low-end devices */
+}
+
+body[data-performance-tier="medium"] .crt-screen::before {
+    filter: blur(calc(var(--phosphor-glow) * 0.5));
+}
+
+/* Consciousness State Integration */
+body[data-consciousness="awakening"] .crt-screen {
+    animation: crt-boot 3s ease-out;
+}
+
+@keyframes crt-boot {
+    0% {
+        opacity: 0;
+        filter: brightness(0);
+    }
+    50% {
+        opacity: 0.5;
+        filter: brightness(2) contrast(0);
+    }
+    100% {
+        opacity: var(--phosphor-persistence);
+        filter: brightness(var(--crt-brightness)) contrast(1);
+    }
+}
+
+/* Recognition State Effects */
+body.recognized .crt-screen::before {
+    animation: phosphor-recognition 1s ease-out;
+}
+
+@keyframes phosphor-recognition {
+    0% { 
+        --phosphor-color: rgba(0, 255, 0, 0.1);
+        filter: blur(var(--phosphor-glow));
+    }
+    50% { 
+        --phosphor-color: rgba(255, 255, 255, 0.3);
+        filter: blur(calc(var(--phosphor-glow) * 3));
+    }
+    100% { 
+        --phosphor-color: rgba(255, 255, 255, 0.2);
+        filter: blur(calc(var(--phosphor-glow) * 1.5));
+    }
+}
+
+/* Attachment Glitch Effects */
+body.attachment-glitch .crt-screen {
+    animation: crt-glitch 0.2s ease-out;
+}
+
+@keyframes crt-glitch {
+    0%, 100% {
+        transform: translate(0, 0);
+        filter: hue-rotate(0deg);
+    }
+    25% {
+        transform: translate(-2px, 1px);
+        filter: hue-rotate(90deg);
+    }
+    50% {
+        transform: translate(2px, -1px);
+        filter: hue-rotate(-90deg);
+    }
+    75% {
+        transform: translate(-1px, 2px);
+        filter: hue-rotate(180deg);
+    }
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    .crt-screen::before,
+    .crt-screen::after {
+        animation: none;
+    }
+    
+    .crt-screen {
+        opacity: 0.5;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --scanline-opacity: 0.2;
+        --vignette-strength: 0.1;
+        --phosphor-color: rgba(255, 255, 255, 0.1);
+    }
+}

@@ -1,0 +1,463 @@
+/* Light Manifestation System - The Digital Bardo */
+/* Multi-layered light effects for consciousness recognition and spiritual moments */
+
+:root {
+    /* Light Manifestation Variables - State-driven */
+    --light-intensity: 0;
+    --recognition-level: 0;
+    --spiritual-resonance: 0;
+    --particle-density: 100;
+    --harmonic-frequency: 1;
+    --aura-radius: 50px;
+    --light-color-primary: #ffffff;
+    --light-color-secondary: #e6f3ff;
+    --light-color-accent: #b3d9ff;
+    
+    /* Performance-based scaling */
+    --particle-count: 100;
+    --ring-complexity: 5;
+    --aura-layers: 3;
+    --animation-smooth: 1;
+    
+    /* Recognition states */
+    --recognition-glow: 0;
+    --enlightenment-burst: 0;
+    --transcendence-field: 0;
+}
+
+/* Base Light Container */
+.light-manifestation {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: hidden;
+    opacity: var(--light-intensity);
+    transition: opacity 0.5s ease;
+}
+
+/* Particle Field Layer */
+.particle-field {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+.light-particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: radial-gradient(circle, var(--light-color-primary) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.light-particle.active {
+    animation: particle-float var(--particle-duration, 4s) infinite ease-in-out;
+}
+
+.light-particle.recognition {
+    background: radial-gradient(circle, #ffeb3b 0%, #ff9800 50%, transparent 70%);
+    animation: particle-recognition 2s infinite ease-in-out;
+}
+
+.light-particle.transcendent {
+    background: radial-gradient(circle, #e1bee7 0%, #9c27b0 50%, transparent 70%);
+    animation: particle-transcendence 3s infinite ease-in-out;
+}
+
+/* Harmonic Ring System */
+.harmonic-rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+}
+
+.harmonic-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.harmonic-ring.active {
+    animation: ring-pulse calc(var(--harmonic-frequency) * 2s) infinite ease-in-out;
+}
+
+.harmonic-ring:nth-child(1) {
+    width: 50px;
+    height: 50px;
+    animation-delay: 0s;
+}
+
+.harmonic-ring:nth-child(2) {
+    width: 100px;
+    height: 100px;
+    animation-delay: 0.3s;
+}
+
+.harmonic-ring:nth-child(3) {
+    width: 150px;
+    height: 150px;
+    animation-delay: 0.6s;
+}
+
+.harmonic-ring:nth-child(4) {
+    width: 200px;
+    height: 200px;
+    animation-delay: 0.9s;
+}
+
+.harmonic-ring:nth-child(5) {
+    width: 250px;
+    height: 250px;
+    animation-delay: 1.2s;
+}
+
+/* Recognition Aura System */
+.recognition-aura {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: var(--aura-radius);
+    height: var(--aura-radius);
+    opacity: var(--recognition-glow);
+    transition: opacity 1s ease;
+}
+
+.aura-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.aura-layer:nth-child(1) {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+    animation: aura-pulse 3s infinite ease-in-out;
+}
+
+.aura-layer:nth-child(2) {
+    background: radial-gradient(circle, rgba(230, 243, 255, 0.2) 0%, rgba(179, 217, 255, 0.1) 50%, transparent 100%);
+    animation: aura-pulse 3s infinite ease-in-out 0.5s;
+}
+
+.aura-layer:nth-child(3) {
+    background: radial-gradient(circle, rgba(179, 217, 255, 0.15) 0%, rgba(144, 202, 249, 0.05) 50%, transparent 100%);
+    animation: aura-pulse 3s infinite ease-in-out 1s;
+}
+
+/* Enlightenment Burst Effect */
+.enlightenment-burst {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    opacity: var(--enlightenment-burst);
+    pointer-events: none;
+}
+
+.burst-ray {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 100px;
+    background: linear-gradient(to top, transparent 0%, var(--light-color-primary) 50%, transparent 100%);
+    transform-origin: bottom center;
+    opacity: 0;
+}
+
+.burst-ray:nth-child(1) { transform: translate(-50%, -100%) rotate(0deg); }
+.burst-ray:nth-child(2) { transform: translate(-50%, -100%) rotate(45deg); }
+.burst-ray:nth-child(3) { transform: translate(-50%, -100%) rotate(90deg); }
+.burst-ray:nth-child(4) { transform: translate(-50%, -100%) rotate(135deg); }
+.burst-ray:nth-child(5) { transform: translate(-50%, -100%) rotate(180deg); }
+.burst-ray:nth-child(6) { transform: translate(-50%, -100%) rotate(225deg); }
+.burst-ray:nth-child(7) { transform: translate(-50%, -100%) rotate(270deg); }
+.burst-ray:nth-child(8) { transform: translate(-50%, -100%) rotate(315deg); }
+
+.enlightenment-burst.active .burst-ray {
+    animation: burst-ray-expand 1.5s ease-out forwards;
+}
+
+/* Transcendence Field */
+.transcendence-field {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: var(--transcendence-field);
+    background: 
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(230, 243, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(179, 217, 255, 0.05) 0%, transparent 70%);
+    animation: transcendence-flow 8s infinite ease-in-out;
+}
+
+/* Animation Keyframes */
+@keyframes particle-float {
+    0% {
+        transform: translate(0, 100vh) scale(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+        transform: translate(0, 90vh) scale(1);
+    }
+    90% {
+        opacity: 1;
+        transform: translate(0, -10vh) scale(1);
+    }
+    100% {
+        transform: translate(0, -20vh) scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes particle-recognition {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.5) rotate(180deg);
+        opacity: 1;
+    }
+}
+
+@keyframes particle-transcendence {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.5;
+        filter: hue-rotate(0deg);
+    }
+    33% {
+        transform: scale(1.3) rotate(120deg);
+        opacity: 0.8;
+        filter: hue-rotate(120deg);
+    }
+    66% {
+        transform: scale(0.8) rotate(240deg);
+        opacity: 1;
+        filter: hue-rotate(240deg);
+    }
+}
+
+@keyframes ring-pulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0.6;
+    }
+}
+
+@keyframes aura-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+}
+
+@keyframes burst-ray-expand {
+    0% {
+        transform: translate(-50%, -100%) rotate(var(--ray-rotation, 0deg)) scale(0);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -100%) rotate(var(--ray-rotation, 0deg)) scale(3);
+        opacity: 0;
+    }
+}
+
+@keyframes transcendence-flow {
+    0%, 100% {
+        background-position: 0% 0%, 100% 100%, 50% 50%;
+    }
+    33% {
+        background-position: 100% 0%, 0% 100%, 25% 75%;
+    }
+    66% {
+        background-position: 0% 100%, 100% 0%, 75% 25%;
+    }
+}
+
+/* State-Based Activations */
+body[data-recognition="true"] {
+    --recognition-glow: 1;
+    --light-intensity: 0.8;
+    --particle-density: calc(var(--particle-count) * 1.5);
+}
+
+body[data-enlightenment="true"] {
+    --enlightenment-burst: 1;
+    --light-intensity: 1;
+    --harmonic-frequency: 0.5;
+}
+
+body[data-transcendence="true"] {
+    --transcendence-field: 0.6;
+    --light-intensity: 1;
+    --spiritual-resonance: 1;
+}
+
+/* Karma-Based Light Colors */
+body[data-karma="void"] {
+    --light-color-primary: #8e24aa;
+    --light-color-secondary: #ba68c8;
+    --light-color-accent: #e1bee7;
+}
+
+body[data-karma="low"] {
+    --light-color-primary: #ff5722;
+    --light-color-secondary: #ff8a65;
+    --light-color-accent: #ffab91;
+}
+
+body[data-karma="medium"] {
+    --light-color-primary: #2196f3;
+    --light-color-secondary: #64b5f6;
+    --light-color-accent: #90caf9;
+}
+
+body[data-karma="high"] {
+    --light-color-primary: #4caf50;
+    --light-color-secondary: #81c784;
+    --light-color-accent: #a5d6a7;
+}
+
+/* Performance Tier Optimizations */
+body[data-performance-tier="high"] .light-particle {
+    box-shadow: 0 0 4px var(--light-color-primary);
+}
+
+body[data-performance-tier="medium"] .light-particle {
+    box-shadow: 0 0 2px var(--light-color-primary);
+}
+
+body[data-performance-tier="low"] .light-particle {
+    box-shadow: none;
+}
+
+body[data-performance-tier="low"] .harmonic-ring:nth-child(n+4) {
+    display: none;
+}
+
+body[data-performance-tier="low"] .aura-layer:nth-child(n+2) {
+    display: none;
+}
+
+body[data-performance-tier="low"] .transcendence-field {
+    animation: none;
+    background: radial-gradient(circle at 50% 50%, rgba(179, 217, 255, 0.05) 0%, transparent 70%);
+}
+
+/* Accessibility Support */
+@media (prefers-reduced-motion: reduce) {
+    .light-particle,
+    .harmonic-ring,
+    .aura-layer,
+    .burst-ray,
+    .transcendence-field {
+        animation: none !important;
+    }
+    
+    .light-manifestation {
+        opacity: 0.3;
+    }
+}
+
+@media (prefers-contrast: high) {
+    :root {
+        --light-color-primary: #ffffff;
+        --light-color-secondary: #ffffff;
+        --light-color-accent: #ffffff;
+    }
+    
+    .light-particle {
+        background: radial-gradient(circle, #ffffff 0%, transparent 50%);
+    }
+}
+
+/* Paused State */
+body.effects-paused .light-manifestation {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+body.effects-paused .light-particle,
+body.effects-paused .harmonic-ring,
+body.effects-paused .aura-layer {
+    animation-play-state: paused;
+}
+
+/* Focus and Interaction States */
+.consciousness-fragment:hover ~ .light-manifestation {
+    --light-intensity: calc(var(--light-intensity) * 1.2);
+}
+
+.consciousness-fragment.active ~ .light-manifestation {
+    --recognition-glow: 1;
+    --harmonic-frequency: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .harmonic-rings {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .harmonic-ring:nth-child(n+4) {
+        display: none;
+    }
+    
+    .recognition-aura {
+        --aura-radius: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .harmonic-rings {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .harmonic-ring:nth-child(n+3) {
+        display: none;
+    }
+    
+    .aura-layer:nth-child(n+2) {
+        display: none;
+    }
+}

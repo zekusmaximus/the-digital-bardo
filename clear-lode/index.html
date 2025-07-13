@@ -7,6 +7,9 @@
     <meta name="description" content="Recognition awaits. The source code reveals itself.">
     <link rel="stylesheet" href="../src/styles/reality.css">
     <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <link rel="stylesheet" href="../src/styles/phosphor-effects.css">
+    <link rel="stylesheet" href="../src/styles/corruption-effects.css">
+    <link rel="stylesheet" href="../src/styles/light-manifestation.css">
     <style>
         /* Critical CSS to ensure proper layout */
         html, body {
@@ -65,9 +68,30 @@
             border-color: rgba(255, 255, 255, 0.4);
             transform: scale(1.1);
         }
+        
+        /* Enhanced visual effects integration */
+        @keyframes choice-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        
+        .phosphor-highlight {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            animation: phosphor-glow 0.5s ease-out;
+        }
+        
+        @keyframes phosphor-glow {
+            0% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
+            50% { text-shadow: 0 0 15px rgba(255, 255, 255, 1); }
+            100% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+        }
+        
+        .corruption-purification {
+            animation: corruption-purification 2s ease-out forwards;
+        }
     </style>
 </head>
-<body class="approaching-light">
+<body class="approaching-light" data-performance-tier="medium" data-degradation="minimal" data-karma="medium">
     <!-- The void before light -->
     <div id="pre-light" class="absolute-center">
         <div class="last-thought"></div>
@@ -95,7 +119,13 @@
 
     <!-- Consciousness fragments -->
     <div id="fragment-field"></div>
+    
+    <!-- Light manifestation container (will be created dynamically) -->
+    <!-- Multi-layered light effects will be injected here by LightManifestationController -->
 
+    <!-- Enhanced visual effects scripts -->
+    <script type="module" src="../src/consciousness/visual-performance-manager.js"></script>
+    <script type="module" src="../src/consciousness/light-manifestation-controller.js"></script>
     <script type="module" src="./clear-lode.js"></script>
 </body>
 </html>

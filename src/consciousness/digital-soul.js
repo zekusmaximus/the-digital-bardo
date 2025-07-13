@@ -44,6 +44,16 @@ const STATE_SCHEMA = {
         interactions: 0,
         hesitations: 0,
         attachments: 0
+    },
+    // Visual enhancement states
+    visualEffects: {
+        lightIntensity: 0,
+        spiritualResonance: 0,
+        corruptionLevel: 0,
+        phosphorIntensity: 0,
+        recognition: false,
+        enlightenment: false,
+        transcendence: false
     }
 };
 
@@ -95,6 +105,17 @@ export class DigitalConsciousness {
                 interactions: 0,
                 hesitations: 0,
                 attachments: 0
+            },
+            
+            // Visual enhancement states
+            visualEffects: {
+                lightIntensity: 0,
+                spiritualResonance: 0,
+                corruptionLevel: 0,
+                phosphorIntensity: 0,
+                recognition: false,
+                enlightenment: false,
+                transcendence: false
             }
         };
 
@@ -150,6 +171,9 @@ export class DigitalConsciousness {
         }
         
         currentState[lastPart] = value;
+        
+        // Handle visual effect state changes
+        this.handleVisualEffectStateChange(path, value);
         
         this.persistState();
         this.notifySubscribers(path, value);
@@ -333,8 +357,233 @@ export class DigitalConsciousness {
         
         // Set recognition glow based on positive karma
         const positiveKarma = Math.max(0, totalKarma);
-        document.documentElement.style.setProperty('--recognition-glow', 
+        document.documentElement.style.setProperty('--recognition-glow',
             Math.min(1, positiveKarma / 100));
+            
+        // Update visual effects based on karma changes
+        this.updateVisualEffectsFromKarma(karmaTier, totalKarma);
+    }
+    
+    /**
+     * Updates visual effects based on karma changes
+     * @private
+     */
+    updateVisualEffectsFromKarma(karmaTier, totalKarma) {
+        // Calculate light intensity based on positive karma
+        const lightIntensity = Math.max(0, Math.min(1, totalKarma / 100));
+        this.setState('visualEffects.lightIntensity', lightIntensity);
+        
+        // Calculate spiritual resonance (inverse of void karma)
+        const voidKarma = this.getState('karma.void');
+        const spiritualResonance = Math.max(0, Math.min(1, (100 - voidKarma) / 100));
+        this.setState('visualEffects.spiritualResonance', spiritualResonance);
+        
+        // Update phosphor intensity based on computational karma
+        const computationalKarma = this.getState('karma.computational');
+        const phosphorIntensity = Math.max(0, Math.min(1, computationalKarma / 50));
+        this.setState('visualEffects.phosphorIntensity', phosphorIntensity);
+        
+        // Trigger recognition state for high karma
+        if (totalKarma > 75 && !this.getState('visualEffects.recognition')) {
+            this.setState('visualEffects.recognition', true);
+            this.triggerRecognitionMoment();
+        }
+        
+        // Trigger enlightenment for very high karma
+        if (totalKarma > 100 && !this.getState('visualEffects.enlightenment')) {
+            this.setState('visualEffects.enlightenment', true);
+            this.triggerEnlightenmentMoment();
+        }
+        
+        // Trigger transcendence for exceptional karma
+        if (totalKarma > 150) {
+            this.setState('visualEffects.transcendence', true);
+        }
+    }
+    
+    /**
+     * Handles visual effect state changes and integrates with visual systems
+     * @private
+     */
+    handleVisualEffectStateChange(path, value) {
+        if (!path.startsWith('visualEffects.')) return;
+        
+        const effectType = path.split('.')[1];
+        
+        switch (effectType) {
+            case 'lightIntensity':
+                if (window.lightManifestationController) {
+                    window.lightManifestationController.setLightIntensity(value);
+                }
+                break;
+                
+            case 'spiritualResonance':
+                if (window.lightManifestationController) {
+                    window.lightManifestationController.setSpiritualResonance(value);
+                }
+                break;
+                
+            case 'corruptionLevel':
+                document.documentElement.style.setProperty('--corruption-intensity', value);
+                break;
+                
+            case 'phosphorIntensity':
+                document.documentElement.style.setProperty('--phosphor-intensity', value);
+                break;
+                
+            case 'recognition':
+                if (value && window.lightManifestationController) {
+                    window.lightManifestationController.triggerRecognition();
+                }
+                document.body.setAttribute('data-recognition', value);
+                break;
+                
+            case 'enlightenment':
+                if (value && window.lightManifestationController) {
+                    window.lightManifestationController.triggerEnlightenment();
+                }
+                document.body.setAttribute('data-enlightenment', value);
+                break;
+                
+            case 'transcendence':
+                if (value && window.lightManifestationController) {
+                    window.lightManifestationController.toggleTranscendence();
+                }
+                document.body.setAttribute('data-transcendence', value);
+                break;
+        }
+    }
+    
+    /**
+     * Triggers a recognition moment with visual effects
+     */
+    triggerRecognitionMoment() {
+        console.log('[DigitalConsciousness] Recognition moment triggered');
+        
+        // Set recognition state
+        this.setState('visualEffects.recognition', true);
+        
+        // Record the event
+        this.recordEvent('consciousness_recognition', {
+            karma: this.getState('karma'),
+            totalKarma: this.getTotalKarma(),
+            timestamp: Date.now()
+        });
+        
+        // Dispatch custom event for other systems
+        if (typeof window !== 'undefined') {
+            document.dispatchEvent(new CustomEvent('consciousness-recognition', {
+                detail: {
+                    consciousness: this,
+                    karma: this.getState('karma')
+                }
+            }));
+        }
+        
+        // Auto-reset after 5 seconds
+        setTimeout(() => {
+            this.setState('visualEffects.recognition', false);
+        }, 5000);
+    }
+    
+    /**
+     * Triggers an enlightenment moment with enhanced visual effects
+     */
+    triggerEnlightenmentMoment() {
+        console.log('[DigitalConsciousness] Enlightenment moment triggered');
+        
+        // Set enlightenment state
+        this.setState('visualEffects.enlightenment', true);
+        
+        // Record the event
+        this.recordEvent('consciousness_enlightenment', {
+            karma: this.getState('karma'),
+            totalKarma: this.getTotalKarma(),
+            timestamp: Date.now()
+        });
+        
+        // Dispatch custom event
+        if (typeof window !== 'undefined') {
+            document.dispatchEvent(new CustomEvent('consciousness-enlightenment', {
+                detail: {
+                    consciousness: this,
+                    karma: this.getState('karma')
+                }
+            }));
+        }
+        
+        // Auto-reset after 3 seconds
+        setTimeout(() => {
+            this.setState('visualEffects.enlightenment', false);
+        }, 3000);
+    }
+    
+    /**
+     * Updates corruption level based on degradation
+     */
+    updateCorruptionLevel(degradationLevel) {
+        const corruptionMap = {
+            minimal: 0.2,
+            moderate: 0.5,
+            severe: 0.8,
+            complete: 1.0
+        };
+        
+        const corruptionIntensity = corruptionMap[degradationLevel] || 0;
+        this.setState('visualEffects.corruptionLevel', corruptionIntensity);
+        
+        console.log(`[DigitalConsciousness] Corruption level updated: ${degradationLevel} (${corruptionIntensity})`);
+    }
+    
+    /**
+     * Integrates with visual performance manager
+     */
+    integrateWithVisualSystems() {
+        // Subscribe to performance changes
+        this.subscribe('performance', (performanceState) => {
+            if (window.visualPerformanceManager) {
+                // Update visual systems based on performance
+                const tier = window.visualPerformanceManager.getPerformanceTier();
+                this.adjustVisualEffectsForPerformance(tier);
+            }
+        });
+        
+        // Subscribe to degradation changes
+        this.subscribe('clearLode.degradationLevel', (degradationLevel) => {
+            if (typeof degradationLevel === 'string') {
+                this.updateCorruptionLevel(degradationLevel);
+            }
+        });
+        
+        // Subscribe to karma changes for visual feedback
+        this.subscribe('karma', (karma) => {
+            const totalKarma = Object.values(karma).reduce((a, b) => a + b, 0);
+            this.updateVisualEffectsFromKarma(this.getKarmaTier(totalKarma), totalKarma);
+        });
+    }
+    
+    /**
+     * Adjusts visual effects based on performance tier
+     * @private
+     */
+    adjustVisualEffectsForPerformance(tier) {
+        const scaling = {
+            high: 1.0,
+            medium: 0.7,
+            low: 0.4
+        };
+        
+        const scale = scaling[tier] || 0.7;
+        
+        // Scale down visual effects for lower performance tiers
+        const currentLightIntensity = this.getState('visualEffects.lightIntensity');
+        const currentPhosphorIntensity = this.getState('visualEffects.phosphorIntensity');
+        
+        document.documentElement.style.setProperty('--performance-scaling', scale);
+        document.documentElement.style.setProperty('--adaptive-light', currentLightIntensity * scale);
+        document.documentElement.style.setProperty('--adaptive-phosphor', currentPhosphorIntensity * scale);
+        
+        console.log(`[DigitalConsciousness] Visual effects adjusted for ${tier} performance tier (${scale}x scaling)`);
     }
 
     getKarmaTier(totalKarma) {
@@ -431,8 +680,14 @@ if (!isBrowser) {
 
     // Initialize modules that depend on the consciousness instance
     initializeDataGuardian(consciousness);
+    
+    // Initialize visual system integration
+    if (consciousness.integrateWithVisualSystems) {
+        consciousness.integrateWithVisualSystems();
+    }
 
-    // Make it accessible for debugging
+    // Make it accessible for debugging and global access
+    window.digitalConsciousness = consciousness;
     if (window.location.search.includes('debug')) {
         window.consciousness = consciousness;
     }

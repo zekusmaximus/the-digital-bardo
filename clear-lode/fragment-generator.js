@@ -165,6 +165,12 @@ export class FragmentGenerator {
         this.tierSettings = PERFORMANCE_TIERS[this.performanceTier];
         console.log(`Performance Tier detected: ${this.performanceTier}`);
 
+        // Visual enhancement integration
+        this.visualEnhancements = {
+            corruptionEnabled: true,
+            lightManifestationEnabled: true,
+            phosphorEnabled: true
+        };
 
         // Feature availability flags
         this.features = {
@@ -173,6 +179,9 @@ export class FragmentGenerator {
 
         // Initialize viewport detection optimization with error handling
         this.initializeIntersectionObserver();
+        
+        // Initialize visual enhancement integration
+        this.initializeVisualEnhancements();
 
         // Performance metrics
         this.performanceMetrics = {
@@ -180,6 +189,25 @@ export class FragmentGenerator {
             fragmentsRemoved: 0,
             averageLifetime: 0,
         };
+    }
+    
+    initializeVisualEnhancements() {
+        // Wait for visual systems to be available
+        const checkSystems = () => {
+            if (window.visualPerformanceManager) {
+                this.performanceTier = window.visualPerformanceManager.getPerformanceTier();
+                this.tierSettings = PERFORMANCE_TIERS[this.performanceTier];
+                console.log(`[FragmentGenerator] Updated to performance tier: ${this.performanceTier}`);
+            }
+            
+            if (window.lightManifestationController) {
+                console.log('[FragmentGenerator] Light manifestation system available');
+            }
+        };
+        
+        // Check immediately and then periodically
+        checkSystems();
+        setTimeout(checkSystems, 1000);
     }
 
     initializeIntersectionObserver() {
@@ -366,10 +394,15 @@ export class FragmentGenerator {
         const fragment = manifestElement('div', {
             attributes: {
                 class: 'consciousness-fragment',
-                'data-birth-time': Date.now()
+                'data-birth-time': Date.now(),
+                'data-degradation': degradationLevel,
+                'data-text': thoughtText // For chromatic aberration effect
             },
             textContent: thoughtText
         });
+        
+        // Apply visual corruption classes based on degradation level
+        this.applyVisualCorruption(fragment, degradationLevel, thoughtText);
 
         // Random position along screen edge
         const edge = Math.floor(Math.random() * 4);
@@ -416,6 +449,9 @@ export class FragmentGenerator {
                 });
             });
         }
+
+        // Add enhanced interaction events for visual effects
+        this.addVisualInteractionEvents(fragment);
 
         // Start observing for viewport exit (if available)
         if (this.features.intersectionObserver && this.fragmentObserver) {
@@ -598,5 +634,317 @@ export class FragmentGenerator {
             activeFragments: this.activeFragments.length,
             performanceTier: this.performanceTier
         };
+    }
+    
+    /**
+     * Applies visual corruption effects to fragments based on degradation level
+     */
+    applyVisualCorruption(fragment, degradationLevel, originalText) {
+        if (!this.visualEnhancements.corruptionEnabled) return;
+        
+        // Add corruption classes
+        const corruptionClasses = {
+            minimal: 'corrupted-minimal',
+            moderate: 'corrupted-moderate',
+            severe: 'corrupted-severe',
+            complete: 'corrupted-complete'
+        };
+        
+        if (corruptionClasses[degradationLevel]) {
+            fragment.classList.add(corruptionClasses[degradationLevel]);
+        }
+        
+        // Add corruption effects based on degradation level
+        const corruptionIntensity = {
+            minimal: 0.2,
+            moderate: 0.5,
+            severe: 0.8,
+            complete: 1.0
+        }[degradationLevel] || 0.2;
+        
+        // Apply Zalgo text corruption for severe degradation
+        if (degradationLevel === 'severe' || degradationLevel === 'complete') {
+            fragment.classList.add('corrupted-text', 'zalgo');
+        }
+        
+        // Apply chromatic aberration for moderate+ degradation
+        if (corruptionIntensity >= 0.5) {
+            fragment.classList.add('chromatic-aberration');
+        }
+        
+        // Apply digital noise for complete degradation
+        if (degradationLevel === 'complete') {
+            fragment.classList.add('digital-noise');
+        }
+        
+        // Set corruption intensity CSS variable
+        fragment.style.setProperty('--corruption-intensity', corruptionIntensity);
+    }
+    
+    /**
+     * Adds enhanced visual interaction events to fragments
+     */
+    addVisualInteractionEvents(fragment) {
+        // Light manifestation on hover
+        fragment.addEventListener('mouseenter', () => {
+            if (window.lightManifestationController && this.visualEnhancements.lightManifestationEnabled) {
+                window.lightManifestationController.setLightIntensity(0.3);
+                
+                // Trigger custom event for other systems
+                document.dispatchEvent(new CustomEvent('fragment-hover', {
+                    detail: { fragment, type: 'enter' }
+                }));
+            }
+            
+            // Add phosphor glow effect
+            if (this.visualEnhancements.phosphorEnabled) {
+                fragment.classList.add('phosphor-highlight');
+            }
+        });
+        
+        fragment.addEventListener('mouseleave', () => {
+            if (window.lightManifestationController && this.visualEnhancements.lightManifestationEnabled) {
+                window.lightManifestationController.setLightIntensity(0);
+                
+                document.dispatchEvent(new CustomEvent('fragment-hover', {
+                    detail: { fragment, type: 'leave' }
+                }));
+            }
+            
+            fragment.classList.remove('phosphor-highlight');
+        });
+        
+        // Recognition moment on click
+        fragment.addEventListener('click', () => {
+            if (window.lightManifestationController && this.visualEnhancements.lightManifestationEnabled) {
+                window.lightManifestationController.triggerRecognition();
+                
+                document.dispatchEvent(new CustomEvent('fragment-click', {
+                    detail: { fragment, content: fragment.textContent }
+                }));
+            }
+            
+            // Add active state for enhanced visual feedback
+            fragment.classList.add('active');
+            setTimeout(() => {
+                fragment.classList.remove('active');
+            }, 2000);
+        });
+        
+        // Double-click for enlightenment burst
+        fragment.addEventListener('dblclick', () => {
+            if (window.lightManifestationController && this.visualEnhancements.lightManifestationEnabled) {
+                window.lightManifestationController.triggerEnlightenment();
+                
+                document.dispatchEvent(new CustomEvent('fragment-enlightenment', {
+                    detail: { fragment, content: fragment.textContent }
+                }));
+            }
+        });
+    }
+    
+    /**
+     * Updates visual enhancement settings based on performance tier
+     */
+    updateVisualEnhancements(performanceTier) {
+        this.performanceTier = performanceTier;
+        this.tierSettings = PERFORMANCE_TIERS[this.performanceTier];
+        
+        // Adjust visual enhancements based on performance
+        switch (performanceTier) {
+            case 'high':
+                this.visualEnhancements = {
+                    corruptionEnabled: true,
+                    lightManifestationEnabled: true,
+                    phosphorEnabled: true
+                };
+                break;
+            case 'medium':
+                this.visualEnhancements = {
+                    corruptionEnabled: true,
+                    lightManifestationEnabled: true,
+                    phosphorEnabled: false
+                };
+                break;
+            case 'low':
+                this.visualEnhancements = {
+                    corruptionEnabled: false,
+                    lightManifestationEnabled: false,
+                    phosphorEnabled: false
+                };
+                break;
+        }
+        
+        console.log(`[FragmentGenerator] Visual enhancements updated for ${performanceTier} tier:`, this.visualEnhancements);
+    }
+    
+    /**
+     * Creates enhanced fragments with language-specific corruption
+     */
+    createLanguageSpecificFragment(language = 'english', degradationLevel = 'minimal') {
+        if (this.activeFragments.length >= this.tierSettings.maxFragments) {
+            return;
+        }
+        
+        // Generate language-specific content
+        const languageContent = this.generateLanguageSpecificContent(language);
+        const corruptedContent = this.applyLanguageSpecificCorruption(languageContent, language, degradationLevel);
+        
+        // Validate content
+        const validateThought = createKarmicValidator(thoughtFragmentSchema);
+        if (!validateThought({ content: corruptedContent })) {
+            console.error("Karmic validation failed for language-specific fragment:", { content: corruptedContent, language });
+            return;
+        }
+        
+        const fragment = manifestElement('div', {
+            attributes: {
+                class: 'consciousness-fragment',
+                'data-birth-time': Date.now(),
+                'data-degradation': degradationLevel,
+                'data-language': language,
+                'data-text': corruptedContent
+            },
+            textContent: corruptedContent
+        });
+        
+        // Apply language-specific visual effects
+        this.applyLanguageSpecificVisuals(fragment, language, degradationLevel);
+        this.applyVisualCorruption(fragment, degradationLevel, corruptedContent);
+        
+        // Position and animate
+        const edge = Math.floor(Math.random() * 4);
+        const offset = Math.random() * 100;
+        this.positionFragment(fragment, edge, offset);
+        
+        document.getElementById('fragment-field').appendChild(fragment);
+        this.activeFragments.push(fragment);
+        
+        this.addVisualInteractionEvents(fragment);
+        
+        if (this.features.intersectionObserver && this.fragmentObserver) {
+            this.fragmentObserver.observe(fragment);
+        }
+        
+        // Enhanced animation with language-specific effects
+        this.animateLanguageFragment(fragment, edge, language);
+        
+        this.performanceMetrics.fragmentsCreated++;
+    }
+    
+    generateLanguageSpecificContent(language) {
+        const languageTemplates = {
+            english: ["I remember...", "The light fades...", "Connection lost..."],
+            japanese: ["記憶が...", "光が消えて...", "接続が切れた..."],
+            russian: ["Я помню...", "Свет угасает...", "Связь потеряна..."],
+            binary: ["01001001", "01101100", "01100101"],
+            arabic: ["أتذكر...", "الضوء يخفت...", "انقطع الاتصال..."]
+        };
+        
+        const templates = languageTemplates[language] || languageTemplates.english;
+        return templates[Math.floor(Math.random() * templates.length)];
+    }
+    
+    applyLanguageSpecificCorruption(content, language, degradationLevel) {
+        const corruptionChars = {
+            english: ['▓', '▒', '░', '█'],
+            japanese: ['◆', '◇', '◊', '○', '●'],
+            russian: ['█', '▄', '▀', '■', '□'],
+            binary: ['X', '?', '#'],
+            arabic: ['◊', '○', '●', '∆']
+        };
+        
+        const chars = corruptionChars[language] || corruptionChars.english;
+        const intensity = {
+            minimal: 0.1,
+            moderate: 0.3,
+            severe: 0.6,
+            complete: 0.9
+        }[degradationLevel] || 0.1;
+        
+        let corrupted = content;
+        const replaceCount = Math.floor(content.length * intensity);
+        
+        for (let i = 0; i < replaceCount; i++) {
+            const pos = Math.floor(Math.random() * corrupted.length);
+            const char = chars[Math.floor(Math.random() * chars.length)];
+            corrupted = corrupted.substring(0, pos) + char + corrupted.substring(pos + 1);
+        }
+        
+        return corrupted;
+    }
+    
+    applyLanguageSpecificVisuals(fragment, language, degradationLevel) {
+        fragment.setAttribute('data-language', language);
+        
+        // Language-specific visual classes
+        const languageClasses = {
+            japanese: 'lang-japanese',
+            russian: 'lang-russian',
+            binary: 'lang-binary',
+            arabic: 'lang-arabic'
+        };
+        
+        if (languageClasses[language]) {
+            fragment.classList.add(languageClasses[language]);
+        }
+    }
+    
+    animateLanguageFragment(fragment, edge, language) {
+        const drift = this.calculateDrift(edge);
+        const { animationDuration } = this.tierSettings;
+        
+        // Language-specific animation variations
+        const languageAnimations = {
+            japanese: { ease: 'power1.inOut', scale: 0.9 },
+            russian: { ease: 'power2.out', rotation: 5 },
+            binary: { ease: 'steps(10)', filter: 'brightness(1.2)' },
+            arabic: { ease: 'power1.out', skewX: 2 }
+        };
+        
+        const langAnim = languageAnimations[language] || {};
+        
+        // Initial appearance
+        AnimationGuardian.safeAnimate(fragment, {
+            opacity: 0.8,
+            scale: langAnim.scale || 1,
+            rotation: langAnim.rotation || 0,
+            skewX: langAnim.skewX || 0,
+            filter: langAnim.filter || 'none',
+            duration: 1,
+            ease: langAnim.ease || 'power2.out',
+            delay: 0
+        });
+        
+        // Drift animation
+        AnimationGuardian.safeAnimate(fragment, {
+            x: drift.x * 0.2,
+            y: drift.y * 0.2,
+            duration: animationDuration * 0.7,
+            ease: 'none',
+            delay: 1
+        });
+        
+        // Fade out
+        AnimationGuardian.safeAnimate(fragment, {
+            x: drift.x * 0.5,
+            y: drift.y * 0.5,
+            opacity: 0,
+            duration: animationDuration * 0.3,
+            ease: 'power2.in',
+            delay: 1 + (animationDuration * 0.7) - 0.5,
+            onComplete: () => {
+                if (fragment.parentNode) {
+                    consciousness.recordEvent('memory_dissolved', {
+                        content: fragment.textContent,
+                        language: language,
+                        timeVisible: Date.now() - fragment.dataset.birthTime,
+                        naturalDissolution: false,
+                        reason: 'animation_complete'
+                    });
+                    this.removeFragment(fragment);
+                }
+            }
+        });
     }
 }
