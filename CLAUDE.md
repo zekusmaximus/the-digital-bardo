@@ -1,4 +1,6 @@
-# CLAUDE.md - The Digital Bardo
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -154,18 +156,78 @@ AnimationGuardian.safeAnimate(element, {
 3. Emit `recognition:details` with method type
 4. Update karma based on method used
 
-## Deployment
+## Essential Commands
 
+### Development
 ```bash
-# Development
+# Start development server (port 8888)
 npm run dev
 
 # Build for production
 npm run build
 
-# Deploy to Netlify
+# Preview production build
+npm run preview
+```
+
+### Deployment
+```bash
+# Deploy to staging
+npm run deploy
+
+# Deploy to production
 npm run deploy:prod
 ```
+
+### Testing Strategy
+This project uses custom testing instead of traditional test frameworks:
+
+**Manual Test Pages** (Located in `/clear-lode/` and root):
+- `verify-fixes.html` - System verification panel
+- `debug-test.html` - Debug panel with real-time monitoring
+- `test-manual.html` - Manual testing interface 
+- `karma-test.html` - Karmic engine testing
+- `security-test.html` - Security validation testing
+
+**Debug Mode**: Add `?debug` parameter to any URL to enable console logging.
+
+**Performance Testing**: 
+- `adaptive-monitoring-test.html` - Performance tier detection
+- `fragment-optimization-demo.js` - Fragment rendering optimization
+
+## Core Architecture
+
+### Centralized State Management
+All application state flows through `src/consciousness/digital-soul.js`:
+- **Single Source of Truth**: `DigitalConsciousness` class manages all state
+- **Reactive Updates**: Subscribe to state changes via `consciousness.subscribe(path, callback)`
+- **Safe Access**: Use `consciousness.getState(path)` and `consciousness.setState(path, value)`
+
+### Event-Driven Architecture  
+The system uses a custom event bridge pattern:
+- `ClearLodeEventBridge` coordinates module communication
+- Modules emit events instead of direct coupling
+- FSM (Finite State Machine) manages recognition states in `recognition-fsm.js`
+
+### Resource Management
+All classes implement `destroy()` method with `ResourceGuardian`:
+```javascript
+// Register resources for automatic cleanup
+this.guardian.register(this.timeline, () => this.timeline.kill());
+this.guardian.register(this.observer, () => this.observer.disconnect());
+
+// Cleanup on destroy
+destroy() {
+    this.guardian.cleanupAll();
+}
+```
+
+### Security Architecture
+Custom security system replaces standard web security:
+- **XSS Prevention**: `consciousness-purification.js` provides secure DOM utilities
+- **Input Validation**: `karmic-validation.js` validates all user data 
+- **Data Flow Auditing**: `data-flow-guardian.js` tracks data boundaries
+- **CSP Integration**: Vite plugin applies development CSP with nonces
 
 ## Important Constants
 
@@ -180,6 +242,11 @@ npm run deploy:prod
 - Hesitation: -1 temporal per second
 - Attachment (clicking memories): -2 emotional
 - Void dwelling: Logarithmic increase
+
+### Build Configuration
+- **Development Port**: 8888 (set in vite.config.js)
+- **Multi-Page Build**: 6 entry points (main, void, clear-lode, datascape, incarnation, limbo)
+- **Security Headers**: Applied via netlify.toml with custom X-Consciousness headers
 
 ## Phase-Specific Notes
 
