@@ -81,15 +81,24 @@ export class DegradationSystem {
         this.eventBridge.emit('degradation:started');
 
         const choicePrompt = document.getElementById('choice-prompt');
-        if (choicePrompt) choicePrompt.classList.remove('hidden');
+        if (choicePrompt) {
+            choicePrompt.classList.remove('hidden');
+            choicePrompt.style.display = 'block';
+            choicePrompt.style.opacity = '0';
+        }
 
         AnimationGuardian.safeAnimate('#choice-prompt', {
-            display: 'block',
             opacity: 1,
             y: 0,
             duration: 1,
             ease: 'power2.out',
-            onComplete: () => this.showInteractivePrompt()
+            onStart: () => {
+                console.log('🌀 [DegradationSystem] Choice prompt animation started');
+            },
+            onComplete: () => {
+                console.log('🌀 [DegradationSystem] Choice prompt visible, starting interactive prompt');
+                this.showInteractivePrompt();
+            }
         });
         
         consciousness.recordEvent('consciousness_degradation_started', {
@@ -203,8 +212,10 @@ export class DegradationSystem {
         if (glitchingText) {
             glitchingText.innerHTML = `
                 <span class="prompt-text"></span>
-                <span id="degradation-choice-yes" class="choice-option" data-choice="yes">Y</span>/
-                <span id="degradation-choice-no" class="choice-option" data-choice="no">N</span>
+                <br>
+                <span id="degradation-choice-yes" class="choice-option" data-choice="yes" title="Press Y or click to continue">Y</span>
+                <span style="color: #666; margin: 0 8px;">/</span>
+                <span id="degradation-choice-no" class="choice-option" data-choice="no" title="Press N or click to refuse">N</span>
             `;
         }
 
@@ -242,6 +253,27 @@ export class DegradationSystem {
 
         // Begin the multilingual glitch sequence
         this.startGlitchSequence();
+        
+        // Ensure immediate visibility with a fallback
+        setTimeout(() => {
+            const choicePrompt = document.getElementById('choice-prompt');
+            const yesChoice = document.getElementById('degradation-choice-yes');
+            const noChoice = document.getElementById('degradation-choice-no');
+            
+            console.log('🔍 [DegradationSystem] Visibility check:', {
+                choicePrompt: choicePrompt ? 'found' : 'missing',
+                yesChoice: yesChoice ? 'found' : 'missing',
+                noChoice: noChoice ? 'found' : 'missing',
+                promptVisible: choicePrompt ? getComputedStyle(choicePrompt).display : 'N/A',
+                promptOpacity: choicePrompt ? getComputedStyle(choicePrompt).opacity : 'N/A'
+            });
+            
+            if (choicePrompt && getComputedStyle(choicePrompt).opacity === '0') {
+                console.log('⚠️ [DegradationSystem] Prompt not visible, forcing visibility');
+                choicePrompt.style.opacity = '1';
+                choicePrompt.style.display = 'block';
+            }
+        }, 100);
     }
 
     /**
@@ -390,8 +422,24 @@ export class DegradationSystem {
     updatePromptDisplay(corruptedText) {
         const textEl = document.querySelector('.glitching-text .prompt-text');
         if (!textEl) return;
+        
         textEl.textContent = corruptedText;
         textEl.setAttribute('aria-label', this.activePrompt);
+        
+        // Ensure the choice prompt is visible
+        const choicePrompt = document.getElementById('choice-prompt');
+        if (choicePrompt && choicePrompt.classList.contains('hidden')) {
+            choicePrompt.classList.remove('hidden');
+        }
+        
+        // Add visual emphasis to choice options during heavy corruption
+        const yesChoice = document.getElementById('degradation-choice-yes');
+        const noChoice = document.getElementById('degradation-choice-no');
+        
+        if (this.corruptionLevel > 0.7) {
+            if (yesChoice) yesChoice.style.animation = 'choice-pulse 1s infinite';
+            if (noChoice) noChoice.style.animation = 'choice-pulse 1s infinite';
+        }
     }
 
     /**

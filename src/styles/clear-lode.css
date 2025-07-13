@@ -216,19 +216,73 @@ body.light-manifested {
     position: fixed;
     top: 20px;
     left: 20px;
-    z-index: 100;
+    z-index: 1000; /* Increased from 100 to ensure visibility over light */
+    background: rgba(0, 0, 0, 0.8); /* Dark background for contrast */
+    padding: 10px 15px;
+    border-radius: 5px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* The glitching Y/N prompt */
 .glitching-text {
     font-family: 'Courier New', monospace;
     font-size: 18px;
-    color: #000;
+    color: #ffffff; /* Changed from #000 to white for visibility */
     text-shadow:
-        var(--chromatic-aberration) var(--chromatic-aberration) 0 rgba(255,0,0,0.5),
-        calc(var(--chromatic-aberration) * -1) calc(var(--chromatic-aberration) * -1) 0 rgba(0,255,255,0.5);
-    animation: glitch-skew 2s infinite; /* Slowed down from 0.5s to 2s */
+        1px 1px 0 rgba(255,0,0,0.5),
+        -1px -1px 0 rgba(0,255,255,0.5),
+        0 0 10px rgba(255, 255, 255, 0.3); /* Added glow effect */
+    animation: glitch-skew 2s infinite;
     transform: translateX(var(--glitch-intensity));
+    line-height: 1.4;
+}
+
+/* Choice option styling for Y/N buttons */
+.choice-option {
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 0 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    color: #00ff00; /* Bright green for visibility */
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+.choice-option:hover {
+    background: rgba(0, 255, 0, 0.2);
+    border-color: rgba(0, 255, 0, 0.6);
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+    transform: scale(1.1);
+}
+
+.choice-option:active {
+    background: rgba(0, 255, 0, 0.4);
+    transform: scale(0.95);
+}
+
+/* Prompt text styling */
+.prompt-text {
+    color: #ffffff;
+    margin-right: 10px;
+}
+
+/* Animation for choice options during heavy corruption */
+@keyframes choice-pulse {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+        transform: scale(1.05);
+    }
 }
 
 @keyframes glitch-skew {
@@ -239,6 +293,30 @@ body.light-manifested {
     60% { transform: skew(1deg); }
     80% { transform: skew(-0.5deg); }
     90% { transform: skew(0.5deg); }
+}
+
+/* Ensure choice prompt is visible during all phases */
+body.light-manifested #choice-prompt {
+    display: block !important;
+}
+
+body.light-manifested #choice-prompt.hidden {
+    display: none !important;
+}
+
+/* Additional visibility improvements */
+#choice-prompt .glitching-text {
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+#choice-prompt .prompt-text {
+    margin-bottom: 8px;
+    display: block;
+    min-height: 20px;
 }
 
 /* Fragment field container */

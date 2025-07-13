@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Y/N Prompt Visibility</title>
+    <link rel="stylesheet" href="../src/styles/reality.css">
+    <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <style>
+        body {
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .test-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 2000;
+        }
+        
+        .test-controls button {
+            margin: 5px;
+            padding: 8px 12px;
+            background: #333;
+            color: white;
+            border: 1px solid #666;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .test-controls button:hover {
+            background: #555;
+        }
+        
+        .status {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .pending { color: #ff0; }
+    </style>
+</head>
+<body class="light-manifested">
+    <!-- Simulate the white light background -->
+    <div id="clear-light" class="manifested">
+        <div class="recognition-zone">
+            <div class="light-core"></div>
+        </div>
+    </div>
+    
+    <!-- The Y/N prompt that should be visible -->
+    <div id="choice-prompt" class="hidden">
+        <pre class="glitching-text"></pre>
+    </div>
+    
+    <div class="test-controls">
+        <h4>Y/N Prompt Visibility Test</h4>
+        <div class="status">Prompt Status: <span id="prompt-status" class="pending">PENDING</span></div>
+        <div class="status">Y Button: <span id="y-status" class="pending">PENDING</span></div>
+        <div class="status">N Button: <span id="n-status" class="pending">PENDING</span></div>
+        <button onclick="showPrompt()">Show Y/N Prompt</button>
+        <button onclick="checkVisibility()">Check Visibility</button>
+        <button onclick="testInteraction()">Test Y Key</button>
+    </div>
+
+    <script type="module">
+        import { DegradationSystem } from './degradation-system.js';
+        import { ClearLodeEventBridge } from './event-bridge.js';
+        import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+        import { CLEAR_LODE_CONFIG } from './config.js';
+        
+        let degradationSystem;
+        let eventBridge;
+        let guardian;
+        
+        function updateStatus(id, status, className) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = status;
+                element.className = className;
+            }
+        }
+        
+        window.showPrompt = function() {
+            console.log('🧪 Initializing degradation system...');
+            
+            try {
+                eventBridge = new ClearLodeEventBridge();
+                guardian = new ResourceGuardian();
+                
+                degradationSystem = new DegradationSystem({
+                    eventBridge,
+                    guardian,
+                    config: CLEAR_LODE_CONFIG
+                });
+                
+                degradationSystem.init();
+                
+                // Manually trigger the degradation sequence
+                degradationSystem.beginDegradation();
+                
+                updateStatus('prompt-status', 'TRIGGERED', 'pending');
+                
+                // Check visibility after a short delay
+                setTimeout(checkVisibility, 1000);
+                
+            } catch (error) {
+                console.error('Test failed:', error);
+                updateStatus('prompt-status', 'ERROR', 'fail');
+            }
+        };
+        
+        window.checkVisibility = function() {
+            const choicePrompt = document.getElementById('choice-prompt');
+            const yesChoice = document.getElementById('degradation-choice-yes');
+            const noChoice = document.getElementById('degradation-choice-no');
+            
+            console.log('🔍 Checking visibility:', {
+                choicePrompt: choicePrompt ? 'found' : 'missing',
+                yesChoice: yesChoice ? 'found' : 'missing',
+                noChoice: noChoice ? 'found' : 'missing'
+            });
+            
+            if (choicePrompt) {
+                const styles = getComputedStyle(choicePrompt);
+                console.log('Choice prompt styles:', {
+                    display: styles.display,
+                    opacity: styles.opacity,
+                    visibility: styles.visibility,
+                    zIndex: styles.zIndex
+                });
+                
+                if (styles.display !== 'none' && styles.opacity !== '0') {
+                    updateStatus('prompt-status', 'VISIBLE', 'pass');
+                } else {
+                    updateStatus('prompt-status', 'HIDDEN', 'fail');
+                }
+            } else {
+                updateStatus('prompt-status', 'MISSING', 'fail');
+            }
+            
+            updateStatus('y-status', yesChoice ? 'FOUND' : 'MISSING', yesChoice ? 'pass' : 'fail');
+            updateStatus('n-status', noChoice ? 'FOUND' : 'MISSING', noChoice ? 'pass' : 'fail');
+        };
+        
+        window.testInteraction = function() {
+            // Simulate Y key press
+            const event = new KeyboardEvent('keydown', { key: 'y' });
+            document.dispatchEvent(event);
+            console.log('🎹 Simulated Y key press');
+        };
+        
+        // Auto-check on load
+        setTimeout(() => {
+            console.log('🧪 Test page loaded');
+        }, 100);
+    </script>
+</body>
+</html>
