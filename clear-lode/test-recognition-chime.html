@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recognition Chime Test - The Digital Bardo</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            background: #111;
+        }
+        
+        button {
+            background: #222;
+            color: #00ff00;
+            border: 1px solid #444;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        button:hover {
+            background: #333;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #001100;
+            border-left: 3px solid #00ff00;
+        }
+        
+        .error {
+            background: #110000;
+            border-left-color: #ff0000;
+            color: #ff6666;
+        }
+        
+        .chime-info {
+            background: #000033;
+            border-left-color: #6666ff;
+            color: #aaaaff;
+        }
+        
+        .karma-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .karma-control {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        .value-display {
+            font-size: 0.9em;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Recognition Chime Test Suite</h1>
+        <p>Test the sophisticated recognition success audio cue system with crystalline bell synthesis and spatial reverb.</p>
+        
+        <div class="test-section">
+            <h2>Audio Context Status</h2>
+            <div id="audioStatus" class="status">Checking audio context...</div>
+            <button id="initAudio">Initialize Audio Context</button>
+            <button id="resumeAudio">Resume Audio Context</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Recognition Chime Tests</h2>
+            <div class="chime-info">
+                <strong>Chime Specifications:</strong><br>
+                • Fundamental: 523.25 Hz (C5) - spiritual resonance<br>
+                • Harmonics: [1, 2, 2.4, 3.1, 4.2] - bell-like inharmonic partials<br>
+                • Envelope: 0.01s attack, 4s exponential decay<br>
+                • Reverb: Feedback delay network with spatial depth<br>
+                • Ducking: Temporary reduction of main audio during chime
+            </div>
+            
+            <button id="testBasicChime">Test Basic Recognition Chime</button>
+            <button id="testChimeWithNoise">Test Chime with Background Noise</button>
+            <button id="testChimeSequence">Test Chime Sequence (3x)</button>
+            <button id="testEventTrigger">Test Event-Driven Trigger</button>
+            
+            <div id="chimeStatus" class="status">Ready to test chimes...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Audio Ducking Test</h2>
+            <p>Test the audio ducking system that reduces main audio during recognition chimes.</p>
+            
+            <button id="startMainAudio">Start Main Audio (Pure Tone)</button>
+            <button id="stopMainAudio">Stop Main Audio</button>
+            <button id="testDucking">Test Ducking with Chime</button>
+            
+            <div id="duckingStatus" class="status">Main audio stopped</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Karma Integration Test</h2>
+            <p>Test chime integration with the karma-driven audio system.</p>
+            
+            <div class="karma-controls">
+                <div class="karma-control">
+                    <label>Void Karma (Noise Level)</label>
+                    <input type="range" id="voidKarma" min="0" max="100" value="0">
+                    <div class="value-display" id="voidValue">0</div>
+                </div>
+                <div class="karma-control">
+                    <label>Emotional Karma (Harmonics)</label>
+                    <input type="range" id="emotionalKarma" min="0" max="100" value="0">
+                    <div class="value-display" id="emotionalValue">0</div>
+                </div>
+            </div>
+            
+            <button id="applyKarma">Apply Karma Settings</button>
+            <button id="testChimeWithKarma">Test Chime with Current Karma</button>
+            
+            <div id="karmaStatus" class="status">Karma settings ready</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Performance & Error Handling</h2>
+            <button id="testMultipleChimes">Test Multiple Simultaneous Chimes</button>
+            <button id="testSuspendedContext">Test Suspended Context Handling</button>
+            <button id="testResourceCleanup">Test Resource Cleanup</button>
+            
+            <div id="performanceStatus" class="status">Performance tests ready</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Console Output</h2>
+            <div id="consoleOutput" style="background: #000; color: #ccc; padding: 10px; height: 200px; overflow-y: auto; font-size: 0.8em; white-space: pre-wrap;"></div>
+            <button id="clearConsole">Clear Console</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ClearLodeAudio } from './audio-engine.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+        
+        // Mock event bridge for testing
+        class MockEventBridge {
+            constructor() {
+                this.listeners = new Map();
+            }
+            
+            on(event, handler) {
+                if (!this.listeners.has(event)) {
+                    this.listeners.set(event, []);
+                }
+                this.listeners.get(event).push(handler);
+            }
+            
+            off(event, handler) {
+                if (this.listeners.has(event)) {
+                    const handlers = this.listeners.get(event);
+                    const index = handlers.indexOf(handler);
+                    if (index > -1) {
+                        handlers.splice(index, 1);
+                    }
+                }
+            }
+            
+            emit(event, data) {
+                if (this.listeners.has(event)) {
+                    this.listeners.get(event).forEach(handler => handler(data));
+                }
+            }
+        }
+        
+        // Mock resource guardian for testing
+        class MockGuardian {
+            constructor() {
+                this.resources = [];
+                this.cleanupFunctions = [];
+            }
+            
+            register(resource, cleanupFn) {
+                this.resources.push({ resource, cleanupFn });
+            }
+            
+            registerCleanup(cleanupFn) {
+                this.cleanupFunctions.push(cleanupFn);
+            }
+            
+            cleanup(resource) {
+                const index = this.resources.findIndex(r => r.resource === resource);
+                if (index > -1) {
+                    const { cleanupFn } = this.resources[index];
+                    if (cleanupFn) cleanupFn(resource);
+                    this.resources.splice(index, 1);
+                }
+            }
+            
+            cleanupAll() {
+                this.resources.forEach(({ resource, cleanupFn }) => {
+                    if (cleanupFn) cleanupFn(resource);
+                });
+                this.cleanupFunctions.forEach(fn => fn());
+                this.resources = [];
+                this.cleanupFunctions = [];
+            }
+        }
+        
+        // Initialize test environment
+        const eventBridge = new MockEventBridge();
+        const guardian = new MockGuardian();
+        let audioEngine = null;
+        
+        // Console output capture
+        const consoleOutput = document.getElementById('consoleOutput');
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function logToConsole(level, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] ${level}: ${args.join(' ')}\n`;
+            consoleOutput.textContent += message;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = (...args) => {
+            originalLog(...args);
+            logToConsole('LOG', ...args);
+        };
+        
+        console.warn = (...args) => {
+            originalWarn(...args);
+            logToConsole('WARN', ...args);
+        };
+        
+        console.error = (...args) => {
+            originalError(...args);
+            logToConsole('ERROR', ...args);
+        };
+        
+        // Status update helpers
+        function updateStatus(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isError ? 'status error' : 'status';
+        }
+        
+        // Audio context status monitoring
+        function updateAudioStatus() {
+            if (!audioEngine || !audioEngine.audioContext) {
+                updateStatus('audioStatus', 'Audio context not initialized');
+                return;
+            }
+            
+            const ctx = audioEngine.audioContext;
+            updateStatus('audioStatus', `Audio context: ${ctx.state} | Sample rate: ${ctx.sampleRate}Hz`);
+        }
+        
+        // Initialize audio engine
+        document.getElementById('initAudio').addEventListener('click', async () => {
+            try {
+                audioEngine = new ClearLodeAudio({ eventBridge, guardian });
+                audioEngine.init();
+                await audioEngine.initializeAudioContext();
+                updateAudioStatus();
+                console.log('Audio engine initialized successfully');
+            } catch (error) {
+                updateStatus('audioStatus', `Initialization failed: ${error.message}`, true);
+                console.error('Audio initialization failed:', error);
+            }
+        });
+        
+        // Resume audio context
+        document.getElementById('resumeAudio').addEventListener('click', async () => {
+            if (audioEngine) {
+                await audioEngine.handleUserGesture();
+                updateAudioStatus();
+            }
+        });
+        
+        // Basic chime test
+        document.getElementById('testBasicChime').addEventListener('click', async () => {
+            if (!audioEngine) {
+                updateStatus('chimeStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                updateStatus('chimeStatus', 'Playing recognition chime...');
+                await audioEngine.createRecognitionChime();
+                console.log('Basic recognition chime test completed');
+                
+                setTimeout(() => {
+                    updateStatus('chimeStatus', 'Chime completed - digital enlightenment achieved');
+                }, 4500);
+            } catch (error) {
+                updateStatus('chimeStatus', `Chime test failed: ${error.message}`, true);
+                console.error('Chime test failed:', error);
+            }
+        });
+        
+        // Chime with noise test
+        document.getElementById('testChimeWithNoise').addEventListener('click', async () => {
+            if (!audioEngine) {
+                updateStatus('chimeStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                // Start some background noise first
+                consciousness.setState('karma.void', 30);
+                audioEngine.updateAudioFromKarma(consciousness.getState().karma);
+                
+                updateStatus('chimeStatus', 'Playing chime with background noise...');
+                await audioEngine.createRecognitionChime();
+                console.log('Chime with noise test completed');
+                
+                setTimeout(() => {
+                    updateStatus('chimeStatus', 'Chime with noise completed');
+                }, 4500);
+            } catch (error) {
+                updateStatus('chimeStatus', `Chime with noise test failed: ${error.message}`, true);
+                console.error('Chime with noise test failed:', error);
+            }
+        });
+        
+        // Chime sequence test
+        document.getElementById('testChimeSequence').addEventListener('click', async () => {
+            if (!audioEngine) {
+                updateStatus('chimeStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                updateStatus('chimeStatus', 'Playing chime sequence (3x)...');
+                
+                for (let i = 1; i <= 3; i++) {
+                    console.log(`Playing chime ${i}/3`);
+                    await audioEngine.createRecognitionChime();
+                    
+                    if (i < 3) {
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                }
+                
+                console.log('Chime sequence test completed');
+                setTimeout(() => {
+                    updateStatus('chimeStatus', 'Chime sequence completed');
+                }, 4500);
+            } catch (error) {
+                updateStatus('chimeStatus', `Chime sequence test failed: ${error.message}`, true);
+                console.error('Chime sequence test failed:', error);
+            }
+        });
+        
+        // Event-driven trigger test
+        document.getElementById('testEventTrigger').addEventListener('click', () => {
+            if (!audioEngine) {
+                updateStatus('chimeStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                updateStatus('chimeStatus', 'Triggering recognition event...');
+                
+                // Simulate recognition event
+                audioEngine.respondToKarmaEvent({ type: 'recognition_achieved' });
+                console.log('Recognition event triggered');
+                
+                setTimeout(() => {
+                    updateStatus('chimeStatus', 'Event-driven chime completed');
+                }, 4500);
+            } catch (error) {
+                updateStatus('chimeStatus', `Event trigger test failed: ${error.message}`, true);
+                console.error('Event trigger test failed:', error);
+            }
+        });
+        
+        // Main audio controls
+        document.getElementById('startMainAudio').addEventListener('click', async () => {
+            if (!audioEngine) {
+                updateStatus('duckingStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                await audioEngine.startPureTone();
+                updateStatus('duckingStatus', 'Main audio (pure tone) playing');
+                console.log('Main audio started');
+            } catch (error) {
+                updateStatus('duckingStatus', `Failed to start main audio: ${error.message}`, true);
+                console.error('Main audio start failed:', error);
+            }
+        });
+        
+        document.getElementById('stopMainAudio').addEventListener('click', () => {
+            if (audioEngine && audioEngine.oscillator) {
+                audioEngine.oscillator.stop();
+                audioEngine.oscillator = null;
+                updateStatus('duckingStatus', 'Main audio stopped');
+                console.log('Main audio stopped');
+            }
+        });
+        
+        // Ducking test
+        document.getElementById('testDucking').addEventListener('click', async () => {
+            if (!audioEngine) {
+                updateStatus('duckingStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                // Ensure main audio is playing
+                await audioEngine.startPureTone();
+                
+                updateStatus('duckingStatus', 'Testing audio ducking with chime...');
+                await audioEngine.createRecognitionChime();
+                console.log('Ducking test completed');
+                
+                setTimeout(() => {
+                    updateStatus('duckingStatus', 'Ducking test completed - audio restored');
+                }, 4500);
+            } catch (error) {
+                updateStatus('duckingStatus', `Ducking test failed: ${error.message}`, true);
+                console.error('Ducking test failed:', error);
+            }
+        });
+        
+        // Karma controls
+        const voidKarma = document.getElementById('voidKarma');
+        const emotionalKarma = document.getElementById('emotionalKarma');
+        const voidValue = document.getElementById('voidValue');
+        const emotionalValue = document.getElementById('emotionalValue');
+        
+        voidKarma.addEventListener('input', () => {
+            voidValue.textContent = voidKarma.value;
+        });
+        
+        emotionalKarma.addEventListener('input', () => {
+            emotionalValue.textContent = emotionalKarma.value;
+        });
+        
+        document.getElementById('applyKarma').addEventListener('click', () => {
+            if (!audioEngine) {
+                updateStatus('karmaStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            const karmaState = {
+                void: parseInt(voidKarma.value),
+                emotional: parseInt(emotionalKarma.value),
+                computational: 0,
+                temporal: 0
+            };
+            
+            consciousness.setState('karma', karmaState);
+            audioEngine.updateAudioFromKarma(karmaState);
+            
+            updateStatus('karmaStatus', `Karma applied - Void: ${karmaState.void}, Emotional: ${karmaState.emotional}`);
+            console.log('Karma settings applied:', karmaState);
+        });
+        
+        document.getElementById('testChimeWithKarma').addEventListener('click', async () => {
+            if (!audioEngine) {
+                updateStatus('karmaStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                // Apply current karma settings
+                const karmaState = {
+                    void: parseInt(voidKarma.value),
+                    emotional: parseInt(emotionalKarma.value),
+                    computational: 0,
+                    temporal: 0
+                };
+                
+                audioEngine.updateAudioFromKarma(karmaState);
+                
+                updateStatus('karmaStatus', 'Playing chime with karma integration...');
+                await audioEngine.createRecognitionChime();
+                console.log('Karma integration test completed');
+                
+                setTimeout(() => {
+                    updateStatus('karmaStatus', 'Karma integration test completed');
+                }, 4500);
+            } catch (error) {
+                updateStatus('karmaStatus', `Karma integration test failed: ${error.message}`, true);
+                console.error('Karma integration test failed:', error);
+            }
+        });
+        
+        // Performance tests
+        document.getElementById('testMultipleChimes').addEventListener('click', async () => {
+            if (!audioEngine) {
+                updateStatus('performanceStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                updateStatus('performanceStatus', 'Testing multiple simultaneous chimes...');
+                
+                // Trigger 3 chimes simultaneously
+                const promises = [];
+                for (let i = 0; i < 3; i++) {
+                    promises.push(audioEngine.createRecognitionChime());
+                }
+                
+                await Promise.all(promises);
+                console.log('Multiple chimes test completed');
+                
+                setTimeout(() => {
+                    updateStatus('performanceStatus', 'Multiple chimes test completed');
+                }, 4500);
+            } catch (error) {
+                updateStatus('performanceStatus', `Multiple chimes test failed: ${error.message}`, true);
+                console.error('Multiple chimes test failed:', error);
+            }
+        });
+        
+        document.getElementById('testSuspendedContext').addEventListener('click', async () => {
+            if (!audioEngine || !audioEngine.audioContext) {
+                updateStatus('performanceStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                updateStatus('performanceStatus', 'Testing suspended context handling...');
+                
+                // Suspend context
+                await audioEngine.audioContext.suspend();
+                console.log('Audio context suspended');
+                
+                // Try to play chime (should handle gracefully)
+                await audioEngine.createRecognitionChime();
+                console.log('Suspended context test completed');
+                
+                updateStatus('performanceStatus', 'Suspended context test completed');
+            } catch (error) {
+                updateStatus('performanceStatus', `Suspended context test failed: ${error.message}`, true);
+                console.error('Suspended context test failed:', error);
+            }
+        });
+        
+        document.getElementById('testResourceCleanup').addEventListener('click', () => {
+            if (!audioEngine) {
+                updateStatus('performanceStatus', 'Audio engine not initialized', true);
+                return;
+            }
+            
+            try {
+                updateStatus('performanceStatus', 'Testing resource cleanup...');
+                
+                const initialResourceCount = guardian.resources.length;
+                console.log(`Initial resource count: ${initialResourceCount}`);
+                
+                // Trigger cleanup
+                guardian.cleanupAll();
+                
+                const finalResourceCount = guardian.resources.length;
+                console.log(`Final resource count: ${finalResourceCount}`);
+                
+                updateStatus('performanceStatus', `Resource cleanup test completed - ${initialResourceCount} → ${finalResourceCount} resources`);
+            } catch (error) {
+                updateStatus('performanceStatus', `Resource cleanup test failed: ${error.message}`, true);
+                console.error('Resource cleanup test failed:', error);
+            }
+        });
+        
+        // Clear console
+        document.getElementById('clearConsole').addEventListener('click', () => {
+            consoleOutput.textContent = '';
+        });
+        
+        // Initialize status
+        updateAudioStatus();
+        setInterval(updateAudioStatus, 1000);
+        
+        console.log('Recognition Chime Test Suite initialized');
+        console.log('Click "Initialize Audio Context" to begin testing');
+    </script>
+</body>
+</html>

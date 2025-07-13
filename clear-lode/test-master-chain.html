@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Chain Test - The Digital Bardo</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            background: #111;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            background: #222;
+            color: #00ff00;
+            border: 1px solid #444;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #333;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #001100;
+            border-left: 3px solid #00ff00;
+        }
+        .karma-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .karma-control {
+            background: #0a0a0a;
+            padding: 10px;
+            border: 1px solid #333;
+        }
+        .karma-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .karma-control input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+        .karma-control .value {
+            font-size: 14px;
+            color: #ffff00;
+        }
+        .master-chain-info {
+            background: #001122;
+            border: 1px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .master-chain-info h3 {
+            color: #00ccff;
+            margin-top: 0;
+        }
+        .chain-params {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .param {
+            background: #000033;
+            padding: 8px;
+            border: 1px solid #0066cc;
+            font-size: 12px;
+        }
+        .param-label {
+            color: #66ccff;
+            font-weight: bold;
+        }
+        .param-value {
+            color: #ffffff;
+        }
+        .log {
+            background: #001100;
+            border: 1px solid #004400;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            margin: 15px 0;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-entry.info { color: #00ff00; }
+        .log-entry.warn { color: #ffaa00; }
+        .log-entry.error { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎛️ Master Chain & Dynamics Processing Test</h1>
+        <p>Testing the comprehensive master effects chain with karma-adaptive dynamics processing.</p>
+
+        <div class="test-section">
+            <h2>Audio System Control</h2>
+            <div class="controls">
+                <button id="initAudio">Initialize Audio System</button>
+                <button id="startTone" disabled>Start Pure Tone</button>
+                <button id="startDegradation" disabled>Start Degradation</button>
+                <button id="triggerChime" disabled>Trigger Recognition Chime</button>
+                <button id="stopAudio" disabled>Stop Audio</button>
+            </div>
+            <div class="status" id="audioStatus">Audio system not initialized</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Master Chain Information</h2>
+            <div class="master-chain-info">
+                <h3>Signal Flow: Audio Sources → High-Shelf Filter → Low-Shelf Filter → Master Compressor → Destination</h3>
+                <div class="chain-params" id="masterChainParams">
+                    <div class="param">
+                        <div class="param-label">High-Shelf Filter</div>
+                        <div class="param-value">8kHz, -3dB</div>
+                    </div>
+                    <div class="param">
+                        <div class="param-label">Low-Shelf Filter</div>
+                        <div class="param-value">200Hz, +2dB</div>
+                    </div>
+                    <div class="param">
+                        <div class="param-label">Compressor Ratio</div>
+                        <div class="param-value" id="compressorRatio">4:1</div>
+                    </div>
+                    <div class="param">
+                        <div class="param-label">Compressor Threshold</div>
+                        <div class="param-value" id="compressorThreshold">-12dB</div>
+                    </div>
+                    <div class="param">
+                        <div class="param-label">Master Gain</div>
+                        <div class="param-value">0.8 (headroom)</div>
+                    </div>
+                    <div class="param">
+                        <div class="param-label">Chain Status</div>
+                        <div class="param-value" id="chainStatus">Not Initialized</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Karma-Adaptive Dynamics Control</h2>
+            <p>Adjust karma values to test adaptive compression. Higher total karma = more dynamic range (less compression).</p>
+            <div class="karma-controls">
+                <div class="karma-control">
+                    <label>Computational Karma</label>
+                    <input type="range" id="computational" min="0" max="100" value="0">
+                    <div class="value" id="computationalValue">0</div>
+                </div>
+                <div class="karma-control">
+                    <label>Emotional Karma</label>
+                    <input type="range" id="emotional" min="0" max="100" value="0">
+                    <div class="value" id="emotionalValue">0</div>
+                </div>
+                <div class="karma-control">
+                    <label>Void Karma</label>
+                    <input type="range" id="void" min="0" max="100" value="0">
+                    <div class="value" id="voidValue">0</div>
+                </div>
+                <div class="karma-control">
+                    <label>Temporal Karma</label>
+                    <input type="range" id="temporal" min="0" max="100" value="0">
+                    <div class="value" id="temporalValue">0</div>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="updateKarma" disabled>Update Karma & Master Dynamics</button>
+                <button id="resetKarma">Reset All Karma</button>
+            </div>
+            <div class="status">
+                <strong>Total Karma:</strong> <span id="totalKarma">0</span> / 400 
+                <strong>Karma Factor:</strong> <span id="karmaFactor">0.00</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Scenarios</h2>
+            <div class="controls">
+                <button id="testLowKarma" disabled>Test Low Karma (Heavy Compression)</button>
+                <button id="testMidKarma" disabled>Test Mid Karma (Balanced)</button>
+                <button id="testHighKarma" disabled>Test High Karma (Light Compression)</button>
+                <button id="testChimeWithMaster" disabled>Test Chime Through Master Chain</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>System Log</h2>
+            <div class="log" id="systemLog"></div>
+            <div class="controls">
+                <button id="clearLog">Clear Log</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ClearLodeOrchestrator } from './orchestrator.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+
+        let orchestrator = null;
+        let audioEngine = null;
+
+        // DOM elements
+        const elements = {
+            initAudio: document.getElementById('initAudio'),
+            startTone: document.getElementById('startTone'),
+            startDegradation: document.getElementById('startDegradation'),
+            triggerChime: document.getElementById('triggerChime'),
+            stopAudio: document.getElementById('stopAudio'),
+            audioStatus: document.getElementById('audioStatus'),
+            updateKarma: document.getElementById('updateKarma'),
+            resetKarma: document.getElementById('resetKarma'),
+            systemLog: document.getElementById('systemLog'),
+            clearLog: document.getElementById('clearLog'),
+            testLowKarma: document.getElementById('testLowKarma'),
+            testMidKarma: document.getElementById('testMidKarma'),
+            testHighKarma: document.getElementById('testHighKarma'),
+            testChimeWithMaster: document.getElementById('testChimeWithMaster'),
+            totalKarma: document.getElementById('totalKarma'),
+            karmaFactor: document.getElementById('karmaFactor'),
+            compressorRatio: document.getElementById('compressorRatio'),
+            compressorThreshold: document.getElementById('compressorThreshold'),
+            chainStatus: document.getElementById('chainStatus')
+        };
+
+        // Karma controls
+        const karmaControls = ['computational', 'emotional', 'void', 'temporal'];
+        const karmaElements = {};
+        karmaControls.forEach(type => {
+            karmaElements[type] = {
+                slider: document.getElementById(type),
+                value: document.getElementById(type + 'Value')
+            };
+        });
+
+        // Logging function
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            elements.systemLog.appendChild(entry);
+            elements.systemLog.scrollTop = elements.systemLog.scrollHeight;
+            console.log(`[MasterChainTest] ${message}`);
+        }
+
+        // Update karma display
+        function updateKarmaDisplay() {
+            let total = 0;
+            karmaControls.forEach(type => {
+                const value = parseInt(karmaElements[type].slider.value);
+                karmaElements[type].value.textContent = value;
+                total += value;
+            });
+            
+            elements.totalKarma.textContent = total;
+            elements.karmaFactor.textContent = Math.min(total / 400, 1).toFixed(2);
+            
+            // Calculate and display adaptive compression parameters
+            const karmaFactor = Math.min(total / 400, 1);
+            const adaptiveRatio = 4 - (karmaFactor * 2);
+            const adaptiveThreshold = -12 + (karmaFactor * 6);
+            
+            elements.compressorRatio.textContent = `${adaptiveRatio.toFixed(1)}:1`;
+            elements.compressorThreshold.textContent = `${adaptiveThreshold.toFixed(1)}dB`;
+        }
+
+        // Initialize karma controls
+        karmaControls.forEach(type => {
+            karmaElements[type].slider.addEventListener('input', updateKarmaDisplay);
+        });
+
+        // Initialize audio system
+        elements.initAudio.addEventListener('click', async () => {
+            try {
+                log('Initializing audio system with master chain...');
+                elements.initAudio.disabled = true;
+                
+                orchestrator = new ClearLodeOrchestrator();
+                await orchestrator.initialize();
+                audioEngine = orchestrator.audio;
+                
+                // Check if master chain was initialized
+                if (audioEngine.masterChain && audioEngine.masterChain.initialized) {
+                    log('Master effects chain initialized successfully!', 'info');
+                    elements.chainStatus.textContent = 'Initialized';
+                    elements.chainStatus.style.color = '#00ff00';
+                } else {
+                    log('Master chain not initialized - using direct connection fallback', 'warn');
+                    elements.chainStatus.textContent = 'Fallback Mode';
+                    elements.chainStatus.style.color = '#ffaa00';
+                }
+                
+                elements.audioStatus.textContent = 'Audio system initialized - Master chain active';
+                elements.startTone.disabled = false;
+                elements.startDegradation.disabled = false;
+                elements.triggerChime.disabled = false;
+                elements.stopAudio.disabled = false;
+                elements.updateKarma.disabled = false;
+                elements.testLowKarma.disabled = false;
+                elements.testMidKarma.disabled = false;
+                elements.testHighKarma.disabled = false;
+                elements.testChimeWithMaster.disabled = false;
+                
+                log('Audio system ready for testing');
+                
+            } catch (error) {
+                log(`Failed to initialize audio system: ${error.message}`, 'error');
+                elements.initAudio.disabled = false;
+            }
+        });
+
+        // Start pure tone
+        elements.startTone.addEventListener('click', async () => {
+            try {
+                log('Starting pure tone through master chain...');
+                await audioEngine.startPureTone();
+                log('Pure tone started - should be processed through master chain');
+            } catch (error) {
+                log(`Failed to start pure tone: ${error.message}`, 'error');
+            }
+        });
+
+        // Start degradation
+        elements.startDegradation.addEventListener('click', () => {
+            try {
+                log('Starting audio degradation...');
+                audioEngine.startDegradation();
+                log('Degradation started - noise will be processed through master chain');
+            } catch (error) {
+                log(`Failed to start degradation: ${error.message}`, 'error');
+            }
+        });
+
+        // Trigger recognition chime
+        elements.triggerChime.addEventListener('click', async () => {
+            try {
+                log('Triggering recognition chime through master chain...');
+                await audioEngine.achieveResonance();
+                log('Recognition chime triggered - processed through master chain with reverb');
+            } catch (error) {
+                log(`Failed to trigger chime: ${error.message}`, 'error');
+            }
+        });
+
+        // Update karma and master dynamics
+        elements.updateKarma.addEventListener('click', () => {
+            try {
+                const karmaState = {};
+                karmaControls.forEach(type => {
+                    karmaState[type] = parseInt(karmaElements[type].slider.value);
+                });
+                
+                log(`Updating karma state: ${JSON.stringify(karmaState)}`);
+                
+                // Update consciousness state
+                consciousness.setState('karma', karmaState);
+                
+                // Trigger audio update
+                audioEngine.updateAudioFromKarma(karmaState);
+                
+                const total = Object.values(karmaState).reduce((sum, val) => sum + val, 0);
+                const karmaFactor = Math.min(total / 400, 1);
+                const adaptiveRatio = 4 - (karmaFactor * 2);
+                const adaptiveThreshold = -12 + (karmaFactor * 6);
+                
+                log(`Master dynamics updated - Ratio: ${adaptiveRatio.toFixed(1)}:1, Threshold: ${adaptiveThreshold.toFixed(1)}dB`);
+                
+            } catch (error) {
+                log(`Failed to update karma: ${error.message}`, 'error');
+            }
+        });
+
+        // Reset karma
+        elements.resetKarma.addEventListener('click', () => {
+            karmaControls.forEach(type => {
+                karmaElements[type].slider.value = 0;
+            });
+            updateKarmaDisplay();
+            log('All karma values reset to 0');
+        });
+
+        // Test scenarios
+        elements.testLowKarma.addEventListener('click', () => {
+            // Set low karma values for heavy compression
+            karmaElements.computational.slider.value = 10;
+            karmaElements.emotional.slider.value = 5;
+            karmaElements.void.slider.value = 15;
+            karmaElements.temporal.slider.value = 10;
+            updateKarmaDisplay();
+            elements.updateKarma.click();
+            log('Low karma test - Heavy compression (4:1 ratio, -12dB threshold)');
+        });
+
+        elements.testMidKarma.addEventListener('click', () => {
+            // Set medium karma values for balanced compression
+            karmaElements.computational.slider.value = 50;
+            karmaElements.emotional.slider.value = 50;
+            karmaElements.void.slider.value = 50;
+            karmaElements.temporal.slider.value = 50;
+            updateKarmaDisplay();
+            elements.updateKarma.click();
+            log('Mid karma test - Balanced compression (3:1 ratio, -6dB threshold)');
+        });
+
+        elements.testHighKarma.addEventListener('click', () => {
+            // Set high karma values for light compression
+            karmaElements.computational.slider.value = 90;
+            karmaElements.emotional.slider.value = 85;
+            karmaElements.void.slider.value = 95;
+            karmaElements.temporal.slider.value = 90;
+            updateKarmaDisplay();
+            elements.updateKarma.click();
+            log('High karma test - Light compression (2.1:1 ratio, -2.4dB threshold)');
+        });
+
+        elements.testChimeWithMaster.addEventListener('click', async () => {
+            log('Testing recognition chime with master chain processing...');
+            await elements.triggerChime.click();
+            setTimeout(() => {
+                log('Chime should exhibit: EQ shaping (tamed highs, warm lows) + adaptive compression');
+            }, 1000);
+        });
+
+        // Stop audio
+        elements.stopAudio.addEventListener('click', () => {
+            try {
+                log('Stopping audio system...');
+                if (orchestrator) {
+                    orchestrator.destroy();
+                    orchestrator = null;
+                    audioEngine = null;
+                }
+                
+                elements.audioStatus.textContent = 'Audio system stopped';
+                elements.chainStatus.textContent = 'Not Initialized';
+                elements.chainStatus.style.color = '#666';
+                
+                // Disable controls
+                elements.startTone.disabled = true;
+                elements.startDegradation.disabled = true;
+                elements.triggerChime.disabled = true;
+                elements.stopAudio.disabled = true;
+                elements.updateKarma.disabled = true;
+                elements.testLowKarma.disabled = true;
+                elements.testMidKarma.disabled = true;
+                elements.testHighKarma.disabled = true;
+                elements.testChimeWithMaster.disabled = true;
+                elements.initAudio.disabled = false;
+                
+                log('Audio system stopped and cleaned up');
+                
+            } catch (error) {
+                log(`Error stopping audio: ${error.message}`, 'error');
+            }
+        });
+
+        // Clear log
+        elements.clearLog.addEventListener('click', () => {
+            elements.systemLog.innerHTML = '';
+        });
+
+        // Initialize display
+        updateKarmaDisplay();
+        log('Master Chain Test interface ready');
+        log('Click "Initialize Audio System" to begin testing');
+    </script>
+</body>
+</html>

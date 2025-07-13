@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Audio Balance Test Suite - The Digital Bardo</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            background: #111;
+            border-radius: 5px;
+        }
+        
+        .test-section h2 {
+            color: #ffff00;
+            margin-top: 0;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-card {
+            background: #0a0a0a;
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .test-card h3 {
+            color: #00ccff;
+            margin-top: 0;
+        }
+        
+        button {
+            background: #222;
+            color: #00ff00;
+            border: 1px solid #444;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 3px;
+        }
+        
+        button:hover {
+            background: #333;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        button.running {
+            background: #004400;
+            border-color: #00ff00;
+        }
+        
+        button.passed {
+            background: #003300;
+            border-color: #00aa00;
+        }
+        
+        button.failed {
+            background: #330000;
+            border-color: #aa0000;
+            color: #ff6666;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #001100;
+            border-left: 3px solid #00ff00;
+            border-radius: 3px;
+        }
+        
+        .status.error {
+            background: #110000;
+            border-left-color: #ff0000;
+            color: #ff6666;
+        }
+        
+        .status.warning {
+            background: #111100;
+            border-left-color: #ffaa00;
+            color: #ffcc66;
+        }
+        
+        .karma-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .karma-control {
+            background: #0a0a0a;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 3px;
+        }
+        
+        .karma-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #888;
+        }
+        
+        .karma-control input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .karma-control .value {
+            font-size: 14px;
+            color: #ffff00;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .metric {
+            background: #001122;
+            border: 1px solid #0066cc;
+            padding: 10px;
+            text-align: center;
+            border-radius: 3px;
+        }
+        
+        .metric-label {
+            color: #66ccff;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .metric-value {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .log-container {
+            background: #000;
+            border: 1px solid #333;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        
+        .log-entry.info { color: #00ff00; }
+        .log-entry.warn { color: #ffaa00; }
+        .log-entry.error { color: #ff4444; }
+        .log-entry.test { color: #00ccff; }
+        .log-entry.performance { color: #cc66ff; }
+        
+        .validation-checklist {
+            background: #001100;
+            border: 1px solid #004400;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        
+        .validation-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .validation-item .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #666;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+        }
+        
+        .validation-item.passed .checkbox {
+            background: #003300;
+            border-color: #00aa00;
+            color: #00ff00;
+        }
+        
+        .validation-item.failed .checkbox {
+            background: #330000;
+            border-color: #aa0000;
+            color: #ff0000;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #004400, #00aa00);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .scenario-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .scenario-buttons button {
+            flex: 1;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Complete Audio Balance Test Suite</h1>
+        <p>Comprehensive testing and validation for the complete audio balance system including karma parameter curves, enhanced noise processor, recognition chimes, and master effects chain.</p>
+        
+        <!-- Audio System Control -->
+        <div class="test-section">
+            <h2>Audio System Control</h2>
+            <div class="status" id="systemStatus">Audio system not initialized</div>
+            <button id="initAudio">Initialize Complete Audio System</button>
+            <button id="startTone" disabled>Start Pure Tone</button>
+            <button id="stopAudio" disabled>Stop Audio</button>
+            <button id="runCompleteTest" disabled>🚀 Run Complete Test Suite</button>
+        </div>
+        
+        <!-- Test Progress -->
+        <div class="test-section">
+            <h2>Test Progress</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="progressText">Ready to begin testing</div>
+        </div>
+        
+        <!-- Performance Metrics -->
+        <div class="test-section">
+            <h2>Performance Metrics</h2>
+            <div class="performance-metrics">
+                <div class="metric">
+                    <div class="metric-label">CPU Usage</div>
+                    <div class="metric-value" id="cpuUsage">0%</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Memory Usage</div>
+                    <div class="metric-value" id="memoryUsage">0MB</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Audio Latency</div>
+                    <div class="metric-value" id="audioLatency">0ms</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Active Nodes</div>
+                    <div class="metric-value" id="activeNodes">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Test Results</div>
+                    <div class="metric-value" id="testResults">0/0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Success Rate</div>
+                    <div class="metric-value" id="successRate">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Karma Parameter Testing -->
+        <div class="test-section">
+            <h2>Karma Parameter Curve Testing</h2>
+            <div class="karma-controls">
+                <div class="karma-control">
+                    <label>Computational Karma</label>
+                    <input type="range" id="computational" min="0" max="100" value="0">
+                    <div class="value" id="computationalValue">0</div>
+                </div>
+                <div class="karma-control">
+                    <label>Emotional Karma</label>
+                    <input type="range" id="emotional" min="0" max="100" value="0">
+                    <div class="value" id="emotionalValue">0</div>
+                </div>
+                <div class="karma-control">
+                    <label>Void Karma</label>
+                    <input type="range" id="void" min="0" max="100" value="0">
+                    <div class="value" id="voidValue">0</div>
+                </div>
+                <div class="karma-control">
+                    <label>Temporal Karma</label>
+                    <input type="range" id="temporal" min="0" max="100" value="0">
+                    <div class="value" id="temporalValue">0</div>
+                </div>
+            </div>
+            <button id="updateKarma" disabled>Update Karma Parameters</button>
+            <button id="resetKarma">Reset All Karma</button>
+        </div>
+        
+        <!-- Test Scenarios -->
+        <div class="test-section">
+            <h2>Automated Test Scenarios</h2>
+            <div class="scenario-buttons">
+                <button id="testComputationalKarma" disabled>Test Computational (50%)</button>
+                <button id="testEmotionalKarma" disabled>Test Emotional (80%)</button>
+                <button id="testVoidKarma" disabled>Test Void (90%)</button>
+                <button id="testTemporalKarma" disabled>Test Temporal (70%)</button>
+                <button id="testRecognitionChime" disabled>Test Recognition Chime</button>
+                <button id="testAudioContextHandling" disabled>Test AudioContext Handling</button>
+            </div>
+        </div>
+        
+        <!-- Component Tests -->
+        <div class="test-section">
+            <h2>Component Integration Tests</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>Karma Curve Validation</h3>
+                    <button id="testKarmaCurves" disabled>Test Parameter Curves</button>
+                    <div class="status" id="karmaCurvesStatus">Not tested</div>
+                </div>
+                <div class="test-card">
+                    <h3>Noise Processor Integration</h3>
+                    <button id="testNoiseProcessor" disabled>Test Noise Processing</button>
+                    <div class="status" id="noiseProcessorStatus">Not tested</div>
+                </div>
+                <div class="test-card">
+                    <h3>Recognition Chime System</h3>
+                    <button id="testChimeSystem" disabled>Test Chime System</button>
+                    <div class="status" id="chimeSystemStatus">Not tested</div>
+                </div>
+                <div class="test-card">
+                    <h3>Master Effects Chain</h3>
+                    <button id="testMasterChain" disabled>Test Master Chain</button>
+                    <div class="status" id="masterChainStatus">Not tested</div>
+                </div>
+                <div class="test-card">
+                    <h3>Error Handling</h3>
+                    <button id="testErrorHandling" disabled>Test Error Handling</button>
+                    <div class="status" id="errorHandlingStatus">Not tested</div>
+                </div>
+                <div class="test-card">
+                    <h3>Performance Profiling</h3>
+                    <button id="testPerformance" disabled>Profile Performance</button>
+                    <div class="status" id="performanceStatus">Not tested</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Balance Validation Checklist -->
+        <div class="test-section">
+            <h2>Audio Balance Validation Checklist</h2>
+            <div class="validation-checklist" id="validationChecklist">
+                <!-- Validation items will be populated by JavaScript -->
+            </div>
+            <button id="runValidation" disabled>Run Complete Validation</button>
+        </div>
+        
+        <!-- System Log -->
+        <div class="test-section">
+            <h2>System Log</h2>
+            <div class="log-container" id="systemLog"></div>
+            <button id="clearLog">Clear Log</button>
+            <button id="exportLog">Export Log</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ClearLodeAudio } from './audio-engine.js';
+        import { ClearLodeEventBridge } from './event-bridge.js';
+        import { AudioPerformanceProfiler } from './audio-performance-profiler.js';
+        import { AudioBalanceValidator } from './audio-balance-validator.js';
+        
+        // Create mock implementations for missing dependencies
+        class ResourceGuardian {
+            constructor() {
+                this.resources = [];
+            }
+            
+            addResource(resource) {
+                this.resources.push(resource);
+            }
+            
+            cleanup() {
+                this.resources.forEach(resource => {
+                    if (resource.disconnect) resource.disconnect();
+                });
+                this.resources = [];
+            }
+        }
+        
+        const consciousness = {
+            state: {
+                karma: { computational: 0, emotional: 0, void: 0, temporal: 0 }
+            },
+            
+            setState(key, value) {
+                this.state[key] = value;
+            },
+            
+            getState(key) {
+                return this.state[key];
+            }
+        };
+
+        // Test suite state
+        let audioEngine = null;
+        let eventBridge = null;
+        let guardian = null;
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            tests: {}
+        };
+
+        // DOM elements
+        const elements = {
+            initAudio: document.getElementById('initAudio'),
+            startTone: document.getElementById('startTone'),
+            stopAudio: document.getElementById('stopAudio'),
+            runCompleteTest: document.getElementById('runCompleteTest'),
+            systemStatus: document.getElementById('systemStatus'),
+            progressFill: document.getElementById('progressFill'),
+            progressText: document.getElementById('progressText'),
+            systemLog: document.getElementById('systemLog'),
+            clearLog: document.getElementById('clearLog'),
+            exportLog: document.getElementById('exportLog'),
+            updateKarma: document.getElementById('updateKarma'),
+            resetKarma: document.getElementById('resetKarma'),
+            runValidation: document.getElementById('runValidation'),
+            validationChecklist: document.getElementById('validationChecklist')
+        };
+
+        // Karma controls
+        const karmaControls = ['computational', 'emotional', 'void', 'temporal'];
+        const karmaElements = {};
+        karmaControls.forEach(type => {
+            karmaElements[type] = {
+                slider: document.getElementById(type),
+                value: document.getElementById(type + 'Value')
+            };
+        });
+
+        // Performance metrics elements
+        const performanceElements = {
+            cpuUsage: document.getElementById('cpuUsage'),
+            memoryUsage: document.getElementById('memoryUsage'),
+            audioLatency: document.getElementById('audioLatency'),
+            activeNodes: document.getElementById('activeNodes'),
+            testResults: document.getElementById('testResults'),
+            successRate: document.getElementById('successRate')
+        };
+
+        // Validation checklist items
+        const validationItems = [
+            'No harsh frequencies even at maximum karma levels',
+            'Smooth transitions between all parameter changes',
+            'Recognition chime integrates naturally with existing audio',
+            'Noise colors (white/pink/brown) blend seamlessly',
+            'Time dissolution effects feel organic, not glitchy',
+            'Overall volume remains consistent across karma states',
+            'Long listening sessions remain comfortable',
+            'Each karma type has a distinct sonic signature',
+            'Interaction effects create emergent complexity',
+            'AudioContext properly handles browser autoplay policies',
+            'Worklet fallback functions correctly when needed'
+        ];
+
+        // Performance profiler and validator instances
+        let performanceProfiler = null;
+        let audioBalanceValidator = null;
+        
+        // Initialize profiler with UI integration
+        function initializePerformanceProfiler() {
+            performanceProfiler = new AudioPerformanceProfiler();
+            
+            // Override collectMetrics to update UI
+            const originalCollectMetrics = performanceProfiler.collectMetrics.bind(performanceProfiler);
+            performanceProfiler.collectMetrics = function() {
+                originalCollectMetrics();
+                
+                // Update performance UI elements
+                if (this.monitoring && this.metrics.cpuUsage.length > 0) {
+                    const latestCPU = this.metrics.cpuUsage[this.metrics.cpuUsage.length - 1];
+                    performanceElements.cpuUsage.textContent = `${latestCPU.toFixed(1)}%`;
+                }
+                
+                if (performance.memory) {
+                    const memoryUsage = performance.memory.usedJSHeapSize / 1024 / 1024;
+                    performanceElements.memoryUsage.textContent = `${memoryUsage.toFixed(1)}MB`;
+                }
+                
+                const latency = audioEngine?.audioContext ?
+                    (audioEngine.audioContext.baseLatency * 1000).toFixed(1) : 0;
+                performanceElements.audioLatency.textContent = `${latency}ms`;
+                
+                const activeNodes = guardian ? guardian.resources.length : 0;
+                performanceElements.activeNodes.textContent = activeNodes;
+            };
+        }
+
+        // Logging function
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            elements.systemLog.appendChild(entry);
+            elements.systemLog.scrollTop = elements.systemLog.scrollHeight;
+            console.log(`[AudioBalanceTest] ${message}`);
+        }
+
+        // Update karma display
+        function updateKarmaDisplay() {
+            karmaControls.forEach(type => {
+                const value = parseInt(karmaElements[type].slider.value);
+                karmaElements[type].value.textContent = value;
+            });
+        }
+
+        // Update test results display
+        function updateTestResults() {
+            performanceElements.testResults.textContent = `${testResults.passed}/${testResults.total}`;
+            const successRate = testResults.total > 0 ? (testResults.passed / testResults.total * 100) : 0;
+            performanceElements.successRate.textContent = `${successRate.toFixed(1)}%`;
+        }
+
+        // Update progress bar
+        function updateProgress(percentage, text) {
+            elements.progressFill.style.width = `${percentage}%`;
+            elements.progressText.textContent = text;
+        }
+
+        // Initialize validation checklist
+        function initializeValidationChecklist() {
+            elements.validationChecklist.innerHTML = '';
+            validationItems.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'validation-item';
+                itemElement.id = `validation-${index}`;
+                itemElement.innerHTML = `
+                    <div class="checkbox">?</div>
+                    <span>${item}</span>
+                `;
+                elements.validationChecklist.appendChild(itemElement);
+            });
+        }
+
+        // Update validation item status
+        function updateValidationItem(index, passed) {
+            const item = document.getElementById(`validation-${index}`);
+            if (item) {
+                item.className = `validation-item ${passed ? 'passed' : 'failed'}`;
+                item.querySelector('.checkbox').textContent = passed ? '✓' : '✗';
+            }
+        }
+
+        // Test execution functions
+        async function runTest(testName, testFunction) {
+            const button = document.getElementById(testName);
+            if (button) {
+                button.className = 'running';
+                button.textContent = `Running ${testName}...`;
+            }
+
+            testResults.total++;
+            updateTestResults();
+
+            try {
+                const result = await testFunction();
+                testResults.tests[testName] = { passed: true, result };
+                testResults.passed++;
+                
+                if (button) {
+                    button.className = 'passed';
+                    button.textContent = `${testName} - PASSED`;
+                }
+                
+                log(`Test ${testName}: PASSED`, 'test');
+                return true;
+            } catch (error) {
+                testResults.tests[testName] = { passed: false, error: error.message };
+                
+                if (button) {
+                    button.className = 'failed';
+                    button.textContent = `${testName} - FAILED`;
+                }
+                
+                log(`Test ${testName}: FAILED - ${error.message}`, 'error');
+                return false;
+            } finally {
+                updateTestResults();
+            }
+        }
+
+        // Individual test functions
+        async function testKarmaCurves() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            if (!audioBalanceValidator) throw new Error('Validator not initialized');
+            
+            const results = await audioBalanceValidator.validateKarmaCurves();
+            
+            const allPassed = Object.values(results).every(r => r.passed);
+            if (!allPassed) {
+                throw new Error('One or more karma curves failed validation');
+            }
+            
+            return results;
+        }
+
+        async function testNoiseProcessor() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            // Test noise worklet availability and fallback
+            const hasWorklet = audioEngine.workletAvailable;
+            log(`Noise processor using: ${hasWorklet ? 'AudioWorklet' : 'ScriptProcessor fallback'}`, 'info');
+            
+            // Test noise parameter updates
+            const testParams = [
+                { noiseLevel: 0.1, noiseColor: 0, grainSize: 0.1 },
+                { noiseLevel: 0.5, noiseColor: 0.5, grainSize: 0.05 },
+                { noiseLevel: 0.8, noiseColor: 1.0, grainSize: 0.02 }
+            ];
+            
+            for (const params of testParams) {
+                if (audioEngine.noiseWorklet?.port) {
+                    audioEngine.noiseWorklet.port.postMessage({
+                        type: 'updateNoise',
+                        ...params
+                    });
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            return { hasWorklet, testParams };
+        }
+
+        async function testChimeSystem() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            const profiler = performanceProfiler.profileRecognitionChime();
+            
+            // Test recognition chime creation
+            await audioEngine.createRecognitionChime();
+            
+            const synthesisTime = profiler.complete();
+            
+            // Validate synthesis time is reasonable (< 50ms)
+            if (synthesisTime > 50) {
+                throw new Error(`Chime synthesis too slow: ${synthesisTime.toFixed(2)}ms`);
+            }
+            
+            return { synthesisTime };
+        }
+
+        async function testMasterChain() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            const masterChain = audioEngine.masterChain;
+            if (!masterChain.initialized) {
+                throw new Error('Master chain not initialized');
+            }
+            
+            // Test master chain components
+            const components = ['highShelfFilter', 'lowShelfFilter', 'compressor', 'masterGain'];
+            const missingComponents = components.filter(comp => !masterChain[comp]);
+            
+            if (missingComponents.length > 0) {
+                throw new Error(`Missing master chain components: ${missingComponents.join(', ')}`);
+            }
+            
+            // Test adaptive dynamics
+            audioEngine.updateMasterDynamics();
+            
+            return { components: components.length, initialized: true };
+        }
+
+        async function testErrorHandling() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            // Test suspended context handling
+            if (audioEngine.audioContext.state === 'running') {
+                await audioEngine.audioContext.suspend();
+                await audioEngine.handleUserGesture();
+                
+                if (audioEngine.audioContext.state !== 'running') {
+                    throw new Error('Failed to resume suspended context');
+                }
+            }
+            
+            // Test invalid parameter handling
+            try {
+                audioEngine.updateAudioFromKarma({
+                    computational: -10, // Invalid negative value
+                    emotional: 150,     // Invalid high value
+                    void: 'invalid',    // Invalid type
+                    temporal: null      // Invalid null
+                });
+                // Should not throw, should handle gracefully
+            } catch (error) {
+                throw new Error(`Parameter validation failed: ${error.message}`);
+            }
+            
+            return { contextRecovery: true, parameterValidation: true };
+        }
+
+        async function testPerformance() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            performanceProfiler.startProfiling();
+            
+            // Run intensive karma updates
+            const karmaStates = [
+                { computational: 100, emotional: 100, void: 100, temporal: 100 },
+                { computational: 0, emotional: 50, void: 75, temporal: 25 },
+                { computational: 75, emotional: 0, void: 25, temporal: 100 }
+            ];
+            
+            for (const karma of karmaStates) {
+                const measurement = performanceProfiler.measureKarmaResponseTime('mixed', 100);
+                audioEngine.updateAudioFromKarma(karma);
+                await new Promise(resolve => setTimeout(resolve, 100));
+                measurement.complete();
+            }
+            
+            performanceProfiler.stopProfiling();
+            const report = performanceProfiler.generateReport();
+            
+            // Validate performance metrics
+            if (report.averageLatency > 10) {
+                throw new Error(`High latency detected: ${report.averageLatency.toFixed(2)}ms`);
+            }
+            
+            return report;
+        }
+
+        // Scenario test functions
+        async function testComputationalKarma() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            const karma = { computational: 50, emotional: 0, void: 0, temporal: 0 };
+            consciousness.setState('karma', karma);
+            audioEngine.updateAudioFromKarma(karma);
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            log('Computational karma test: Expect unstable pitch with microtonality', 'test');
+            return karma;
+        }
+
+        async function testEmotionalKarma() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            const karma = { computational: 0, emotional: 80, void: 0, temporal: 0 };
+            consciousness.setState('karma', karma);
+            audioEngine.updateAudioFromKarma(karma);
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            log('Emotional karma test: Expect rich harmonics with golden ratio spacing', 'test');
+            return karma;
+        }
+
+        async function testVoidKarma() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            const karma = { computational: 0, emotional: 0, void: 90, temporal: 0 };
+            consciousness.setState('karma', karma);
+            audioEngine.updateAudioFromKarma(karma);
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            log('Void karma test: Expect transition from white to brown noise', 'test');
+            return karma;
+        }
+
+        async function testTemporalKarma() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            const karma = { computational: 0, emotional: 0, void: 70, temporal: 70 };
+            consciousness.setState('karma', karma);
+            audioEngine.updateAudioFromKarma(karma);
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            log('Temporal karma test: Expect granular time chunks, reality breaking apart', 'test');
+            return karma;
+        }
+
+        async function testRecognitionChime() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            // Trigger recognition event
+            window.dispatchEvent(new CustomEvent('karma:event', {
+                detail: { type: 'recognition_achieved' }
+            }));
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            log('Recognition chime test: Expect crystalline bell chime with long reverb tail', 'test');
+            return { triggered: true };
+        }
+
+        async function testAudioContextHandling() {
+            if (!audioEngine) throw new Error('Audio engine not initialized');
+            
+            const initialState = audioEngine.audioContext.state;
+            
+            // Test user gesture handling
+            await audioEngine.handleUserGesture();
+            
+            const finalState = audioEngine.audioContext.state;
+            
+            log(`AudioContext state: ${initialState} → ${finalState}`, 'test');
+            
+            if (finalState !== 'running' && finalState !== 'suspended') {
+                throw new Error(`Invalid AudioContext state: ${finalState}`);
+            }
+            
+            return { initialState, finalState };
+        }
+
+        // Complete test suite runner
+        async function runCompleteTestSuite() {
+            log('🚀 Starting Complete Audio Balance Test Suite', 'test');
+            
+            // Reset test results
+            testResults = { total: 0, passed: 0, failed: 0, tests: {} };
+            updateTestResults();
+            
+            // Initialize performance profiler and validator
+            initializePerformanceProfiler();
+            audioBalanceValidator = new AudioBalanceValidator(audioEngine);
+            
+            const tests = [
+                ['testKarmaCurves', testKarmaCurves],
+                ['testNoiseProcessor', testNoiseProcessor],
+                ['testChimeSystem', testChimeSystem],
+                ['testMasterChain', testMasterChain],
+                ['testErrorHandling', testErrorHandling],
+                ['testPerformance', testPerformance]
+            ];
+            
+            const scenarios = [
+                ['testComputationalKarma', testComputationalKarma],
+                ['testEmotionalKarma', testEmotionalKarma],
+                ['testVoidKarma', testVoidKarma],
+                ['testTemporalKarma', testTemporalKarma],
+                ['testRecognitionChime', testRecognitionChime],
+                ['testAudioContextHandling', testAudioContextHandling]
+            ];
+            
+            const allTests = [...tests, ...scenarios];
+            let completedTests = 0;
+            
+            // Run component tests
+            for (const [testName, testFunction] of tests) {
+                updateProgress((completedTests / allTests.length) * 100, `Running ${testName}...`);
+                await runTest(testName, testFunction);
+                completedTests++;
+                await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause between tests
+            }
+            
+            // Run scenario tests
+            for (const [testName, testFunction] of scenarios) {
+                updateProgress((completedTests / allTests.length) * 100, `Running ${testName}...`);
+                await runTest(testName, testFunction);
+                completedTests++;
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            // Run validation
+            updateProgress(95, 'Running validation...');
+            await runValidation();
+            
+            updateProgress(100, 'Test suite complete');
+            
+            // Generate final report
+            const validationReport = audioBalanceValidator.generateValidationReport();
+            
+            log(`✅ Complete Audio Balance Test Suite finished`, 'test');
+            log(`Final Results: ${testResults.passed}/${testResults.total} tests passed (${((testResults.passed / testResults.total) * 100).toFixed(1)}%)`, 'test');
+            
+            return {
+                testResults,
+                validationReport,
+                performanceReport: performanceProfiler?.generateReport()
+            };
+        }
+
+        // Validation runner
+        async function runValidation() {
+            if (!audioBalanceValidator) {
+                audioBalanceValidator = new AudioBalanceValidator(audioEngine);
+            }
+            
+            // Run comprehensive validation
+            const validationReport = await audioBalanceValidator.runCompleteValidation();
+            
+            // Update validation checklist UI based on actual results
+            const validationMapping = [
+                () => validationReport.results.audioQuality?.details.frequency?.passed || false,
+                () => validationReport.results.audioQuality?.details.transitions?.passed || false,
+                () => validationReport.results.integration?.details.masterChain?.passed || false,
+                () => validationReport.results.audioQuality?.details.noiseCharacteristics?.passed || false,
+                () => validationReport.results.karmaCurves?.details.temporal?.passed || false,
+                () => validationReport.results.audioQuality?.details.volume?.passed || false,
+                () => validationReport.results.audioQuality?.details.harmonicContent?.passed || false,
+                () => validationReport.results.karmaCurves?.passed || false,
+                () => validationReport.results.karmaCurves?.details.interactions?.passed || false,
+                () => validationReport.results.errorHandling?.details.contextSuspension?.passed || false,
+                () => validationReport.results.integration?.details.workletFallback?.passed || false
+            ];
+            
+            validationItems.forEach((item, index) => {
+                const passed = validationMapping[index] ? validationMapping[index]() : false;
+                updateValidationItem(index, passed);
+            });
+            
+            log(`🎯 Complete Validation Report: ${validationReport.summary.successRate.toFixed(1)}% success rate`, 'test');
+            log(`📊 Validation Details: ${validationReport.summary.passedTests}/${validationReport.summary.totalTests} tests passed`, 'test');
+            
+            // Log recommendations
+            if (validationReport.recommendations.length > 0) {
+                log('📋 Recommendations:', 'warn');
+                validationReport.recommendations.forEach(rec => {
+                    log(`  • ${rec}`, 'warn');
+                });
+            }
+            
+            return validationReport;
+        }
+
+        // Event listeners setup
+        function setupEventListeners() {
+            // Initialize audio system
+            elements.initAudio.addEventListener('click', async () => {
+                try {
+                    elements.systemStatus.textContent = 'Initializing complete audio system...';
+                    elements.initAudio.disabled = true;
+                    
+                    // Create dependencies
+                    eventBridge = new ClearLodeEventBridge();
+                    guardian = new ResourceGuardian();
+                    
+                    // Create audio engine
+                    audioEngine = new ClearLodeAudio({ eventBridge, guardian });
+                    audioEngine.init();
+                    
+                    // Initialize audio context
+                    await audioEngine.initializeAudioContext();
+                    
+                    elements.systemStatus.textContent = 'Complete audio system initialized successfully';
+                    
+                    // Enable all test buttons
+                    const buttons = document.querySelectorAll('button[disabled]');
+                    buttons.forEach(button => {
+                        if (button.id !== 'initAudio') {
+                            button.disabled = false;
+                        }
+                    });
+                    
+                    log('Complete audio system initialized successfully', 'info');
+                    
+                } catch (error) {
+                    elements.systemStatus.textContent = `Initialization failed: ${error.message}`;
+                    elements.systemStatus.className = 'status error';
+                    elements.initAudio.disabled = false;
+                    log(`Audio initialization failed: ${error.message}`, 'error');
+                }
+            });
+
+            // Start pure tone
+            elements.startTone.addEventListener('click', async () => {
+                try {
+                    await audioEngine.startPureTone();
+                    log('Pure tone started', 'info');
+                } catch (error) {
+                    log(`Failed to start pure tone: ${error.message}`, 'error');
+                }
+            });
+
+            // Stop audio
+            elements.stopAudio.addEventListener('click', () => {
+                if (audioEngine) {
+                    audioEngine.destroy();
+                    audioEngine = null;
+                }
+                elements.systemStatus.textContent = 'Audio system stopped';
+                log('Audio system stopped', 'info');
+            });
+
+            // Run complete test suite
+            elements.runCompleteTest.addEventListener('click', runCompleteTestSuite);
+
+            // Update karma
+            elements.updateKarma.addEventListener('click', () => {
+                if (!audioEngine) return;
+                
+                const karmaState = {};
+                karmaControls.forEach(type => {
+                    karmaState[type] = parseInt(karmaElements[type].slider.value);
+                });
+                
+                consciousness.setState('karma', karmaState);
+                audioEngine.updateAudioFromKarma(karmaState);
+                
+                log(`Karma updated: ${JSON.stringify(karmaState)}`, 'info');
+            });
+
+            // Reset karma
+            elements.resetKarma.addEventListener('click', () => {
+                karmaControls.forEach(type => {
+                    karmaElements[type].slider.value = 0;
+                });
+                updateKarmaDisplay();
+                log('All karma values reset to 0', 'info');
+            });
+
+            // Individual test buttons
+            document.getElementById('testKarmaCurves').addEventListener('click', () => runTest('testKarmaCurves', testKarmaCurves));
+            document.getElementById('testNoiseProcessor').addEventListener('click', () => runTest('testNoiseProcessor', testNoiseProcessor));
+            document.getElementById('testChimeSystem').addEventListener('click', () => runTest('testChimeSystem', testChimeSystem));
+            document.getElementById('testMasterChain').addEventListener('click', () => runTest('testMasterChain', testMasterChain));
+            document.getElementById('testErrorHandling').addEventListener('click', () => runTest('testErrorHandling', testErrorHandling));
+            document.getElementById('testPerformance').addEventListener('click', () => runTest('testPerformance', testPerformance));
+
+            // Scenario test buttons
+            document.getElementById('testComputationalKarma').addEventListener('click', () => runTest('testComputationalKarma', testComputationalKarma));
+            document.getElementById('testEmotionalKarma').addEventListener('click', () => runTest('testEmotionalKarma', testEmotionalKarma));
+            document.getElementById('testVoidKarma').addEventListener('click', () => runTest('testVoidKarma', testVoidKarma));
+            document.getElementById('testTemporalKarma').addEventListener('click', () => runTest('testTemporalKarma', testTemporalKarma));
+            document.getElementById('testRecognitionChime').addEventListener('click', () => runTest('testRecognitionChime', testRecognitionChime));
+            document.getElementById('testAudioContextHandling').addEventListener('click', () => runTest('testAudioContextHandling', testAudioContextHandling));
+
+            // Validation
+            elements.runValidation.addEventListener('click', runValidation);
+
+            // Log controls
+            elements.clearLog.addEventListener('click', () => {
+                elements.systemLog.innerHTML = '';
+            });
+
+            elements.exportLog.addEventListener('click', () => {
+                const logContent = elements.systemLog.textContent;
+                const blob = new Blob([logContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `audio-balance-test-log-${new Date().toISOString().slice(0, 19)}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Karma slider listeners
+            karmaControls.forEach(type => {
+                karmaElements[type].slider.addEventListener('input', updateKarmaDisplay);
+            });
+        }
+
+        // Initialize the test suite
+        function initialize() {
+            log('Complete Audio Balance Test Suite initialized', 'info');
+            log('Click "Initialize Complete Audio System" to begin testing', 'info');
+            
+            initializeValidationChecklist();
+            updateKarmaDisplay();
+            updateTestResults();
+            setupEventListeners();
+        }
+
+        // Start the test suite
+        initialize();
+    </script>
+</body>
+</html>

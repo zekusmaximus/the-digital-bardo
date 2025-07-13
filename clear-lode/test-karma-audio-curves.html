@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karma-to-Audio Parameter Curves Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .karma-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .karma-type {
+            border: 1px solid #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .karma-type h3 {
+            margin: 0 0 10px 0;
+            color: #ffff00;
+        }
+        
+        .slider-container {
+            margin: 10px 0;
+        }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .slider-container input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .value-display {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .test-buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        button:hover {
+            background: #006600;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #666;
+            border-radius: 5px;
+            background: #111;
+        }
+        
+        .curve-info {
+            margin: 20px 0;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .curve-info h4 {
+            color: #ffff00;
+            margin: 10px 0 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎵 Karma-to-Audio Parameter Curves Test</h1>
+        <p>Test the sophisticated non-linear karma-to-audio parameter mappings.</p>
+        
+        <div class="test-buttons">
+            <button id="initAudio">Initialize Audio Engine</button>
+            <button id="startTone" disabled>Start Pure Tone</button>
+            <button id="stopAudio" disabled>Stop Audio</button>
+        </div>
+        
+        <div class="status" id="status">
+            Status: Audio not initialized
+        </div>
+        
+        <div class="karma-controls">
+            <div class="karma-type">
+                <h3>Computational Karma</h3>
+                <p>Exponential curve → Pitch instability & microtonality</p>
+                <div class="slider-container">
+                    <label for="computational">Level: <span id="computationalValue">0</span></label>
+                    <input type="range" id="computational" min="0" max="100" value="0">
+                    <div class="value-display">Pitch instability: <span id="pitchInstabilityValue">0</span> Hz</div>
+                </div>
+            </div>
+            
+            <div class="karma-type">
+                <h3>Emotional Karma</h3>
+                <p>Logarithmic curve → Golden ratio harmonics</p>
+                <div class="slider-container">
+                    <label for="emotional">Level: <span id="emotionalValue">0</span></label>
+                    <input type="range" id="emotional" min="0" max="100" value="0">
+                    <div class="value-display">Harmonics: <span id="harmonicCountValue">1</span></div>
+                </div>
+            </div>
+            
+            <div class="karma-type">
+                <h3>Void Karma</h3>
+                <p>Sigmoid curve → Colored noise transition</p>
+                <div class="slider-container">
+                    <label for="void">Level: <span id="voidValue">0</span></label>
+                    <input type="range" id="void" min="0" max="100" value="0">
+                    <div class="value-display">Noise level: <span id="noiseLevelValue">0.00</span></div>
+                </div>
+            </div>
+            
+            <div class="karma-type">
+                <h3>Temporal Karma</h3>
+                <p>Linear + interactions → Time dilation effects</p>
+                <div class="slider-container">
+                    <label for="temporal">Level: <span id="temporalValue">0</span></label>
+                    <input type="range" id="temporal" min="0" max="100" value="0">
+                    <div class="value-display">Time stretch: <span id="timeStretchValue">1.00</span>x</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-buttons">
+            <button id="testComputational">Test Computational (50%)</button>
+            <button id="testEmotional">Test Emotional (25%)</button>
+            <button id="testVoid">Test Void (50%)</button>
+            <button id="testInteraction">Test Interaction (70% + 70%)</button>
+            <button id="resetKarma">Reset All</button>
+        </div>
+        
+        <div class="curve-info">
+            <h4>Parameter Curve Mathematics:</h4>
+            <p><strong>Computational:</strong> pitchInstability = karma² × 15 (exponential)</p>
+            <p><strong>Emotional:</strong> harmonicCount = floor(1 + log(1 + karma×9) × 4) (logarithmic)</p>
+            <p><strong>Void:</strong> noiseLevel = 1/(1 + e^(-10×(karma-0.5))) (sigmoid)</p>
+            <p><strong>Temporal:</strong> timeStretch = 1 - (karma × 0.3) (linear)</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ClearLodeAudio } from './audio-engine.js';
+        import { ClearLodeEventBridge } from './event-bridge.js';
+        import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+
+        let audioEngine = null;
+        let eventBridge = null;
+        let guardian = null;
+
+        // DOM elements
+        const initButton = document.getElementById('initAudio');
+        const startButton = document.getElementById('startTone');
+        const stopButton = document.getElementById('stopAudio');
+        const status = document.getElementById('status');
+
+        // Karma sliders
+        const computationalSlider = document.getElementById('computational');
+        const emotionalSlider = document.getElementById('emotional');
+        const voidSlider = document.getElementById('void');
+        const temporalSlider = document.getElementById('temporal');
+
+        // Value displays
+        const computationalValue = document.getElementById('computationalValue');
+        const emotionalValue = document.getElementById('emotionalValue');
+        const voidValue = document.getElementById('voidValue');
+        const temporalValue = document.getElementById('temporalValue');
+
+        // Calculated value displays
+        const pitchInstabilityValue = document.getElementById('pitchInstabilityValue');
+        const harmonicCountValue = document.getElementById('harmonicCountValue');
+        const noiseLevelValue = document.getElementById('noiseLevelValue');
+        const timeStretchValue = document.getElementById('timeStretchValue');
+
+        // Test buttons
+        const testComputational = document.getElementById('testComputational');
+        const testEmotional = document.getElementById('testEmotional');
+        const testVoid = document.getElementById('testVoid');
+        const testInteraction = document.getElementById('testInteraction');
+        const resetKarma = document.getElementById('resetKarma');
+
+        // Initialize audio engine
+        initButton.addEventListener('click', async () => {
+            try {
+                status.textContent = 'Status: Initializing audio engine...';
+                
+                // Create dependencies
+                eventBridge = new ClearLodeEventBridge();
+                guardian = new ResourceGuardian();
+                
+                // Create audio engine
+                audioEngine = new ClearLodeAudio({ eventBridge, guardian });
+                audioEngine.init();
+                
+                // Initialize audio context (requires user gesture)
+                await audioEngine.initializeAudioContext();
+                
+                status.textContent = 'Status: Audio engine initialized successfully';
+                initButton.disabled = true;
+                startButton.disabled = false;
+                stopButton.disabled = false;
+                
+                // Enable test buttons
+                testComputational.disabled = false;
+                testEmotional.disabled = false;
+                testVoid.disabled = false;
+                testInteraction.disabled = false;
+                resetKarma.disabled = false;
+                
+            } catch (error) {
+                status.textContent = `Status: Initialization failed - ${error.message}`;
+                console.error('Audio initialization failed:', error);
+            }
+        });
+
+        // Start pure tone
+        startButton.addEventListener('click', async () => {
+            try {
+                await audioEngine.startPureTone();
+                status.textContent = 'Status: Pure tone started - adjust karma parameters';
+            } catch (error) {
+                status.textContent = `Status: Failed to start tone - ${error.message}`;
+            }
+        });
+
+        // Stop audio
+        stopButton.addEventListener('click', () => {
+            if (audioEngine) {
+                audioEngine.destroy();
+                audioEngine = null;
+            }
+            status.textContent = 'Status: Audio stopped';
+            initButton.disabled = false;
+            startButton.disabled = true;
+            stopButton.disabled = true;
+        });
+
+        // Update karma values and apply to audio
+        function updateKarma() {
+            if (!audioEngine) return;
+
+            const computational = parseInt(computationalSlider.value);
+            const emotional = parseInt(emotionalSlider.value);
+            const void_ = parseInt(voidSlider.value);
+            const temporal = parseInt(temporalSlider.value);
+
+            // Update displays
+            computationalValue.textContent = computational;
+            emotionalValue.textContent = emotional;
+            voidValue.textContent = void_;
+            temporalValue.textContent = temporal;
+
+            // Calculate and display parameter values
+            const computationalNorm = computational / 100;
+            const emotionalNorm = emotional / 100;
+            const voidNorm = void_ / 100;
+            const temporalNorm = temporal / 100;
+
+            // Computational: Exponential curve
+            const pitchInstability = Math.pow(computationalNorm, 2) * 15;
+            pitchInstabilityValue.textContent = pitchInstability.toFixed(2);
+
+            // Emotional: Logarithmic curve
+            const harmonicCount = Math.floor(1 + Math.log(1 + emotionalNorm * 9) * 4);
+            harmonicCountValue.textContent = Math.min(16, harmonicCount);
+
+            // Void: Sigmoid curve
+            const noiseLevel = 1 / (1 + Math.exp(-10 * (voidNorm - 0.5)));
+            noiseLevelValue.textContent = noiseLevel.toFixed(2);
+
+            // Temporal: Linear
+            const timeStretch = 1 - (temporalNorm * 0.3);
+            timeStretchValue.textContent = Math.max(0.7, timeStretch).toFixed(2);
+
+            // Apply to audio engine
+            const karmaState = {
+                computational,
+                emotional,
+                void: void_,
+                temporal
+            };
+
+            audioEngine.updateAudioFromKarma(karmaState);
+        }
+
+        // Slider event listeners
+        computationalSlider.addEventListener('input', updateKarma);
+        emotionalSlider.addEventListener('input', updateKarma);
+        voidSlider.addEventListener('input', updateKarma);
+        temporalSlider.addEventListener('input', updateKarma);
+
+        // Test button functions
+        testComputational.addEventListener('click', () => {
+            computationalSlider.value = 50;
+            emotionalSlider.value = 0;
+            voidSlider.value = 0;
+            temporalSlider.value = 0;
+            updateKarma();
+            status.textContent = 'Status: Testing computational karma (50%) - expect pitch instability';
+        });
+
+        testEmotional.addEventListener('click', () => {
+            computationalSlider.value = 0;
+            emotionalSlider.value = 25;
+            voidSlider.value = 0;
+            temporalSlider.value = 0;
+            updateKarma();
+            status.textContent = 'Status: Testing emotional karma (25%) - expect rich harmonics';
+        });
+
+        testVoid.addEventListener('click', () => {
+            computationalSlider.value = 0;
+            emotionalSlider.value = 0;
+            voidSlider.value = 50;
+            temporalSlider.value = 0;
+            updateKarma();
+            status.textContent = 'Status: Testing void karma (50%) - expect noise transition';
+        });
+
+        testInteraction.addEventListener('click', () => {
+            computationalSlider.value = 70;
+            emotionalSlider.value = 70;
+            voidSlider.value = 0;
+            temporalSlider.value = 0;
+            updateKarma();
+            status.textContent = 'Status: Testing interaction effects - expect chaotic harmonic jitter';
+        });
+
+        resetKarma.addEventListener('click', () => {
+            computationalSlider.value = 0;
+            emotionalSlider.value = 0;
+            voidSlider.value = 0;
+            temporalSlider.value = 0;
+            updateKarma();
+            status.textContent = 'Status: All karma reset to zero';
+        });
+
+        // Initial update
+        updateKarma();
+    </script>
+</body>
+</html>

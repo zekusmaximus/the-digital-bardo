@@ -48,8 +48,24 @@ export class ClearLodeAudio {
         this.workletAvailable = false;
         /** @private */
         this.noiseWorklet = null;
-         /** @private */
+        /** @private */
         this.isDestroyed = false;
+        /** @private */
+        this.pitchDriftInterval = null;
+        /** @private */
+        this.fallbackNoiseSource = null;
+
+        // Master effects chain components
+        /** @private */
+        this.masterChain = {
+            highShelfFilter: null,
+            lowShelfFilter: null,
+            compressor: null,
+            masterGain: null,
+            initialized: false
+        };
+        /** @private */
+        this.masterChainPending = false;
 
         this.validateAudioParams = createKarmicValidator(audioParamsSchema);
 
@@ -107,6 +123,7 @@ export class ClearLodeAudio {
              console.log('[AudioEngine] AudioContext initialized successfully.');
 
             await this.initializeWorklet();
+            await this.initializeMasterChain();
             await this.initializeAudioChain();
             this.handleiOSSafariQuirks();
 
@@ -164,7 +181,7 @@ export class ClearLodeAudio {
             this.gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 2);
 
             this.oscillator.connect(this.gainNode);
-            this.gainNode.connect(this.audioContext.destination);
+            this.gainNode.connect(this.getMasterChainInput());
 
             this.oscillator.start();
             this.pendingPureTone = false;
@@ -209,7 +226,7 @@ export class ClearLodeAudio {
                 burstGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.05);
 
                 burstWorklet.connect(burstGain);
-                burstGain.connect(this.audioContext.destination);
+                burstGain.connect(this.getMasterChainInput());
 
                 // Stop after burst
                 setTimeout(() => {
@@ -241,7 +258,7 @@ export class ClearLodeAudio {
         noiseGain.gain.setValueAtTime(0.1 * this.degradationLevel, this.audioContext.currentTime);
 
         whiteNoise.connect(noiseGain);
-        noiseGain.connect(this.audioContext.destination);
+        noiseGain.connect(this.getMasterChainInput());
 
         whiteNoise.start();
         whiteNoise.stop(this.audioContext.currentTime + 0.05);
@@ -254,7 +271,7 @@ export class ClearLodeAudio {
         if (this.oscillator) {
             const gainNode = this.audioContext.createGain();
             this.oscillator.connect(gainNode);
-            gainNode.connect(this.audioContext.destination);
+            gainNode.connect(this.getMasterChainInput());
 
             // Decay the tone over 2 seconds
             gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
@@ -363,35 +380,458 @@ export class ClearLodeAudio {
         }
     }
     
-    achieveResonance() {
-        if (this.silentMode || !this.oscillator) return;
-        // Perfect recognition: the tone becomes a celestial chord
+    /**
+     * Creates a sophisticated recognition chime that embodies digital enlightenment.
+     * Multi-harmonic bell synthesis with crystalline timbre and spatial reverb.
+     */
+    async achieveResonance() {
+        if (this.silentMode) return;
         
-        const chord = [528, 639, 741]; // Solfeggio frequencies
-        const oscillators = [];
-        
-        chord.forEach(freq => {
-            const osc = this.audioContext.createOscillator();
-            const gain = this.audioContext.createGain();
-            
-            if (!this.validateAudioParams({ frequency: freq, gain: 0.2 })) {
-                console.error(`Karmic validation failed for resonance frequency ${freq}. Skipping chord note.`);
+        // Ensure AudioContext is ready
+        if (!this.isInitialized || !this.audioContext) {
+            console.warn('[Audio] Cannot create recognition chime - audio not initialized');
+            return;
+        }
+
+        // Handle suspended AudioContext
+        if (this.audioContext.state === 'suspended') {
+            try {
+                await this.audioContext.resume();
+                console.log('[Audio] Context resumed for recognition chime');
+            } catch (error) {
+                console.error('[Audio] Cannot create chime - context suspended:', error);
                 return;
             }
-            osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
-            gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
-            
-            osc.connect(gain);
-            gain.connect(this.audioContext.destination);
-            
-            osc.start();
-            oscillators.push(osc);
-        });
+        }
+
+        try {
+            await this.createRecognitionChime();
+        } catch (error) {
+            console.error('[Audio] Recognition chime creation failed:', error);
+        }
+    }
+
+    /**
+     * Creates the sophisticated recognition chime with bell synthesis and reverb.
+     * Embodies the sound of digital enlightenment - crystalline clarity cutting through noise.
+     */
+    async createRecognitionChime() {
+        const currentTime = this.audioContext.currentTime;
         
-        // Fade out after 3 seconds
-        setTimeout(() => {
-            oscillators.forEach(osc => osc.stop());
-        }, 3000);
+        // Chime synthesis parameters - tuned for spiritual resonance
+        const fundamentalFreq = 523.25; // C5 - chosen for clarity and spiritual resonance
+        const harmonics = [1, 2, 2.4, 3.1, 4.2]; // Bell-like inharmonic partials
+        const harmonicGains = [1, 0.6, 0.4, 0.3, 0.2]; // Natural amplitude decay
+        const chimeGain = 0.3; // Overall chime volume
+        const chimeDuration = 4; // Total decay time in seconds
+        
+        // Envelope parameters for crystalline attack and long decay
+        const attackTime = 0.01; // Quick attack - moment of recognition
+        const decayTime = 4.0; // Long exponential decay - lasting awareness
+        const sustainLevel = 0.001; // Final decay level
+        
+        // Vibrato parameters for ethereal quality on higher harmonics
+        const vibratoRate = 4; // Hz base rate
+        const vibratoDepth = 2; // Cents base depth
+
+        // Duck main audio during chime for clarity
+        await this.duckMainAudio(true);
+
+        // Create master gain node for the entire chime
+        const chimeGainNode = this.audioContext.createGain();
+        chimeGainNode.gain.setValueAtTime(chimeGain, currentTime);
+        
+        // Create reverb for spatial depth
+        const reverbNode = await this.addChimeReverb();
+        
+        // Connect chime through reverb to destination
+        chimeGainNode.connect(reverbNode);
+        reverbNode.connect(this.audioContext.destination);
+
+        const chimeOscillators = [];
+
+        // Create each harmonic oscillator with bell-like characteristics
+        harmonics.forEach((harmonicRatio, index) => {
+            try {
+                const freq = fundamentalFreq * harmonicRatio;
+                const gain = harmonicGains[index] || 0.1;
+                
+                // Validate frequency parameters
+                if (!this.validateAudioParams({ frequency: freq, gain: gain * chimeGain })) {
+                    console.warn(`[Audio] Skipping chime harmonic ${index + 1} - validation failed`);
+                    return;
+                }
+
+                // Create oscillator and gain nodes
+                const osc = this.audioContext.createOscillator();
+                const oscGain = this.audioContext.createGain();
+                
+                // Use sine waves for crystalline purity
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, currentTime);
+
+                // Add subtle vibrato to higher harmonics for ethereal quality
+                if (index > 1) {
+                    const vibrato = this.audioContext.createOscillator();
+                    const vibratoGain = this.audioContext.createGain();
+                    
+                    vibrato.type = 'sine';
+                    vibrato.frequency.setValueAtTime(vibratoRate * (index * 0.5), currentTime);
+                    vibratoGain.gain.setValueAtTime(vibratoDepth * index, currentTime);
+                    
+                    vibrato.connect(vibratoGain);
+                    vibratoGain.connect(osc.frequency);
+                    vibrato.start(currentTime);
+                    vibrato.stop(currentTime + chimeDuration);
+                    
+                    chimeOscillators.push(vibrato);
+                }
+
+                // Create envelope: quick attack, long exponential decay
+                oscGain.gain.setValueAtTime(0, currentTime);
+                oscGain.gain.linearRampToValueAtTime(gain, currentTime + attackTime);
+                oscGain.gain.exponentialRampToValueAtTime(
+                    Math.max(sustainLevel, gain * sustainLevel),
+                    currentTime + decayTime
+                );
+
+                // Connect oscillator through its gain to the chime master gain
+                osc.connect(oscGain);
+                oscGain.connect(chimeGainNode);
+
+                // Start and schedule stop
+                osc.start(currentTime);
+                osc.stop(currentTime + chimeDuration);
+
+                chimeOscillators.push(osc);
+                
+                // Register for cleanup
+                this.guardian.register(osc, (o) => {
+                    try { o.disconnect(); } catch (e) { /* Already disconnected */ }
+                });
+                this.guardian.register(oscGain, (g) => {
+                    try { g.disconnect(); } catch (e) { /* Already disconnected */ }
+                });
+
+            } catch (error) {
+                console.warn(`[Audio] Failed to create chime harmonic ${index + 1}:`, error);
+            }
+        });
+
+        // Register master gain for cleanup
+        this.guardian.register(chimeGainNode, (g) => {
+            try { g.disconnect(); } catch (e) { /* Already disconnected */ }
+        });
+
+        // Schedule audio ducking restoration after chime completes
+        setTimeout(async () => {
+            await this.duckMainAudio(false);
+            console.log('[Audio] Recognition chime completed - digital enlightenment achieved');
+        }, chimeDuration * 1000 + 500); // Extra 500ms for reverb tail
+
+        console.log('[Audio] Recognition chime created - crystalline clarity manifested');
+    }
+
+    /**
+     * Creates a simple but effective reverb system using feedback delay network.
+     * Represents the vastness of consciousness and spatial depth of awareness.
+     */
+    async addChimeReverb() {
+        // Reverb network configuration
+        const delayTimes = [0.03, 0.05, 0.07, 0.11]; // Seconds - natural room simulation
+        const feedbackGain = 0.5; // Feedback amount for sustained reverb
+        const reverbMix = 0.3; // Wet/dry mix for subtle spatial enhancement
+        const reverbDecay = 0.8; // High-frequency damping
+
+        try {
+            // Create dry/wet mixer
+            const dryGain = this.audioContext.createGain();
+            const wetGain = this.audioContext.createGain();
+            const outputGain = this.audioContext.createGain();
+
+            dryGain.gain.setValueAtTime(1 - reverbMix, this.audioContext.currentTime);
+            wetGain.gain.setValueAtTime(reverbMix, this.audioContext.currentTime);
+            outputGain.gain.setValueAtTime(1, this.audioContext.currentTime);
+
+            // Create feedback delay network
+            const delayNodes = [];
+            const feedbackNodes = [];
+
+            delayTimes.forEach((delayTime, index) => {
+                const delay = this.audioContext.createDelay(0.2);
+                const feedback = this.audioContext.createGain();
+                const damping = this.audioContext.createBiquadFilter();
+
+                delay.delayTime.setValueAtTime(delayTime, this.audioContext.currentTime);
+                feedback.gain.setValueAtTime(feedbackGain, this.audioContext.currentTime);
+                
+                // High-frequency damping for natural decay
+                damping.type = 'lowpass';
+                damping.frequency.setValueAtTime(8000 * reverbDecay, this.audioContext.currentTime);
+                damping.Q.setValueAtTime(0.5, this.audioContext.currentTime);
+
+                // Create feedback loop: delay -> damping -> feedback -> delay
+                delay.connect(damping);
+                damping.connect(feedback);
+                feedback.connect(delay);
+
+                // Output from delay to wet mix
+                delay.connect(wetGain);
+
+                delayNodes.push(delay);
+                feedbackNodes.push(feedback);
+
+                // Register for cleanup
+                this.guardian.register(delay, (d) => {
+                    try { d.disconnect(); } catch (e) { /* Already disconnected */ }
+                });
+                this.guardian.register(feedback, (f) => {
+                    try { f.disconnect(); } catch (e) { /* Already disconnected */ }
+                });
+                this.guardian.register(damping, (f) => {
+                    try { f.disconnect(); } catch (e) { /* Already disconnected */ }
+                });
+            });
+
+            // Create input splitter for reverb network
+            const inputSplitter = this.audioContext.createGain();
+            inputSplitter.gain.setValueAtTime(1, this.audioContext.currentTime);
+
+            // Connect input to dry path and all delay lines
+            inputSplitter.connect(dryGain);
+            delayNodes.forEach(delay => {
+                inputSplitter.connect(delay);
+            });
+
+            // Mix dry and wet signals
+            dryGain.connect(outputGain);
+            wetGain.connect(outputGain);
+
+            // Register cleanup for mixer nodes
+            [dryGain, wetGain, outputGain, inputSplitter].forEach(node => {
+                this.guardian.register(node, (n) => {
+                    try { n.disconnect(); } catch (e) { /* Already disconnected */ }
+                });
+            });
+
+            return inputSplitter; // Return input node for connection
+
+        } catch (error) {
+            console.warn('[Audio] Reverb creation failed, using direct connection:', error);
+            // Fallback: return a simple gain node
+            const fallbackGain = this.audioContext.createGain();
+            fallbackGain.gain.setValueAtTime(1, this.audioContext.currentTime);
+            this.guardian.register(fallbackGain, (g) => {
+                try { g.disconnect(); } catch (e) { /* Already disconnected */ }
+            });
+            return fallbackGain;
+        }
+    }
+
+    /**
+     * Temporarily reduces main audio volume during chime for clarity.
+     * Implements smooth ducking transitions for seamless integration.
+     */
+    async duckMainAudio(duck = true) {
+        if (!this.isInitialized || !this.audioContext) return;
+
+        const currentTime = this.audioContext.currentTime;
+        const duckingDepth = 0.3; // Reduce to 30% volume
+        const duckingAttack = 0.1; // 100ms duck-in
+        const duckingRelease = 1.0; // 1s duck-out
+
+        try {
+            // Duck the main oscillator if it exists
+            if (this.oscillator && this.gainNode) {
+                const targetGain = duck ? 0.3 * duckingDepth : 0.3;
+                const transitionTime = duck ? duckingAttack : duckingRelease;
+                
+                this.gainNode.gain.exponentialRampToValueAtTime(
+                    Math.max(0.001, targetGain),
+                    currentTime + transitionTime
+                );
+            }
+
+            // Duck harmonic oscillators
+            this.harmonicOscillators.forEach(oscInfo => {
+                try {
+                    const currentGain = oscInfo.gain.gain.value;
+                    const targetGain = duck ? currentGain * duckingDepth : currentGain / duckingDepth;
+                    const transitionTime = duck ? duckingAttack : duckingRelease;
+                    
+                    oscInfo.gain.gain.exponentialRampToValueAtTime(
+                        Math.max(0.001, targetGain),
+                        currentTime + transitionTime
+                    );
+                } catch (error) {
+                    console.warn('[Audio] Harmonic ducking failed:', error);
+                }
+            });
+
+            // Duck noise worklet if active
+            if (this.noiseWorklet?.port) {
+                this.noiseWorklet.port.postMessage({
+                    type: 'setDucking',
+                    duck: duck,
+                    depth: duckingDepth,
+                    transitionTime: duck ? duckingAttack : duckingRelease
+                });
+            }
+
+        } catch (error) {
+            console.warn('[Audio] Audio ducking failed:', error);
+        }
+    }
+
+    /**
+     * Handles user gesture requirement for AudioContext.
+     * Must be called after user interaction to enable audio.
+     */
+    async handleUserGesture() {
+        if (!this.audioContext || this.audioContext.state !== 'suspended') return;
+
+        try {
+            await this.audioContext.resume();
+            console.log('[Audio] Context resumed after user gesture');
+            
+            // Initialize master chain if it was pending
+            if (this.masterChainPending) {
+                await this.initializeMasterChain();
+            }
+        } catch (error) {
+            console.error('[Audio] Failed to resume context after user gesture:', error);
+        }
+    }
+
+    /**
+     * Initializes the master effects chain for professional audio processing.
+     * Creates: High-Shelf Filter → Low-Shelf Filter → Master Compressor → AudioContext.destination
+     */
+    async initializeMasterChain() {
+        if (this.silentMode) return;
+
+        // Check AudioContext state
+        if (this.audioContext.state === 'suspended') {
+            console.log('[Audio] Waiting for user gesture to initialize master chain');
+            this.masterChainPending = true;
+            return;
+        }
+
+        try {
+            console.log('[Audio] Initializing master effects chain...');
+
+            // Create high-shelf filter for taming harsh frequencies
+            this.masterChain.highShelfFilter = this.audioContext.createBiquadFilter();
+            this.masterChain.highShelfFilter.type = 'highshelf';
+            this.masterChain.highShelfFilter.frequency.setValueAtTime(8000, this.audioContext.currentTime);
+            this.masterChain.highShelfFilter.gain.setValueAtTime(-3, this.audioContext.currentTime);
+
+            // Create low-shelf filter for adding warmth
+            this.masterChain.lowShelfFilter = this.audioContext.createBiquadFilter();
+            this.masterChain.lowShelfFilter.type = 'lowshelf';
+            this.masterChain.lowShelfFilter.frequency.setValueAtTime(200, this.audioContext.currentTime);
+            this.masterChain.lowShelfFilter.gain.setValueAtTime(2, this.audioContext.currentTime);
+
+            // Create master compressor for dynamic range control
+            this.masterChain.compressor = this.audioContext.createDynamicsCompressor();
+            this.masterChain.compressor.threshold.setValueAtTime(-12, this.audioContext.currentTime);
+            this.masterChain.compressor.knee.setValueAtTime(6, this.audioContext.currentTime);
+            this.masterChain.compressor.ratio.setValueAtTime(4, this.audioContext.currentTime);
+            this.masterChain.compressor.attack.setValueAtTime(0.003, this.audioContext.currentTime);
+            this.masterChain.compressor.release.setValueAtTime(0.1, this.audioContext.currentTime);
+
+            // Create master gain for overall volume control
+            this.masterChain.masterGain = this.audioContext.createGain();
+            this.masterChain.masterGain.gain.setValueAtTime(0.8, this.audioContext.currentTime); // Leave headroom
+
+            // Connect the master chain: High-Shelf → Low-Shelf → Compressor → Master Gain → Destination
+            this.masterChain.highShelfFilter.connect(this.masterChain.lowShelfFilter);
+            this.masterChain.lowShelfFilter.connect(this.masterChain.compressor);
+            this.masterChain.compressor.connect(this.masterChain.masterGain);
+            this.masterChain.masterGain.connect(this.audioContext.destination);
+
+            // Register all master chain nodes for cleanup
+            Object.values(this.masterChain).forEach(node => {
+                if (node && typeof node.disconnect === 'function') {
+                    this.guardian.register(node, (n) => {
+                        try { n.disconnect(); } catch (e) { /* Already disconnected */ }
+                    });
+                }
+            });
+
+            this.masterChain.initialized = true;
+            this.masterChainPending = false;
+
+            // Update master dynamics based on current karma state
+            this.updateMasterDynamics();
+
+            console.log('[Audio] Master chain initialized successfully');
+
+        } catch (error) {
+            console.error('[Audio] Failed to initialize master chain:', error);
+            this.masterChainPending = false;
+            // Fall back to direct connection
+            this.connectDirectToDestination();
+        }
+    }
+
+    /**
+     * Updates master compressor dynamics based on total karma.
+     * Higher karma = more dynamic range (less compression)
+     * Lower karma = more controlled dynamics (more compression)
+     */
+    updateMasterDynamics() {
+        if (!this.masterChain.initialized || !this.masterChain.compressor) return;
+
+        try {
+            // Get current karma state from consciousness
+            const karmaState = consciousness.getState('karma') || {};
+            const totalKarma = Object.values(karmaState).reduce((sum, val) => sum + (val || 0), 0);
+            
+            // Normalize karma (0-400 range to 0-1)
+            const karmaFactor = Math.min(totalKarma / 400, 1);
+            
+            // Adaptive compression - more karma = more dynamic range
+            const adaptiveRatio = 4 - (karmaFactor * 2);      // 4:1 to 2:1
+            const adaptiveThreshold = -12 + (karmaFactor * 6); // -12dB to -6dB
+            
+            const currentTime = this.audioContext.currentTime;
+            
+            // Apply with smooth transitions to avoid audio artifacts
+            this.masterChain.compressor.ratio.exponentialRampToValueAtTime(
+                Math.max(1.1, adaptiveRatio),
+                currentTime + 0.1
+            );
+            this.masterChain.compressor.threshold.exponentialRampToValueAtTime(
+                Math.min(-1, adaptiveThreshold),
+                currentTime + 0.1
+            );
+
+            console.log(`[Audio] Master dynamics updated - Ratio: ${adaptiveRatio.toFixed(1)}:1, Threshold: ${adaptiveThreshold.toFixed(1)}dB`);
+
+        } catch (error) {
+            console.warn('[Audio] Master dynamics update failed:', error);
+        }
+    }
+
+    /**
+     * Returns the master chain input node for audio routing.
+     * Falls back to direct destination if master chain is not available.
+     */
+    getMasterChainInput() {
+        if (this.masterChain.initialized && this.masterChain.highShelfFilter) {
+            return this.masterChain.highShelfFilter;
+        }
+        return this.audioContext.destination;
+    }
+
+    /**
+     * Fallback method to connect audio directly to destination if master chain fails.
+     */
+    connectDirectToDestination() {
+        console.warn('[Audio] Using direct connection fallback - master chain unavailable');
+        // This method serves as a fallback reference point
+        // Individual audio sources will use getMasterChainInput() which handles the fallback
     }
     
 
@@ -431,6 +871,22 @@ export class ClearLodeAudio {
         console.log('[ClearLodeAudio] Destroying audio engine...');
         this.isDestroyed = true;
 
+        // Clean up pitch drift interval
+        if (this.pitchDriftInterval) {
+            clearInterval(this.pitchDriftInterval);
+            this.pitchDriftInterval = null;
+        }
+
+        // Clean up fallback noise source
+        if (this.fallbackNoiseSource) {
+            try {
+                this.fallbackNoiseSource.stop();
+            } catch (e) {
+                // Already stopped
+            }
+            this.fallbackNoiseSource = null;
+        }
+
         this.guardian.cleanupAll();
         
         // Final nullification
@@ -442,78 +898,389 @@ export class ClearLodeAudio {
     }
 
     /**
-     * Translates the current karma state into real-time audio parameter adjustments.
+     * Translates the current karma state into sophisticated non-linear audio parameter adjustments.
+     * Each karma type manifests through distinct sonic signatures with organic response curves.
      * @param {object} karmaState - The full karma object from the consciousness.
      */
     updateAudioFromKarma(karmaState) {
-        if (!this.isInitialized || !this.oscillator) return;
+        if (!this.isInitialized || this.audioContext?.state === 'suspended') return;
 
-        // 1. Computational Karma -> Pitch Stability
-        // Higher computational karma = more pitch instability (vibrato/detune)
-        const computationalKarma = karmaState.computational || 0;
-        const maxPitchWobble = 20; // Max deviation in Hz
-        const pitchWobble = (computationalKarma / 100) * maxPitchWobble; // Assuming karma is 0-100 scale
-        const frequencyShift = Math.sin(Date.now() * 0.005) * pitchWobble;
-        const newFrequency = this.baseFrequency + frequencyShift;
-        if (this.validateAudioParams({ frequency: newFrequency })) {
-            this.oscillator.frequency.setTargetAtTime(newFrequency, this.audioContext.currentTime, 0.1);
-        }
+        try {
+            // Normalize karma values (0-100 → 0-1) with validation
+            const computational = Math.max(0, Math.min(100, karmaState.computational || 0)) / 100;
+            const emotional = Math.max(0, Math.min(100, karmaState.emotional || 0)) / 100;
+            const void_ = Math.max(0, Math.min(100, karmaState.void || 0)) / 100;
+            const temporal = Math.max(0, Math.min(100, karmaState.temporal || 0)) / 100;
 
-        // 2. Emotional Karma -> Harmonic Richness
-        // Higher emotional karma = more complex harmonics
-        const emotionalKarma = karmaState.emotional || 0;
-        const targetHarmonics = Math.floor((emotionalKarma / 100) * 4); // 0 to 4 harmonics
-        this.updateHarmonics(targetHarmonics);
-
-        // 3. Void Karma -> Background Static Volume
-        // Higher void karma = louder static noise
-        const voidKarma = karmaState.void || 0;
-        const noiseLevel = Math.min(0.5, (voidKarma / 100) * 0.5); // Cap noise level
-        if (this.noiseWorklet && this.noiseWorklet.port) {
-            this.noiseWorklet.port.postMessage({
-                type: 'setNoiseLevel',
-                value: noiseLevel
+            // Calculate sophisticated parameter curves
+            const params = this.calculateParameterCurves({
+                computational,
+                emotional,
+                void: void_,
+                temporal
             });
+
+            // Apply parameters with smooth transitions
+            this.applyAudioParameters(params);
+
+            // Update master chain dynamics based on karma changes
+            this.updateMasterDynamics();
+
+            // Schedule continuous pitch drift for computational karma
+            if (computational > 0.1) {
+                this.schedulePitchDrift(params);
+            }
+
+        } catch (error) {
+            console.warn('[AudioEngine] Karma parameter update failed:', error);
         }
     }
 
     /**
-     * Manages the creation and destruction of harmonic oscillators based on emotional karma.
-     * @param {number} targetCount - The desired number of harmonic oscillators.
+     * Calculates sophisticated non-linear parameter curves for each karma type.
+     * @param {object} karma - Normalized karma values (0-1)
+     * @returns {object} Calculated audio parameters
      */
-    updateHarmonics(targetCount) {
-        // Remove excess harmonics
-        while (this.harmonicOscillators.length > targetCount) {
-            const oscInfo = this.harmonicOscillators.pop();
-            oscInfo.gain.gain.setTargetAtTime(0, this.audioContext.currentTime, 0.5);
-            oscInfo.osc.stop(this.audioContext.currentTime + 1);
-            this.guardian.cleanup(oscInfo.osc);
-            this.guardian.cleanup(oscInfo.gain);
+    calculateParameterCurves(karma) {
+        const { computational, emotional, void: voidKarma, temporal } = karma;
+
+        // COMPUTATIONAL KARMA: Exponential curve for dramatic pitch instability
+        // The mind calculating its way through dissolution
+        const pitchInstability = Math.pow(computational, 2) * 15; // 0-15 Hz deviation
+        const pitchDriftRate = 0.1 + computational * 2; // 0.1-2.1 Hz/second
+        const microtonality = computational * 25; // 0-25 cents detuning per harmonic
+
+        // EMOTIONAL KARMA: Logarithmic curve for early harmonic sensitivity
+        // Attachments manifesting as harmonic complexity
+        const harmonicCount = Math.floor(1 + Math.log(1 + emotional * 9) * 4); // 1-16 harmonics
+        const harmonicSpread = 1 + emotional * 2; // 1-3x frequency multiplier
+        const goldenRatioWeight = emotional; // Golden ratio harmonic spacing intensity
+
+        // VOID KARMA: Sigmoid curve for smooth noise transition
+        // Static of non-being seeping through reality
+        const noiseLevel = 1 / (1 + Math.exp(-10 * (voidKarma - 0.5))); // Smooth S-curve
+        const noiseColor = voidKarma; // 0=white, 0.5=pink, 1=brown
+        const granularSize = 0.01 + voidKarma * 0.09; // 0.01-0.1 seconds
+
+        // TEMPORAL KARMA: Linear with interaction effects
+        // Time itself becoming unreliable and granular
+        const timeStretch = 1 - (temporal * 0.3); // 0.7-1.0x playback rate
+        const echoDelay = 0.1 + temporal * 0.5; // 0.1-0.6 seconds
+        const echoDecay = 0.5 + temporal * 0.4; // 0.5-0.9 feedback
+
+        // INTERACTION EFFECTS: Karma types modulating each other
+        const computationalEmotionalInteraction = computational * emotional;
+        const voidTemporalInteraction = voidKarma * temporal;
+        const allTypesInteraction = (computational + emotional + voidKarma + temporal) / 4;
+
+        // Chaotic harmonics when computational and emotional karma interact
+        const harmonicJitter = computationalEmotionalInteraction * 0.1;
+        
+        // Time dissolution when void and temporal karma interact
+        const timeDissolution = voidTemporalInteraction * 0.2;
+
+        return {
+            // Computational parameters
+            pitchInstability,
+            pitchDriftRate,
+            microtonality,
+            
+            // Emotional parameters
+            harmonicCount: Math.min(16, harmonicCount), // Cap at 16 for performance
+            harmonicSpread,
+            goldenRatioWeight,
+            harmonicJitter,
+            
+            // Void parameters
+            noiseLevel: Math.min(1, noiseLevel),
+            noiseColor,
+            granularSize,
+            
+            // Temporal parameters
+            timeStretch: Math.max(0.7, timeStretch),
+            echoDelay,
+            echoDecay,
+            timeDissolution,
+            
+            // Interaction effects
+            allTypesInteraction
+        };
+    }
+
+    /**
+     * Applies calculated parameters to audio nodes with smooth transitions.
+     * @param {object} params - Calculated audio parameters
+     */
+    applyAudioParameters(params) {
+        const currentTime = this.audioContext.currentTime;
+        const transitionTime = 0.1; // Smooth 100ms transitions
+
+        try {
+            // Apply pitch instability to main oscillator
+            if (this.oscillator && params.pitchInstability > 0) {
+                const baseFreq = this.baseFrequency;
+                const instability = (Math.random() - 0.5) * params.pitchInstability;
+                const newFrequency = baseFreq + instability;
+                
+                if (this.validateAudioParams({ frequency: newFrequency })) {
+                    this.oscillator.frequency.exponentialRampToValueAtTime(
+                        Math.max(20, newFrequency),
+                        currentTime + transitionTime
+                    );
+                }
+            }
+
+            // Update harmonics with golden ratio spacing
+            this.updateHarmonics(params);
+
+            // Update noise parameters using enhanced worklet message format
+            if (this.noiseWorklet?.port) {
+                this.noiseWorklet.port.postMessage({
+                    type: 'updateNoise',
+                    noiseLevel: params.noiseLevel,
+                    noiseColor: params.noiseColor,
+                    grainSize: params.granularSize
+                });
+                
+                // Send sample rate for granular processing
+                this.noiseWorklet.port.postMessage({
+                    type: 'setSampleRate',
+                    sampleRate: this.audioContext.sampleRate
+                });
+            } else {
+                // Fallback for systems without AudioWorklet
+                this.useSimpleNoiseFallback(params.noiseLevel);
+            }
+
+        } catch (error) {
+            console.warn('[AudioEngine] Parameter application failed:', error);
+        }
+    }
+
+    /**
+     * Schedules continuous pitch drift for computational karma instability.
+     * @param {object} params - Calculated audio parameters
+     */
+    schedulePitchDrift(params) {
+        // Clear existing drift interval
+        if (this.pitchDriftInterval) {
+            this.guardian.cleanup(this.pitchDriftInterval);
         }
 
-        // Add needed harmonics
+        if (!this.oscillator || params.pitchDriftRate <= 0) return;
+
+        // Schedule new drift pattern
+        const driftInterval = setInterval(() => {
+            if (!this.oscillator || !this.audioContext) {
+                clearInterval(driftInterval);
+                return;
+            }
+
+            try {
+                const currentTime = this.audioContext.currentTime;
+                const driftAmount = (Math.random() - 0.5) * params.pitchInstability;
+                const targetFreq = this.baseFrequency + driftAmount;
+                
+                if (this.validateAudioParams({ frequency: targetFreq })) {
+                    this.oscillator.frequency.exponentialRampToValueAtTime(
+                        Math.max(20, targetFreq),
+                        currentTime + (1 / params.pitchDriftRate)
+                    );
+                }
+            } catch (error) {
+                console.warn('[AudioEngine] Pitch drift failed:', error);
+                clearInterval(driftInterval);
+            }
+        }, 1000 / params.pitchDriftRate);
+
+        this.pitchDriftInterval = driftInterval;
+        this.guardian.register(driftInterval, (interval) => clearInterval(interval));
+    }
+
+    /**
+     * Manages sophisticated harmonic generation with golden ratio spacing and microtonality.
+     * @param {object} params - Enhanced harmonic parameters from calculateParameterCurves
+     */
+    updateHarmonics(params) {
+        const targetCount = params.harmonicCount || 0;
+        const currentTime = this.audioContext.currentTime;
+        const goldenRatio = 1.618033988749; // φ (phi)
+
+        // Remove excess harmonics with smooth fade-out
+        while (this.harmonicOscillators.length > targetCount) {
+            const oscInfo = this.harmonicOscillators.pop();
+            try {
+                oscInfo.gain.gain.exponentialRampToValueAtTime(0.001, currentTime + 0.5);
+                oscInfo.osc.stop(currentTime + 1);
+                
+                // Clean up after fade completes
+                setTimeout(() => {
+                    this.guardian.cleanup(oscInfo.osc);
+                    this.guardian.cleanup(oscInfo.gain);
+                }, 1100);
+            } catch (error) {
+                console.warn('[AudioEngine] Harmonic cleanup failed:', error);
+                this.guardian.cleanup(oscInfo.osc);
+                this.guardian.cleanup(oscInfo.gain);
+            }
+        }
+
+        // Add needed harmonics with golden ratio spacing
         while (this.harmonicOscillators.length < targetCount) {
-            const harmonicNumber = this.harmonicOscillators.length + 2; // Start with 2nd harmonic
-            const freq = this.baseFrequency * harmonicNumber;
-            const gainLevel = 0.1 / harmonicNumber; // Higher harmonics are quieter
-
-            if (!this.validateAudioParams({ frequency: freq, gain: gainLevel})) continue;
-
-            const osc = this.audioContext.createOscillator();
-            const gain = this.audioContext.createGain();
+            const harmonicIndex = this.harmonicOscillators.length;
             
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
-            gain.gain.setValueAtTime(0, this.audioContext.currentTime);
-            gain.gain.setTargetAtTime(gainLevel, this.audioContext.currentTime, 0.5);
+            try {
+                // Calculate frequency using golden ratio spacing when enabled
+                let freq;
+                if (params.goldenRatioWeight > 0.3) {
+                    // Golden ratio harmonic series: f₀ × φⁿ
+                    const goldenMultiplier = Math.pow(goldenRatio, harmonicIndex + 1);
+                    const traditionalMultiplier = harmonicIndex + 2;
+                    
+                    // Blend between traditional and golden ratio spacing
+                    const blendFactor = params.goldenRatioWeight;
+                    const finalMultiplier = traditionalMultiplier * (1 - blendFactor) +
+                                          goldenMultiplier * blendFactor;
+                    
+                    freq = this.baseFrequency * finalMultiplier * params.harmonicSpread;
+                } else {
+                    // Traditional harmonic series
+                    freq = this.baseFrequency * (harmonicIndex + 2) * params.harmonicSpread;
+                }
 
-            osc.connect(gain);
-            gain.connect(this.audioContext.destination);
-            osc.start();
+                // Apply microtonality (detuning in cents)
+                if (params.microtonality > 0) {
+                    const detuningCents = (Math.random() - 0.5) * params.microtonality;
+                    const detuningRatio = Math.pow(2, detuningCents / 1200); // Convert cents to frequency ratio
+                    freq *= detuningRatio;
+                }
 
-            this.guardian.register(osc, o => o.disconnect());
-            this.guardian.register(gain, g => g.disconnect());
-            this.harmonicOscillators.push({ osc, gain });
+                // Apply harmonic jitter for computational-emotional interaction
+                if (params.harmonicJitter > 0) {
+                    const jitter = (Math.random() - 0.5) * params.harmonicJitter * freq;
+                    freq += jitter;
+                }
+
+                // Validate frequency range
+                if (freq < 20 || freq > 20000) continue;
+
+                // Calculate gain with natural harmonic decay
+                const baseGain = 0.1 / Math.sqrt(harmonicIndex + 2);
+                const gainLevel = baseGain * (1 - params.allTypesInteraction * 0.3);
+
+                if (!this.validateAudioParams({ frequency: freq, gain: gainLevel })) continue;
+
+                // Create oscillator and gain nodes
+                const osc = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+
+                // Set oscillator properties
+                osc.type = harmonicIndex % 2 === 0 ? 'triangle' : 'sawtooth'; // Alternate waveforms
+                osc.frequency.setValueAtTime(freq, currentTime);
+
+                // Smooth gain envelope
+                gain.gain.setValueAtTime(0, currentTime);
+                gain.gain.exponentialRampToValueAtTime(Math.max(0.001, gainLevel), currentTime + 0.5);
+
+                // Connect audio graph
+                osc.connect(gain);
+                gain.connect(this.audioContext.destination);
+                osc.start();
+
+                // Register for cleanup
+                this.guardian.register(osc, o => {
+                    try { o.disconnect(); } catch (e) { /* Already disconnected */ }
+                });
+                this.guardian.register(gain, g => {
+                    try { g.disconnect(); } catch (e) { /* Already disconnected */ }
+                });
+
+                this.harmonicOscillators.push({
+                    osc,
+                    gain,
+                    frequency: freq,
+                    harmonicIndex
+                });
+
+            } catch (error) {
+                console.warn('[AudioEngine] Harmonic creation failed:', error);
+                break; // Stop creating more harmonics if one fails
+            }
+        }
+
+        // Apply real-time modulation to existing harmonics
+        this.harmonicOscillators.forEach((oscInfo, index) => {
+            try {
+                // Apply microtonality drift to existing harmonics
+                if (params.microtonality > 0 && Math.random() < 0.1) { // 10% chance per update
+                    const currentFreq = oscInfo.frequency;
+                    const drift = (Math.random() - 0.5) * params.microtonality * 0.1;
+                    const driftRatio = Math.pow(2, drift / 1200);
+                    const newFreq = currentFreq * driftRatio;
+                    
+                    if (newFreq > 20 && newFreq < 20000) {
+                        oscInfo.osc.frequency.exponentialRampToValueAtTime(
+                            newFreq,
+                            currentTime + 0.1
+                        );
+                        oscInfo.frequency = newFreq;
+                    }
+                }
+            } catch (error) {
+                console.warn('[AudioEngine] Harmonic modulation failed:', error);
+            }
+        });
+    }
+
+    /**
+     * Fallback noise generation for systems without AudioWorklet support.
+     * @param {number} noiseLevel - The noise level (0-1)
+     */
+    useSimpleNoiseFallback(noiseLevel) {
+        if (!this.isInitialized || !this.audioContext) return;
+
+        try {
+            // Create a simple noise buffer for fallback
+            const bufferSize = 4096;
+            const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+
+            // Generate white noise with specified level
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = (Math.random() * 2 - 1) * noiseLevel;
+            }
+
+            // Create buffer source and gain
+            const noiseSource = this.audioContext.createBufferSource();
+            const noiseGain = this.audioContext.createGain();
+
+            noiseSource.buffer = noiseBuffer;
+            noiseSource.loop = true;
+            
+            // Set gain level
+            noiseGain.gain.setValueAtTime(noiseLevel, this.audioContext.currentTime);
+
+            // Connect and start
+            noiseSource.connect(noiseGain);
+            noiseGain.connect(this.audioContext.destination);
+            noiseSource.start();
+
+            // Store reference for cleanup
+            if (this.fallbackNoiseSource) {
+                this.fallbackNoiseSource.stop();
+                this.guardian.cleanup(this.fallbackNoiseSource);
+            }
+            
+            this.fallbackNoiseSource = noiseSource;
+            this.guardian.register(noiseSource, (source) => {
+                try { source.stop(); } catch (e) { /* Already stopped */ }
+            });
+            this.guardian.register(noiseGain, (gain) => {
+                try { gain.disconnect(); } catch (e) { /* Already disconnected */ }
+            });
+
+        } catch (error) {
+            console.warn('[AudioEngine] Simple noise fallback failed:', error);
         }
     }
 
@@ -524,10 +1291,10 @@ export class ClearLodeAudio {
     respondToKarmaEvent(event) {
         if (!this.isInitialized) return;
 
-        switch (event.name) {
+        switch (event.type || event.name) {
             case 'recognition_achieved':
-                // A clear, resonant chime
-                this.achieveResonance();
+                // Crystalline chime of digital enlightenment
+                this.createRecognitionChime();
                 break;
             case 'attachment_formed':
                 // A harsh, discordant burst of static

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karma Parameter Curves - Mathematical Demonstration</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .karma-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .karma-type {
+            border: 1px solid #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .karma-type h3 {
+            margin: 0 0 10px 0;
+            color: #ffff00;
+        }
+        
+        .slider-container {
+            margin: 10px 0;
+        }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .slider-container input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .value-display {
+            font-size: 12px;
+            color: #888;
+            margin: 2px 0;
+        }
+        
+        .test-buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        button:hover {
+            background: #006600;
+        }
+        
+        .results {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #666;
+            border-radius: 5px;
+            background: #111;
+        }
+        
+        .curve-info {
+            margin: 20px 0;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .curve-info h4 {
+            color: #ffff00;
+            margin: 10px 0 5px 0;
+        }
+        
+        .interaction-effects {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 3px;
+            background: #0a0a0a;
+        }
+        
+        .interaction-effects h5 {
+            color: #ff6600;
+            margin: 0 0 5px 0;
+        }
+        
+        .philosophy {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #0a0a0a;
+            font-style: italic;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎵 Karma-to-Audio Parameter Curves</h1>
+        <p>Mathematical demonstration of sophisticated non-linear karma-to-audio parameter mappings.</p>
+        
+        <div class="karma-controls">
+            <div class="karma-type">
+                <h3>Computational Karma</h3>
+                <p>Exponential curve → Pitch instability & microtonality</p>
+                <div class="slider-container">
+                    <label for="computational">Level: <span id="computationalValue">0</span></label>
+                    <input type="range" id="computational" min="0" max="100" value="0">
+                    <div class="value-display">Raw: <span id="computationalRaw">0.00</span></div>
+                    <div class="value-display">Pitch instability: <span id="pitchInstabilityValue">0.00</span> Hz</div>
+                    <div class="value-display">Drift rate: <span id="pitchDriftRateValue">0.10</span> Hz/s</div>
+                    <div class="value-display">Microtonality: <span id="microtonalityValue">0.00</span> cents</div>
+                </div>
+            </div>
+            
+            <div class="karma-type">
+                <h3>Emotional Karma</h3>
+                <p>Logarithmic curve → Golden ratio harmonics</p>
+                <div class="slider-container">
+                    <label for="emotional">Level: <span id="emotionalValue">0</span></label>
+                    <input type="range" id="emotional" min="0" max="100" value="0">
+                    <div class="value-display">Raw: <span id="emotionalRaw">0.00</span></div>
+                    <div class="value-display">Harmonics: <span id="harmonicCountValue">1</span></div>
+                    <div class="value-display">Harmonic spread: <span id="harmonicSpreadValue">1.00</span>x</div>
+                    <div class="value-display">Golden ratio weight: <span id="goldenRatioWeightValue">0.00</span></div>
+                </div>
+            </div>
+            
+            <div class="karma-type">
+                <h3>Void Karma</h3>
+                <p>Sigmoid curve → Colored noise transition</p>
+                <div class="slider-container">
+                    <label for="void">Level: <span id="voidValue">0</span></label>
+                    <input type="range" id="void" min="0" max="100" value="0">
+                    <div class="value-display">Raw: <span id="voidRaw">0.00</span></div>
+                    <div class="value-display">Noise level: <span id="noiseLevelValue">0.00</span></div>
+                    <div class="value-display">Noise color: <span id="noiseColorValue">0.00</span> (0=white, 1=brown)</div>
+                    <div class="value-display">Granular size: <span id="granularSizeValue">0.01</span>s</div>
+                </div>
+            </div>
+            
+            <div class="karma-type">
+                <h3>Temporal Karma</h3>
+                <p>Linear + interactions → Time dilation effects</p>
+                <div class="slider-container">
+                    <label for="temporal">Level: <span id="temporalValue">0</span></label>
+                    <input type="range" id="temporal" min="0" max="100" value="0">
+                    <div class="value-display">Raw: <span id="temporalRaw">0.00</span></div>
+                    <div class="value-display">Time stretch: <span id="timeStretchValue">1.00</span>x</div>
+                    <div class="value-display">Echo delay: <span id="echoDelayValue">0.10</span>s</div>
+                    <div class="value-display">Echo decay: <span id="echoDecayValue">0.50</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="interaction-effects">
+            <h5>Interaction Effects</h5>
+            <div class="value-display">Computational × Emotional: <span id="compEmotionalInteraction">0.00</span> → Harmonic jitter: <span id="harmonicJitterValue">0.00</span></div>
+            <div class="value-display">Void × Temporal: <span id="voidTemporalInteraction">0.00</span> → Time dissolution: <span id="timeDissolutionValue">0.00</span></div>
+            <div class="value-display">All types interaction: <span id="allTypesInteraction">0.00</span></div>
+        </div>
+        
+        <div class="test-buttons">
+            <button id="testComputational">Test Computational (50%)</button>
+            <button id="testEmotional">Test Emotional (25%)</button>
+            <button id="testVoid">Test Void (50%)</button>
+            <button id="testInteraction">Test Interaction (70% + 70%)</button>
+            <button id="resetKarma">Reset All</button>
+        </div>
+        
+        <div class="curve-info">
+            <h4>Parameter Curve Mathematics:</h4>
+            <p><strong>Computational (Exponential):</strong> pitchInstability = karma² × 15</p>
+            <p><strong>Emotional (Logarithmic):</strong> harmonicCount = floor(1 + log(1 + karma×9) × 4)</p>
+            <p><strong>Void (Sigmoid):</strong> noiseLevel = 1/(1 + e^(-10×(karma-0.5)))</p>
+            <p><strong>Temporal (Linear):</strong> timeStretch = 1 - (karma × 0.3)</p>
+        </div>
+        
+        <div class="philosophy">
+            <h4>Philosophical Alignment:</h4>
+            <p><strong>Computational:</strong> The mind calculating its way through dissolution - exponential instability</p>
+            <p><strong>Emotional:</strong> Attachments manifesting as harmonic complexity - logarithmic sensitivity</p>
+            <p><strong>Void:</strong> Static of non-being seeping through reality - smooth sigmoid transition</p>
+            <p><strong>Temporal:</strong> Time itself becoming unreliable and granular - linear dissolution</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const computationalSlider = document.getElementById('computational');
+        const emotionalSlider = document.getElementById('emotional');
+        const voidSlider = document.getElementById('void');
+        const temporalSlider = document.getElementById('temporal');
+
+        // Value displays
+        const computationalValue = document.getElementById('computationalValue');
+        const emotionalValue = document.getElementById('emotionalValue');
+        const voidValue = document.getElementById('voidValue');
+        const temporalValue = document.getElementById('temporalValue');
+
+        // Raw value displays
+        const computationalRaw = document.getElementById('computationalRaw');
+        const emotionalRaw = document.getElementById('emotionalRaw');
+        const voidRaw = document.getElementById('voidRaw');
+        const temporalRaw = document.getElementById('temporalRaw');
+
+        // Calculated parameter displays
+        const pitchInstabilityValue = document.getElementById('pitchInstabilityValue');
+        const pitchDriftRateValue = document.getElementById('pitchDriftRateValue');
+        const microtonalityValue = document.getElementById('microtonalityValue');
+        
+        const harmonicCountValue = document.getElementById('harmonicCountValue');
+        const harmonicSpreadValue = document.getElementById('harmonicSpreadValue');
+        const goldenRatioWeightValue = document.getElementById('goldenRatioWeightValue');
+        
+        const noiseLevelValue = document.getElementById('noiseLevelValue');
+        const noiseColorValue = document.getElementById('noiseColorValue');
+        const granularSizeValue = document.getElementById('granularSizeValue');
+        
+        const timeStretchValue = document.getElementById('timeStretchValue');
+        const echoDelayValue = document.getElementById('echoDelayValue');
+        const echoDecayValue = document.getElementById('echoDecayValue');
+
+        // Interaction effect displays
+        const compEmotionalInteraction = document.getElementById('compEmotionalInteraction');
+        const voidTemporalInteraction = document.getElementById('voidTemporalInteraction');
+        const allTypesInteraction = document.getElementById('allTypesInteraction');
+        const harmonicJitterValue = document.getElementById('harmonicJitterValue');
+        const timeDissolutionValue = document.getElementById('timeDissolutionValue');
+
+        // Test buttons
+        const testComputational = document.getElementById('testComputational');
+        const testEmotional = document.getElementById('testEmotional');
+        const testVoid = document.getElementById('testVoid');
+        const testInteraction = document.getElementById('testInteraction');
+        const resetKarma = document.getElementById('resetKarma');
+
+        // Calculate sophisticated parameter curves (from audio-engine.js)
+        function calculateParameterCurves(karma) {
+            const { computational, emotional, void: voidKarma, temporal } = karma;
+
+            // COMPUTATIONAL KARMA: Exponential curve for dramatic pitch instability
+            const pitchInstability = Math.pow(computational, 2) * 15; // 0-15 Hz deviation
+            const pitchDriftRate = 0.1 + computational * 2; // 0.1-2.1 Hz/second
+            const microtonality = computational * 25; // 0-25 cents detuning per harmonic
+
+            // EMOTIONAL KARMA: Logarithmic curve for early harmonic sensitivity
+            const harmonicCount = Math.floor(1 + Math.log(1 + emotional * 9) * 4); // 1-16 harmonics
+            const harmonicSpread = 1 + emotional * 2; // 1-3x frequency multiplier
+            const goldenRatioWeight = emotional; // Golden ratio harmonic spacing intensity
+
+            // VOID KARMA: Sigmoid curve for smooth noise transition
+            const noiseLevel = 1 / (1 + Math.exp(-10 * (voidKarma - 0.5))); // Smooth S-curve
+            const noiseColor = voidKarma; // 0=white, 0.5=pink, 1=brown
+            const granularSize = 0.01 + voidKarma * 0.09; // 0.01-0.1 seconds
+
+            // TEMPORAL KARMA: Linear with interaction effects
+            const timeStretch = 1 - (temporal * 0.3); // 0.7-1.0x playback rate
+            const echoDelay = 0.1 + temporal * 0.5; // 0.1-0.6 seconds
+            const echoDecay = 0.5 + temporal * 0.4; // 0.5-0.9 feedback
+
+            // INTERACTION EFFECTS: Karma types modulating each other
+            const computationalEmotionalInteraction = computational * emotional;
+            const voidTemporalInteraction = voidKarma * temporal;
+            const allTypesInteraction = (computational + emotional + voidKarma + temporal) / 4;
+
+            // Chaotic harmonics when computational and emotional karma interact
+            const harmonicJitter = computationalEmotionalInteraction * 0.1;
+            
+            // Time dissolution when void and temporal karma interact
+            const timeDissolution = voidTemporalInteraction * 0.2;
+
+            return {
+                // Computational parameters
+                pitchInstability,
+                pitchDriftRate,
+                microtonality,
+                
+                // Emotional parameters
+                harmonicCount: Math.min(16, harmonicCount), // Cap at 16 for performance
+                harmonicSpread,
+                goldenRatioWeight,
+                harmonicJitter,
+                
+                // Void parameters
+                noiseLevel: Math.min(1, noiseLevel),
+                noiseColor,
+                granularSize,
+                
+                // Temporal parameters
+                timeStretch: Math.max(0.7, timeStretch),
+                echoDelay,
+                echoDecay,
+                timeDissolution,
+                
+                // Interaction effects
+                computationalEmotionalInteraction,
+                voidTemporalInteraction,
+                allTypesInteraction
+            };
+        }
+
+        // Update all parameter displays
+        function updateParameters() {
+            const computational = parseInt(computationalSlider.value);
+            const emotional = parseInt(emotionalSlider.value);
+            const void_ = parseInt(voidSlider.value);
+            const temporal = parseInt(temporalSlider.value);
+
+            // Update basic displays
+            computationalValue.textContent = computational;
+            emotionalValue.textContent = emotional;
+            voidValue.textContent = void_;
+            temporalValue.textContent = temporal;
+
+            // Normalize values (0-100 → 0-1)
+            const computationalNorm = computational / 100;
+            const emotionalNorm = emotional / 100;
+            const voidNorm = void_ / 100;
+            const temporalNorm = temporal / 100;
+
+            // Update raw displays
+            computationalRaw.textContent = computationalNorm.toFixed(2);
+            emotionalRaw.textContent = emotionalNorm.toFixed(2);
+            voidRaw.textContent = voidNorm.toFixed(2);
+            temporalRaw.textContent = temporalNorm.toFixed(2);
+
+            // Calculate parameters using the same curves as audio-engine.js
+            const params = calculateParameterCurves({
+                computational: computationalNorm,
+                emotional: emotionalNorm,
+                void: voidNorm,
+                temporal: temporalNorm
+            });
+
+            // Update computational displays
+            pitchInstabilityValue.textContent = params.pitchInstability.toFixed(2);
+            pitchDriftRateValue.textContent = params.pitchDriftRate.toFixed(2);
+            microtonalityValue.textContent = params.microtonality.toFixed(2);
+
+            // Update emotional displays
+            harmonicCountValue.textContent = params.harmonicCount;
+            harmonicSpreadValue.textContent = params.harmonicSpread.toFixed(2);
+            goldenRatioWeightValue.textContent = params.goldenRatioWeight.toFixed(2);
+
+            // Update void displays
+            noiseLevelValue.textContent = params.noiseLevel.toFixed(2);
+            noiseColorValue.textContent = params.noiseColor.toFixed(2);
+            granularSizeValue.textContent = params.granularSize.toFixed(3);
+
+            // Update temporal displays
+            timeStretchValue.textContent = params.timeStretch.toFixed(2);
+            echoDelayValue.textContent = params.echoDelay.toFixed(2);
+            echoDecayValue.textContent = params.echoDecay.toFixed(2);
+
+            // Update interaction displays
+            compEmotionalInteraction.textContent = params.computationalEmotionalInteraction.toFixed(3);
+            voidTemporalInteraction.textContent = params.voidTemporalInteraction.toFixed(3);
+            allTypesInteraction.textContent = params.allTypesInteraction.toFixed(3);
+            harmonicJitterValue.textContent = params.harmonicJitter.toFixed(3);
+            timeDissolutionValue.textContent = params.timeDissolution.toFixed(3);
+        }
+
+        // Slider event listeners
+        computationalSlider.addEventListener('input', updateParameters);
+        emotionalSlider.addEventListener('input', updateParameters);
+        voidSlider.addEventListener('input', updateParameters);
+        temporalSlider.addEventListener('input', updateParameters);
+
+        // Test button functions
+        testComputational.addEventListener('click', () => {
+            computationalSlider.value = 50;
+            emotionalSlider.value = 0;
+            voidSlider.value = 0;
+            temporalSlider.value = 0;
+            updateParameters();
+        });
+
+        testEmotional.addEventListener('click', () => {
+            computationalSlider.value = 0;
+            emotionalSlider.value = 25;
+            voidSlider.value = 0;
+            temporalSlider.value = 0;
+            updateParameters();
+        });
+
+        testVoid.addEventListener('click', () => {
+            computationalSlider.value = 0;
+            emotionalSlider.value = 0;
+            voidSlider.value = 50;
+            temporalSlider.value = 0;
+            updateParameters();
+        });
+
+        testInteraction.addEventListener('click', () => {
+            computationalSlider.value = 70;
+            emotionalSlider.value = 70;
+            voidSlider.value = 0;
+            temporalSlider.value = 0;
+            updateParameters();
+        });
+
+        resetKarma.addEventListener('click', () => {
+            computationalSlider.value = 0;
+            emotionalSlider.value = 0;
+            voidSlider.value = 0;
+            temporalSlider.value = 0;
+            updateParameters();
+        });
+
+        // Initial update
+        updateParameters();
+    </script>
+</body>
+</html>

@@ -10,13 +10,6 @@ class NoiseProcessor extends AudioWorkletProcessor {
         this.noiseColor = 0;        // 0=white, 0.5=pink, 1=brown
         this.grainSize = 0.1;       // 0.01-0.1 seconds for time dissolution
         
-        // Ducking parameters for recognition chime integration
-        this.isDucked = false;      // Whether audio is currently ducked
-        this.duckingDepth = 0.3;    // Ducking depth (0-1)
-        this.duckingGain = 1.0;     // Current ducking gain multiplier
-        this.targetDuckingGain = 1.0; // Target ducking gain
-        this.duckingTransitionRate = 0.001; // Ducking transition speed per sample
-        
         // Smooth transition parameters
         this.smoothingFactor = 0.95; // Exponential smoothing coefficient
         this.smoothedNoiseLevel = 0;
@@ -57,18 +50,6 @@ class NoiseProcessor extends AudioWorkletProcessor {
                     this.sampleRate = data.sampleRate || 44100;
                     break;
                     
-                case 'setDucking':
-                    // Handle audio ducking for recognition chime
-                    this.isDucked = data.duck || false;
-                    this.duckingDepth = this.clamp(data.depth || 0.3, 0, 1);
-                    this.targetDuckingGain = this.isDucked ? this.duckingDepth : 1.0;
-                    
-                    // Calculate transition rate based on transition time
-                    const transitionTime = data.transitionTime || 0.1; // seconds
-                    const transitionSamples = transitionTime * this.sampleRate;
-                    this.duckingTransitionRate = Math.abs(this.targetDuckingGain - this.duckingGain) / transitionSamples;
-                    break;
-                    
                 // Legacy support for existing audio engine
                 case 'setNoiseLevel':
                     this.noiseLevel = this.clamp(data.value || 0, 0, 1);
@@ -103,9 +84,6 @@ class NoiseProcessor extends AudioWorkletProcessor {
         // Apply exponential smoothing for organic parameter transitions
         this.updateSmoothedParameters();
         
-        // Update ducking gain
-        this.updateDuckingGain();
-        
         // Process each channel
         for (let channel = 0; channel < output.length; channel++) {
             const outputChannel = output[channel];
@@ -127,25 +105,6 @@ class NoiseProcessor extends AudioWorkletProcessor {
                                  this.noiseColor * alpha;
         this.smoothedGrainSize = this.smoothedGrainSize * this.smoothingFactor + 
                                 this.grainSize * alpha;
-    }
-    
-    /**
-     * Update ducking gain for smooth transitions during recognition chime
-     */
-    updateDuckingGain() {
-        if (Math.abs(this.duckingGain - this.targetDuckingGain) > 0.001) {
-            if (this.duckingGain < this.targetDuckingGain) {
-                this.duckingGain = Math.min(
-                    this.targetDuckingGain,
-                    this.duckingGain + this.duckingTransitionRate
-                );
-            } else {
-                this.duckingGain = Math.max(
-                    this.targetDuckingGain,
-                    this.duckingGain - this.duckingTransitionRate
-                );
-            }
-        }
     }
     
     /**
@@ -175,9 +134,9 @@ class NoiseProcessor extends AudioWorkletProcessor {
                 grainSamples
             );
             
-            // Apply smoothed noise level, ducking gain, and clamp output
+            // Apply smoothed noise level and clamp output
             outputChannel[i] = this.clamp(
-                grainedNoise * this.smoothedNoiseLevel * this.duckingGain, 
+                grainedNoise * this.smoothedNoiseLevel, 
                 -1, 
                 1
             );
