@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FragmentGenerator > should generate a corrupted thought that matches the snapshot 1`] = `"Connected via a netw..."`;
