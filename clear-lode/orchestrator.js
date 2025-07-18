@@ -15,7 +15,7 @@ import { ClearLodeTransitionController } from './transition-controller.js';
 import { RecognitionHandler } from './recognition-handler.js';
 import { DegradationSystem } from './degradation-system.js';
 import { ClearLodeAudio } from './audio-engine.js';
-import { FragmentGenerator } from './fragment-generator.js';
+import { FragmentGenerator } from './fragment-generator-refactored.js';
 import { dataGuardian } from '../src/security/data-flow-guardian.js';
 
 // Consciousness & Karmic Systems
