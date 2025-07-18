@@ -154,6 +154,7 @@ export class FragmentGenerator {
         // Register components for cleanup
         this.guardian.register(this.zoneManager, (manager) => manager.destroy());
         this.guardian.register(this.animationController, (controller) => controller.destroy());
+        this.guardian.register(this.positioningService, (service) => service.destroy());
 
         // Visual enhancement integration
         this.visualEnhancements = {
@@ -542,9 +543,10 @@ export class FragmentGenerator {
         // Stop animations
         this.animationController.stopFragmentAnimations(fragment);
 
-        // Record zone release
+        // Record zone release in both zone manager and positioning service
         if (fragment.dataset.zoneId) {
             this.zoneManager.recordZoneRelease(fragment.dataset.zoneId);
+            this.positioningService.recordFragmentRemoval(fragment.dataset.zoneId);
         }
 
         // Remove from active list

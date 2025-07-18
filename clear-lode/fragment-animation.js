@@ -10,13 +10,20 @@ export class FragmentAnimation {
      * Animates fragment movement with support for waypoints and complex paths
      */
     static animateFragmentMovement(fragment, drift, animationDuration, onComplete) {
-        // Initial appearance animation
+        // Get karma state for animation adjustments
+        const karmaState = AnimationGuardian.getKarmaState();
+        
+        // Initial appearance animation with karma integration
         AnimationGuardian.safeAnimate(fragment, {
             opacity: 0.8,
             scale: 1,
             duration: 1,
             ease: 'power2.out',
             delay: 0
+        }, {
+            karmaState: karmaState,
+            pathType: 'appearance',
+            recordKarmaEvents: true
         });
 
         if (drift.waypoints && drift.waypoints.length > 0) {
@@ -76,13 +83,20 @@ export class FragmentAnimation {
      * Animates fragment along simple linear path
      */
     static animateSimplePath(fragment, drift, animationDuration, onComplete) {
-        // Traditional two-stage animation
+        // Get karma state for animation adjustments
+        const karmaState = AnimationGuardian.getKarmaState();
+        
+        // Traditional two-stage animation with karma integration
         AnimationGuardian.safeAnimate(fragment, {
             x: drift.x * 0.2,
             y: drift.y * 0.2,
             duration: animationDuration * 0.7,
             ease: 'none',
             delay: 1
+        }, {
+            karmaState: karmaState,
+            pathType: 'simple',
+            recordKarmaEvents: true
         });
 
         AnimationGuardian.safeAnimate(fragment, {
@@ -104,6 +118,10 @@ export class FragmentAnimation {
                     onComplete(fragment);
                 }
             }
+        }, {
+            karmaState: karmaState,
+            pathType: 'simple',
+            recordKarmaEvents: true
         });
     }
 
