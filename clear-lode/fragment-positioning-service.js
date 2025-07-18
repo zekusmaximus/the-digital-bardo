@@ -157,7 +157,7 @@ export class FragmentPositioningService {
     
     // Fallback to original implementation
     // Get random position within zone bounds
-    let position = zone.getRandomPosition(0.1); // 10% margin within zone
+    let position = zone.getRandomPosition(0); // No margin, use full zone
 
     // Apply distribution-based adjustments if provided
     if (distributionData && distributionData.centerBias) {
