@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Enhancement Integration Test</title>
+  <link rel="stylesheet" href="../src/styles/clear-lode.css">
+  <link rel="stylesheet" href="../src/styles/phosphor-effects.css">
+  <link rel="stylesheet" href="../src/styles/corruption-effects.css">
+  <link rel="stylesheet" href="../src/styles/light-manifestation.css">
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 5px;
+      z-index: 10000;
+    }
+    
+    button {
+      background-color: #444;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin: 5px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #666;
+    }
+    
+    .metrics {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 5px;
+      max-width: 400px;
+      font-size: 12px;
+      z-index: 10000;
+    }
+    
+    .fragment {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .fragment:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .test-section {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    
+    .status-display {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 3px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h3>Visual Enhancement Integration Test</h3>
+    
+    <div class="test-section">
+      <h4>Fragment Generation</h4>
+      <button id="createFragments">Create Fragments</button>
+      <button id="clearFragments">Clear All</button>
+      <div>
+        <label for="fragmentCount">Count:</label>
+        <input type="number" id="fragmentCount" value="10" min="1" max="50" style="width: 50px;">
+      </div>
+    </div>
+    
+    <div class="test-section">
+      <h4>Visual Effects</h4>
+      <button id="togglePhosphor">Toggle Phosphor</button>
+      <button id="toggleLight">Toggle Light</button>
+      <button id="toggleZones">Show Zones</button>
+    </div>
+    
+    <div class="test-section">
+      <h4>Corruption Level</h4>
+      <button data-corruption="minimal">Minimal</button>
+      <button data-corruption="moderate">Moderate</button>
+      <button data-corruption="severe">Severe</button>
+      <button data-corruption="complete">Complete</button>
+    </div>
+    
+    <div class="test-section">
+      <h4>Karma Level</h4>
+      <button data-karma="low">Low (1-3)</button>
+      <button data-karma="medium">Medium (4-6)</button>
+      <button data-karma="high">High (7-10)</button>
+    </div>
+    
+    <div class="test-section">
+      <h4>Recognition State</h4>
+      <button id="toggleRecognition">Toggle Recognition</button>
+    </div>
+  </div>
+  
+  <div class="metrics" id="metricsDisplay">
+    <h3>Visual Enhancement Metrics</h3>
+    <div id="metricsContent">No data yet</div>
+  </div>
+
+  <!-- Visual Effect Elements -->
+  <div class="crt-screen"></div>
+  <div class="crt-vignette"></div>
+  <div class="crt-curvature"></div>
+  
+  <div class="light-manifestation">
+    <div class="particle-field"></div>
+    <div class="harmonic-rings">
+      <div class="harmonic-ring"></div>
+      <div class="harmonic-ring"></div>
+      <div class="harmonic-ring"></div>
+      <div class="harmonic-ring"></div>
+      <div class="harmonic-ring"></div>
+    </div>
+    <div class="recognition-aura">
+      <div class="aura-layer"></div>
+      <div class="aura-layer"></div>
+      <div class="aura-layer"></div>
+    </div>
+  </div>
+  
+  <div id="fragmentContainer"></div>
+
+  <script type="module">
+    import { visualEnhancementIntegration } from './visual-enhancement-integration.js';
+    import { PositionZoneManager } from './position-zone-manager.js';
+    import { FragmentPositioningService } from './fragment-positioning-service.js';
+    import { consciousness } from '../src/consciousness/digital-soul.js';
+    import { AnimationGuardian } from '../src/utils/animation-guardian.js';
+    
+    // Initialize components
+    const zoneManager = new PositionZoneManager();
+    const positioningService = new FragmentPositioningService(zoneManager);
+    
+    // Track fragments
+    const fragments = [];
+    
+    // DOM elements
+    const fragmentContainer = document.getElementById('fragmentContainer');
+    const createFragmentsBtn = document.getElementById('createFragments');
+    const clearFragmentsBtn = document.getElementById('clearFragments');
+    const fragmentCountInput = document.getElementById('fragmentCount');
+    const metricsContent = document.getElementById('metricsContent');
+    const togglePhosphorBtn = document.getElementById('togglePhosphor');
+    const toggleLightBtn = document.getElementById('toggleLight');
+    const toggleZonesBtn = document.getElementById('toggleZones');
+    const toggleRecognitionBtn = document.getElementById('toggleRecognition');
+    
+    // Initialize consciousness state
+    if (!consciousness.getState) {
+      // Mock consciousness for testing
+      consciousness.getState = () => ({
+        clearLode: {
+          karma: {
+            level: 5,
+            balance: 0.5
+          },
+          recognition: {
+            recognized: false
+          },
+          degradation: {
+            level: 0.3
+          }
+        }
+      });
+      
+      consciousness.recordEvent = (event, data) => {
+        console.log(`[Consciousness] Event: ${event}`, data);
+      };
+      
+      consciousness.subscribe = (path, callback) => {
+        console.log(`[Consciousness] Subscribed to: ${path}`);
+      };
+      
+      consciousness.unsubscribe = (path) => {
+        console.log(`[Consciousness] Unsubscribed from: ${path}`);
+      };
+    }
+    
+    // Create fragments
+    function createFragments(count = 10) {
+      for (let i = 0; i < count; i++) {
+        createFragment();
+      }
+      updateMetricsDisplay();
+    }
+    
+    // Create a single fragment
+    function createFragment() {
+      const fragment = document.createElement('div');
+      fragment.className = 'fragment';
+      fragment.textContent = getRandomText();
+      fragment.dataset.birthTime = Date.now().toString();
+      
+      // Select zone and position fragment
+      const zone = zoneManager.selectZone();
+      positioningService.positionFragment(fragment, zone);
+      
+      // Apply visual effects
+      visualEnhancementIntegration.applyVisualEffectsToFragment(fragment, zone);
+      
+      // Record zone usage
+      zoneManager.recordZoneUsage(zone);
+      
+      // Add to DOM
+      fragmentContainer.appendChild(fragment);
+      
+      // Store fragment
+      fragments.push({
+        element: fragment,
+        zone: zone,
+        birthTime: Date.now()
+      });
+      
+      // Add click handler
+      fragment.addEventListener('click', () => {
+        visualEnhancementIntegration.recordFragmentKarmaEvent(fragment, 'click');
+        animateFragmentInteraction(fragment);
+      });
+      
+      // Animate fragment
+      setTimeout(() => {
+        animateFragment(fragment, zone);
+      }, Math.random() * 2000);
+      
+      return fragment;
+    }
+    
+    // Animate fragment
+    function animateFragment(fragment, zone) {
+      // Calculate drift
+      const drift = {
+        x: (Math.random() - 0.5) * 200,
+        y: (Math.random() - 0.5) * 200
+      };
+      
+      // Create path
+      const startPoint = {
+        x: parseFloat(fragment.style.left),
+        y: parseFloat(fragment.style.top)
+      };
+      
+      const endPoint = {
+        x: startPoint.x + drift.x,
+        y: startPoint.y + drift.y
+      };
+      
+      // Validate path for visual effects
+      const waypoints = [startPoint, endPoint];
+      const validatedWaypoints = visualEnhancementIntegration.validatePathForVisualEffects(waypoints);
+      
+      // Apply animation
+      AnimationGuardian.safeAnimate(fragment, {
+        x: validatedWaypoints[1].x,
+        y: validatedWaypoints[1].y,
+        duration: 2 + Math.random() * 3,
+        ease: 'power1.inOut',
+        onComplete: () => {
+          // Remove fragment after animation
+          setTimeout(() => {
+            removeFragment(fragment);
+          }, Math.random() * 2000);
+        }
+      });
+    }
+    
+    // Animate fragment interaction
+    function animateFragmentInteraction(fragment) {
+      // Pulse animation
+      AnimationGuardian.safeAnimate(fragment, {
+        scale: 1.2,
+        opacity: 0.8,
+        duration: 0.3,
+        ease: 'power2.out',
+        onComplete: () => {
+          AnimationGuardian.safeAnimate(fragment, {
+            scale: 1,
+            opacity: 0.6,
+            duration: 0.5,
+            ease: 'elastic.out(1, 0.3)'
+          });
+        }
+      });
+    }
+    
+    // Remove fragment
+    function removeFragment(fragment) {
+      // Remove from DOM
+      if (fragment.parentNode) {
+        fragment.parentNode.removeChild(fragment);
+      }
+      
+      // Remove from fragments array
+      const index = fragments.findIndex(f => f.element === fragment);
+      if (index !== -1) {
+        fragments.splice(index, 1);
+      }
+      
+      updateMetricsDisplay();
+    }
+    
+    // Clear all fragments
+    function clearAllFragments() {
+      // Remove all fragments
+      while (fragments.length > 0) {
+        const fragment = fragments[0].element;
+        removeFragment(fragment);
+      }
+      
+      // Clear container
+      fragmentContainer.innerHTML = '';
+      
+      updateMetricsDisplay();
+    }
+    
+    // Toggle phosphor effects
+    function togglePhosphor() {
+      const crtScreen = document.querySelector('.crt-screen');
+      const crtVignette = document.querySelector('.crt-vignette');
+      const crtCurvature = document.querySelector('.crt-curvature');
+      
+      if (crtScreen.style.display === 'none') {
+        crtScreen.style.display = '';
+        crtVignette.style.display = '';
+        crtCurvature.style.display = '';
+        visualEnhancementIntegration.visualEffects.phosphor.enabled = true;
+        togglePhosphorBtn.textContent = 'Disable Phosphor';
+      } else {
+        crtScreen.style.display = 'none';
+        crtVignette.style.display = 'none';
+        crtCurvature.style.display = 'none';
+        visualEnhancementIntegration.visualEffects.phosphor.enabled = false;
+        togglePhosphorBtn.textContent = 'Enable Phosphor';
+      }
+    }
+    
+    // Toggle light manifestation
+    function toggleLight() {
+      const lightManifestation = document.querySelector('.light-manifestation');
+      
+      if (lightManifestation.style.display === 'none') {
+        lightManifestation.style.display = '';
+        visualEnhancementIntegration.visualEffects.light.enabled = true;
+        toggleLightBtn.textContent = 'Disable Light';
+      } else {
+        lightManifestation.style.display = 'none';
+        visualEnhancementIntegration.visualEffects.light.enabled = false;
+        toggleLightBtn.textContent = 'Enable Light';
+      }
+    }
+    
+    // Toggle zone visualization
+    let zoneVisualization = null;
+    function toggleZones() {
+      if (zoneVisualization) {
+        document.body.removeChild(zoneVisualization);
+        zoneVisualization = null;
+        toggleZonesBtn.textContent = 'Show Zones';
+      } else {
+        zoneVisualization = document.createElement('div');
+        zoneVisualization.className = 'zone-visualization';
+        zoneVisualization.style.position = 'fixed';
+        zoneVisualization.style.top = '0';
+        zoneVisualization.style.left = '0';
+        zoneVisualization.style.width = '100%';
+        zoneVisualization.style.height = '100%';
+        zoneVisualization.style.pointerEvents = 'none';
+        zoneVisualization.style.zIndex = '9999';
+        
+        document.body.appendChild(zoneVisualization);
+        
+        // Visualize zones
+        for (const zone of zoneManager.zones.values()) {
+          const zoneElement = document.createElement('div');
+          zoneElement.className = `zone-visualization zone-${zone.id}`;
+          zoneElement.style.position = 'absolute';
+          zoneElement.style.left = `${zone.bounds.x.min}px`;
+          zoneElement.style.top = `${zone.bounds.y.min}px`;
+          zoneElement.style.width = `${zone.bounds.x.max - zone.bounds.x.min}px`;
+          zoneElement.style.height = `${zone.bounds.y.max - zone.bounds.y.min}px`;
+          
+          // Color based on zone type
+          let backgroundColor;
+          switch (zone.type) {
+            case 'center':
+              backgroundColor = 'rgba(0, 255, 0, 0.1)';
+              break;
+            case 'edge':
+              backgroundColor = 'rgba(255, 0, 0, 0.1)';
+              break;
+            case 'transition':
+              backgroundColor = 'rgba(0, 0, 255, 0.1)';
+              break;
+            default:
+              backgroundColor = 'rgba(128, 128, 128, 0.1)';
+          }
+          
+          zoneElement.style.backgroundColor = backgroundColor;
+          zoneElement.style.border = '1px dashed rgba(255, 255, 255, 0.3)';
+          zoneElement.style.boxSizing = 'border-box';
+          
+          // Add label
+          const label = document.createElement('div');
+          label.textContent = zone.id;
+          label.style.position = 'absolute';
+          label.style.top = '5px';
+          label.style.left = '5px';
+          label.style.fontSize = '10px';
+          label.style.color = 'white';
+          label.style.textShadow = '1px 1px 1px black';
+          
+          zoneElement.appendChild(label);
+          zoneVisualization.appendChild(zoneElement);
+        }
+        
+        toggleZonesBtn.textContent = 'Hide Zones';
+      }
+    }
+    
+    // Toggle recognition state
+    function toggleRecognition() {
+      const isRecognized = document.body.classList.contains('recognized');
+      
+      if (isRecognized) {
+        document.body.classList.remove('recognized');
+        document.body.removeAttribute('data-recognition');
+        visualEnhancementIntegration.recognitionState.isRecognized = false;
+        toggleRecognitionBtn.textContent = 'Enable Recognition';
+      } else {
+        document.body.classList.add('recognized');
+        document.body.setAttribute('data-recognition', 'true');
+        visualEnhancementIntegration.recognitionState.isRecognized = true;
+        toggleRecognitionBtn.textContent = 'Disable Recognition';
+      }
+      
+      // Update visual effects
+      visualEnhancementIntegration.updateVisualEffectsForRecognition();
+    }
+    
+    // Update metrics display
+    function updateMetricsDisplay() {
+      const visualState = visualEnhancementIntegration.getVisualEffectState();
+      
+      metricsContent.innerHTML = `
+        <strong>Active Fragments:</strong> ${fragments.length}<br>
+        <strong>Corruption Level:</strong> ${(visualState.corruption.intensity * 100).toFixed(1)}%<br>
+        <strong>Corruption Class:</strong> ${visualState.corruption.appliedClass}<br>
+        <strong>Chromatic Aberration:</strong> ${visualState.chromatic.aberrationLevel}px<br>
+        <strong>Karma Level:</strong> ${visualState.recognition.karmaLevel}<br>
+        <strong>Karma Balance:</strong> ${visualState.recognition.karmaBalance.toFixed(2)}<br>
+        <strong>Recognition:</strong> ${visualState.recognition.isRecognized ? 'Yes' : 'No'}<br>
+        <strong>Phosphor:</strong> ${visualState.phosphor.enabled ? 'Enabled' : 'Disabled'}<br>
+        <strong>Light:</strong> ${visualState.light.enabled ? 'Enabled' : 'Disabled'}<br>
+      `;
+    }
+    
+    // Get random text
+    function getRandomText() {
+      const texts = [
+        'Fragment', 'Memory', 'Thought', 'Idea', 'Concept',
+        'Dream', 'Vision', 'Echo', 'Whisper', 'Reflection',
+        'Shadow', 'Light', 'Moment', 'Glimpse', 'Trace',
+        'Essence', 'Spirit', 'Soul', 'Mind', 'Consciousness'
+      ];
+      return texts[Math.floor(Math.random() * texts.length)];
+    }
+    
+    // Event listeners
+    createFragmentsBtn.addEventListener('click', () => {
+      const count = parseInt(fragmentCountInput.value, 10) || 10;
+      createFragments(count);
+    });
+    
+    clearFragmentsBtn.addEventListener('click', clearAllFragments);
+    togglePhosphorBtn.addEventListener('click', togglePhosphor);
+    toggleLightBtn.addEventListener('click', toggleLight);
+    toggleZonesBtn.addEventListener('click', toggleZones);
+    toggleRecognitionBtn.addEventListener('click', toggleRecognition);
+    
+    // Corruption level buttons
+    document.querySelectorAll('[data-corruption]').forEach(button => {
+      button.addEventListener('click', () => {
+        const level = button.getAttribute('data-corruption');
+        let intensity = 0.2;
+        
+        switch (level) {
+          case 'minimal':
+            intensity = 0.2;
+            break;
+          case 'moderate':
+            intensity = 0.4;
+            break;
+          case 'severe':
+            intensity = 0.7;
+            break;
+          case 'complete':
+            intensity = 0.9;
+            break;
+        }
+        
+        visualEnhancementIntegration.visualEffects.corruption.intensity = intensity;
+        visualEnhancementIntegration.updateCorruptionEffects();
+        updateMetricsDisplay();
+      });
+    });
+    
+    // Karma level buttons
+    document.querySelectorAll('[data-karma]').forEach(button => {
+      button.addEventListener('click', () => {
+        const level = button.getAttribute('data-karma');
+        let karmaLevel = 5;
+        
+        switch (level) {
+          case 'low':
+            karmaLevel = 2;
+            break;
+          case 'medium':
+            karmaLevel = 5;
+            break;
+          case 'high':
+            karmaLevel = 8;
+            break;
+        }
+        
+        visualEnhancementIntegration.recognitionState.karmaLevel = karmaLevel;
+        visualEnhancementIntegration.updateVisualEffectsForKarma();
+        updateMetricsDisplay();
+      });
+    });
+    
+    // Auto-create some initial fragments
+    setTimeout(() => {
+      createFragments(5);
+    }, 500);
+    
+    // Update metrics periodically
+    setInterval(updateMetricsDisplay, 2000);
+    
+    // Continuous fragment creation for demo
+    setInterval(() => {
+      if (fragments.length < 20) {
+        createFragment();
+      }
+    }, 3000);
+  </script>
+</body>
+</html>

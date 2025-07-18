@@ -4,6 +4,8 @@
 export class FragmentDriftCalculator {
     constructor(zoneManager) {
         this.zoneManager = zoneManager;
+        // Use optimization manager if available
+        this.optimizationManager = zoneManager.optimizationManager;
     }
 
     /**
@@ -155,6 +157,38 @@ export class FragmentDriftCalculator {
      * Generates center traversal path with waypoints for curved movement
      */
     generateCenterTraversalPath(startPoint, centerPoint, distance) {
+        // Use optimization manager if available for object pooling
+        if (this.optimizationManager) {
+            const numWaypoints = 2 + Math.floor(Math.random() * 3); // 2-4 waypoints
+            const options = {
+                waypointCount: numWaypoints,
+                center: centerPoint,
+                radius: distance * 0.3
+            };
+            
+            // Generate waypoints using object pool
+            const waypoints = this.optimizationManager.generatePathWaypoints(
+                'orbital', 
+                startPoint, 
+                {
+                    x: centerPoint.x + Math.cos(Math.random() * Math.PI * 2) * distance * 0.6,
+                    y: centerPoint.y + Math.sin(Math.random() * Math.PI * 2) * distance * 0.6
+                },
+                options
+            );
+            
+            // Final destination
+            const finalAngle = Math.random() * Math.PI * 2;
+            const finalDistance = distance * (0.6 + Math.random() * 0.4);
+            
+            return {
+                x: centerPoint.x + Math.cos(finalAngle) * finalDistance,
+                y: centerPoint.y + Math.sin(finalAngle) * finalDistance,
+                waypoints: waypoints
+            };
+        }
+        
+        // Fallback to original implementation if optimization manager not available
         const waypoints = [];
         const numWaypoints = 2 + Math.floor(Math.random() * 3); // 2-4 waypoints
         

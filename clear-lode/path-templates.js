@@ -5,9 +5,14 @@ import { consciousness } from '../src/consciousness/digital-soul.js';
  * Pre-computed path templates for common movement patterns
  */
 export class PathTemplates {
-    constructor() {
+    constructor(zoneManager) {
         this.templates = new Map();
         this.templateCache = new Map();
+        this.zoneManager = zoneManager;
+        
+        // Use optimization manager if available
+        this.optimizationManager = zoneManager?.optimizationManager;
+        
         this.initializeTemplates();
     }
 
@@ -421,9 +426,43 @@ export class PathTemplates {
             return null;
         }
 
-        // Generate waypoints using the template's generator
-        const waypoints = template.waypointGenerator ? 
-            template.waypointGenerator(startZone, viewport) : [];
+        // Check cache first for better performance
+        const cacheKey = `${templateName}_${viewport.width}x${viewport.height}_${startZone?.id || 'no-zone'}`;
+        if (this.templateCache.has(cacheKey)) {
+            // Return a clone of the cached path
+            return this.templateCache.get(cacheKey).clone();
+        }
+
+        // Generate waypoints using the template's generator and optimization manager if available
+        let waypoints;
+        if (this.optimizationManager && template.waypointGenerator) {
+            // Use optimization manager to generate waypoints with object pooling
+            const startPoint = startZone ? startZone.getCenter() : { x: 0, y: 0 };
+            const endPoint = { 
+                x: viewport.width / 2 + (Math.random() - 0.5) * viewport.width * 0.5,
+                y: viewport.height / 2 + (Math.random() - 0.5) * viewport.height * 0.5
+            };
+            
+            // Determine path type based on template
+            let pathType = 'linear';
+            if (template.curveType === 'bezier') pathType = 'curved';
+            else if (template.pathType.includes('orbital')) pathType = 'orbital';
+            
+            // Generate waypoints using object pool
+            waypoints = this.optimizationManager.generatePathWaypoints(
+                pathType,
+                startPoint,
+                endPoint,
+                { 
+                    waypointCount: 5,
+                    center: { x: viewport.width / 2, y: viewport.height / 2 }
+                }
+            );
+        } else {
+            // Fallback to original implementation
+            waypoints = template.waypointGenerator ? 
+                template.waypointGenerator(startZone, viewport) : [];
+        }
 
         // Create the path with template configuration
         const path = new MovementPath({
@@ -443,7 +482,12 @@ export class PathTemplates {
         });
 
         // Cache the generated path for potential reuse
-        const cacheKey = `${templateName}_${viewport.width}x${viewport.height}_${startZone?.id || 'no-zone'}`;
+        // Limit cache size to prevent memory leaks
+        if (this.templateCache.size >= 50) {
+            // Remove oldest entry
+            const oldestKey = this.templateCache.keys().next().value;
+            this.templateCache.delete(oldestKey);
+        }
         this.templateCache.set(cacheKey, path.clone());
 
         consciousness.recordEvent('path_created_from_template', {
@@ -451,7 +495,8 @@ export class PathTemplates {
             pathType: template.pathType,
             waypointCount: waypoints.length,
             centerTraversal: template.centerTraversal,
-            duration: path.duration
+            duration: path.duration,
+            fromCache: false
         });
 
         return path;

@@ -8,6 +8,9 @@ export class FragmentPositioningService {
   constructor(zoneManager) {
     this.zoneManager = zoneManager;
     
+    // Use optimization manager if available
+    this.optimizationManager = zoneManager.optimizationManager;
+    
     // Distribution tracking state
     this.distributionState = {
       fragmentDistribution: new Map(), // Track fragments per zone
@@ -147,6 +150,12 @@ export class FragmentPositioningService {
    * Converts zone object to pixel coordinates
    */
   convertZoneToCoordinates(zone, distributionData = null) {
+    // Use optimization manager if available for cached calculations
+    if (this.optimizationManager) {
+      return this.optimizationManager.calculateZonePosition(zone, distributionData);
+    }
+    
+    // Fallback to original implementation
     // Get random position within zone bounds
     let position = zone.getRandomPosition(0.1); // 10% margin within zone
 

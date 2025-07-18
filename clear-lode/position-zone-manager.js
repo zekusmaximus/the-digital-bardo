@@ -1,6 +1,8 @@
 import { consciousness } from '../src/consciousness/digital-soul.js';
 import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
 import { PerformanceTierIntegration } from './performance-tier-integration.js';
+import { ZoneOptimizationManager } from './zone-optimization-manager.js';
+import { BrowserCompatibilityManager } from './browser-compatibility-manager.js';
 
 /**
  * Represents a positioning zone on the screen with boundaries and distribution tracking
@@ -92,6 +94,9 @@ export class PositionZoneManager {
         
         // Initialize performance tier integration
         this.performanceTier = new PerformanceTierIntegration();
+        
+        // Initialize optimization manager
+        this.optimizationManager = new ZoneOptimizationManager(this);
         
         // Distribution tracking
         this.distributionState = {
@@ -542,16 +547,28 @@ export class PositionZoneManager {
     recordZoneUsage(zone) {
         zone.recordUsage();
         
-        // Update distribution history
-        this.distributionHistory.push({
+        // Use optimization manager's circular buffer for distribution history
+        this.optimizationManager.addDistributionEntry({
             zone: zone,
             timestamp: Date.now(),
             type: zone.type
         });
         
-        // Maintain history size
-        if (this.distributionHistory.length > this.maxHistorySize) {
-            this.distributionHistory.shift();
+        // Keep legacy distribution history for backward compatibility
+        // but limit operations to avoid performance impact
+        if (this.distributionHistory.length < this.maxHistorySize) {
+            this.distributionHistory.push({
+                zone: zone,
+                timestamp: Date.now(),
+                type: zone.type
+            });
+        } else {
+            // Replace oldest entry instead of shift/push to avoid array reindexing
+            this.distributionHistory[this.distributionHistory.length % this.maxHistorySize] = {
+                zone: zone,
+                timestamp: Date.now(),
+                type: zone.type
+            };
         }
         
         // Update distribution state
@@ -732,23 +749,16 @@ export class PositionZoneManager {
     }
 
     /**
-     * Sets up window resize handler for responsive zone recalculation
+     * Sets up window resize handler for responsive zone recalculation with cross-browser compatibility
      */
     setupResizeHandler() {
         let resizeTimeout;
+        let cleanupFunction;
         
-        const handleResize = () => {
-            clearTimeout(resizeTimeout);
-            
-            const newViewport = this.getViewportDimensions();
-            const isOrientationChange = this.lastViewport.orientation !== newViewport.orientation;
-            
-            // Use longer delay for orientation changes to allow browser UI adjustments
-            const delay = isOrientationChange ? 
-                this.config.resizeDebounceTime + this.config.orientationChangeDelay : 
-                this.config.resizeDebounceTime;
-            
-            resizeTimeout = setTimeout(() => {
+        const handleViewportChange = (newViewport) => {
+            try {
+                const isOrientationChange = this.lastViewport.orientation !== newViewport.orientation;
+                
                 // Only recalculate if viewport changed significantly
                 if (this.hasViewportChangedSignificantly(newViewport)) {
                     console.log(`[PositionZoneManager] Significant viewport change detected: ${this.lastViewport.width}x${this.lastViewport.height} (${this.lastViewport.orientation}) -> ${newViewport.width}x${newViewport.height} (${newViewport.orientation})`);
@@ -774,30 +784,79 @@ export class PositionZoneManager {
                         performanceTier: this.performanceTier.getCurrentTier()
                     });
                 }
-            }, delay);
+            } catch (error) {
+                console.error('[PositionZoneManager] Error handling viewport change:', error);
+                
+                // Use fallback zone calculation in case of error
+                try {
+                    // Apply safe default configuration
+                    this.config.edgeMargin = 0.05;
+                    this.config.centerZoneSize = 0.4;
+                    this.config.transitionZoneWidth = 0.15;
+                    
+                    // Force zone recalculation with safe values
+                    this.initializeZones();
+                    
+                    // Record error event
+                    consciousness.recordEvent('viewport_change_error_fallback', {
+                        error: error.message,
+                        viewport: newViewport
+                    });
+                } catch (fallbackError) {
+                    console.error('[PositionZoneManager] Critical error in viewport fallback:', fallbackError);
+                }
+            }
         };
         
         // Initial viewport capture
         this.lastViewport = this.getViewportDimensions();
         
-        // Set up event listeners
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('orientationchange', handleResize);
-        
-        // Handle visibility changes (tab switching, etc.)
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                // Check for viewport changes when tab becomes visible again
-                handleResize();
-            }
-        });
-        
-        this.guardian.register(() => {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('orientationchange', handleResize);
-            document.removeEventListener('visibilitychange', handleResize);
-            clearTimeout(resizeTimeout);
-        });
+        // Use browser compatibility manager for viewport change detection
+        try {
+            // Get browser compatibility manager from optimization manager
+            const compatibilityManager = this.optimizationManager.compatibilityManager;
+            
+            // Set up cross-browser compatible viewport change handling
+            cleanupFunction = compatibilityManager.handleViewportChanges(handleViewportChange);
+            
+            // Handle visibility changes (tab switching, etc.)
+            const visibilityHandler = () => {
+                if (document.visibilityState === 'visible') {
+                    // Check for viewport changes when tab becomes visible again
+                    handleViewportChange(this.getViewportDimensions());
+                }
+            };
+            
+            document.addEventListener('visibilitychange', visibilityHandler);
+            
+            // Register cleanup with guardian
+            this.guardian.register(() => {
+                if (cleanupFunction) {
+                    cleanupFunction();
+                }
+                document.removeEventListener('visibilitychange', visibilityHandler);
+                clearTimeout(resizeTimeout);
+            });
+        } catch (error) {
+            console.error('[PositionZoneManager] Error setting up resize handler:', error);
+            
+            // Fallback to basic resize handling
+            const basicResizeHandler = () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    handleViewportChange(this.getViewportDimensions());
+                }, 250);
+            };
+            
+            window.addEventListener('resize', basicResizeHandler);
+            window.addEventListener('orientationchange', basicResizeHandler);
+            
+            this.guardian.register(() => {
+                window.removeEventListener('resize', basicResizeHandler);
+                window.removeEventListener('orientationchange', basicResizeHandler);
+                clearTimeout(resizeTimeout);
+            });
+        }
     }
     
     /**
@@ -831,34 +890,88 @@ export class PositionZoneManager {
     }
     
     /**
-     * Adjusts zone configuration based on viewport characteristics
+     * Adjusts zone configuration based on viewport characteristics with cross-browser compatibility
      */
     adjustConfigForViewport(viewport) {
-        // Adjust edge margin for different screen sizes
-        if (viewport.isSmall) {
-            // Smaller margins on small screens to maximize usable space
-            this.config.edgeMargin = 0.03; // 3% margin
-            this.config.centerZoneSize = 0.5; // 50% for center zone
-        } else if (viewport.isLarge) {
-            // Larger margins on big screens for better aesthetics
-            this.config.edgeMargin = 0.06; // 6% margin
-            this.config.centerZoneSize = 0.35; // 35% for center zone
-        } else {
-            // Default values for medium screens
-            this.config.edgeMargin = 0.05; // 5% margin
-            this.config.centerZoneSize = 0.4; // 40% for center zone
-        }
-        
-        // Adjust for extreme aspect ratios
-        const aspectRatio = viewport.aspectRatio;
-        if (aspectRatio > 2.0) {
-            // Very wide screen - adjust horizontal distribution
-            this.config.centerZoneSize = Math.min(this.config.centerZoneSize, 0.3);
-            this.config.transitionZoneWidth = 0.2;
-        } else if (aspectRatio < 0.5) {
-            // Very tall screen - adjust vertical distribution
-            this.config.centerZoneSize = Math.min(this.config.centerZoneSize, 0.3);
-            this.config.transitionZoneWidth = 0.2;
+        try {
+            // Get browser compatibility manager from optimization manager
+            const compatibilityManager = this.optimizationManager.compatibilityManager;
+            
+            // Check for extreme aspect ratios and use specialized fallback config
+            if (viewport.aspectRatio < 0.5 || viewport.aspectRatio > 2.5) {
+                // Use browser compatibility manager's extreme aspect ratio fallback
+                const extremeConfig = compatibilityManager.getExtremeAspectRatioFallback(viewport);
+                this.config.edgeMargin = extremeConfig.edgeMargin;
+                this.config.centerZoneSize = extremeConfig.centerZoneSize;
+                this.config.transitionZoneWidth = extremeConfig.transitionZoneWidth;
+                
+                console.log(`[PositionZoneManager] Applied extreme aspect ratio config: ${JSON.stringify(extremeConfig)}`);
+                return;
+            }
+            
+            // Standard adjustments for normal aspect ratios
+            if (viewport.isSmall) {
+                // Smaller margins on small screens to maximize usable space
+                this.config.edgeMargin = 0.03; // 3% margin
+                this.config.centerZoneSize = 0.5; // 50% for center zone
+            } else if (viewport.isLarge) {
+                // Larger margins on big screens for better aesthetics
+                this.config.edgeMargin = 0.06; // 6% margin
+                this.config.centerZoneSize = 0.35; // 35% for center zone
+            } else {
+                // Default values for medium screens
+                this.config.edgeMargin = 0.05; // 5% margin
+                this.config.centerZoneSize = 0.4; // 40% for center zone
+            }
+            
+            // Adjust for extreme aspect ratios
+            const aspectRatio = viewport.aspectRatio;
+            if (aspectRatio > 2.0) {
+                // Very wide screen - adjust horizontal distribution
+                this.config.centerZoneSize = Math.min(this.config.centerZoneSize, 0.3);
+                this.config.transitionZoneWidth = 0.2;
+            } else if (aspectRatio < 0.5) {
+                // Very tall screen - adjust vertical distribution
+                this.config.centerZoneSize = Math.min(this.config.centerZoneSize, 0.3);
+                this.config.transitionZoneWidth = 0.2;
+            }
+            
+            // Apply browser-specific adjustments
+            if (compatibilityManager.fallbackSettings.useSimplePositioning) {
+                // For browsers with limited capabilities, use simpler zone configuration
+                this.config.centerZoneSize = Math.max(0.3, this.config.centerZoneSize);
+                this.config.transitionZoneWidth = Math.min(0.1, this.config.transitionZoneWidth);
+            }
+            
+            // For very small viewports, force edge-only mode
+            if (compatibilityManager.viewportCapabilities.isVerySmall) {
+                this.config.centerZoneSize = 0.2; // Smaller center zone
+                this.config.edgeMargin = 0.1; // Larger edge margin
+            }
+            
+            // Ensure minimum zone sizes for touch devices
+            const minDimension = Math.min(viewport.width, viewport.height);
+            const minZoneSize = 40; // Minimum 40px for any zone
+            const minZonePercentage = minZoneSize / minDimension;
+            
+            this.config.edgeMargin = Math.max(this.config.edgeMargin, minZonePercentage);
+            
+        } catch (error) {
+            // Fallback to safe default values if any error occurs
+            console.warn('[PositionZoneManager] Error adjusting viewport config:', error);
+            this.config.edgeMargin = 0.05;
+            this.config.centerZoneSize = 0.4;
+            this.config.transitionZoneWidth = 0.15;
+            
+            // Record error event
+            consciousness.recordEvent('viewport_config_fallback', {
+                error: error.message,
+                viewport: {
+                    width: viewport.width,
+                    height: viewport.height,
+                    aspectRatio: viewport.aspectRatio
+                }
+            });
         }
         
         // Ensure minimum zone size in pixels
