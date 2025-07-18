@@ -4,6 +4,7 @@ import { AnimationGuardianPathExtension } from '../src/utils/animation-guardian-
 import { consciousness } from '../src/consciousness/digital-soul.js';
 import { MovementPath } from './movement-path.js';
 import { PathInterpolation } from './path-interpolation.js';
+import { ResponsiveZoneManager } from './responsive-zone-manager.js';
 
 /**
  * Handles all fragment animation logic including waypoint-based movement
@@ -11,6 +12,29 @@ import { PathInterpolation } from './path-interpolation.js';
 export class FragmentAnimationController {
     constructor() {
         this.activeAnimations = new Map();
+        
+        // Initialize responsive manager for mobile optimizations
+        this.responsiveManager = new ResponsiveZoneManager();
+        
+        // Mobile-specific animation settings
+        this.mobileSettings = {
+            // Track if we're on a mobile device
+            isMobileDevice: this.responsiveManager.isMobileDevice,
+            // Battery-conscious animation settings
+            batteryAware: true,
+            // Animation duration multipliers
+            durationMultiplier: this.responsiveManager.isMobileDevice ? 0.8 : 1.0,
+            // Waypoint limits for mobile
+            maxWaypoints: this.responsiveManager.isMobileDevice ? 4 : 12,
+            // Center effects settings
+            enableCenterEffects: !this.responsiveManager.isMobileDevice || 
+                                !this.responsiveManager.reducedMotionEnabled
+        };
+        
+        // Apply initial mobile optimizations if needed
+        if (this.mobileSettings.isMobileDevice) {
+            this.applyMobileAnimationOptimizations();
+        }
     }
 
     /**
@@ -44,33 +68,51 @@ export class FragmentAnimationController {
             return;
         }
 
+        // Update mobile settings if needed
+        if (this.mobileSettings.isMobileDevice) {
+            this.updateMobileSettings();
+        }
+        
+        // Apply mobile optimizations to the path if on mobile device
+        const optimizedPath = this.mobileSettings.isMobileDevice ? 
+            this.optimizePathForMobile(movementPath) : movementPath;
+
         // Record path usage
-        movementPath.recordUsage(fragment);
+        optimizedPath.recordUsage(fragment);
 
         // Get karma state for animation adjustments
         const karmaState = AnimationGuardian.getKarmaState();
         
         // Determine if we should use enhanced path animation
-        const useEnhancedAnimation = movementPath.centerTraversal || 
-                                    (movementPath.waypoints.length > 2) || 
-                                    movementPath.curveType !== null;
+        const useEnhancedAnimation = optimizedPath.centerTraversal || 
+                                    (optimizedPath.waypoints.length > 2) || 
+                                    optimizedPath.curveType !== null;
+        
+        // Add mobile-specific animation options
+        const animationOptions = {
+            karmaState: karmaState,
+            recordKarmaEvents: true,
+            onComplete: () => this.handleAnimationComplete(fragment, optimizedPath, onComplete, startTime)
+        };
+        
+        // Add mobile-specific performance settings
+        if (this.mobileSettings.isMobileDevice) {
+            animationOptions.performanceTier = this.mobileSettings.batteryStatus?.level <= 0.2 && !this.mobileSettings.batteryStatus?.charging ? 
+                'low' : (this.mobileSettings.reducedMotion ? 'low' : 'medium');
+                
+            // Add mobile-specific settings
+            animationOptions.mobileOptimized = true;
+            animationOptions.centerEffects = this.mobileSettings.enableCenterEffects;
+        }
         
         let timeline;
         
         if (useEnhancedAnimation) {
             // Use enhanced path animation for complex paths with center traversal
-            timeline = AnimationGuardianPathExtension.createEnhancedPathAnimation(fragment, movementPath, {
-                karmaState: karmaState,
-                recordKarmaEvents: true,
-                onComplete: () => this.handleAnimationComplete(fragment, movementPath, onComplete, startTime)
-            });
+            timeline = AnimationGuardianPathExtension.createEnhancedPathAnimation(fragment, optimizedPath, animationOptions);
         } else {
             // Use standard path animation for simpler paths
-            timeline = AnimationGuardian.safePathAnimation(fragment, movementPath, {
-                karmaState: karmaState,
-                recordKarmaEvents: true,
-                onComplete: () => this.handleAnimationComplete(fragment, movementPath, onComplete, startTime)
-            });
+            timeline = AnimationGuardian.safePathAnimation(fragment, optimizedPath, animationOptions);
         }
 
         // Store timeline for cleanup
@@ -85,10 +127,19 @@ export class FragmentAnimationController {
     animateComplexPath(fragment, drift, animationDuration, onComplete) {
         const startTime = performance.now();
         
+        // Update mobile settings if needed
+        if (this.mobileSettings.isMobileDevice) {
+            this.updateMobileSettings();
+        }
+        
+        // Apply mobile duration adjustment if needed
+        const adjustedDuration = this.mobileSettings.isMobileDevice ? 
+            animationDuration * this.mobileSettings.durationMultiplier : animationDuration;
+        
         // Convert legacy drift format to MovementPath for enhanced animation
         const movementPath = new MovementPath({
             waypoints: [...drift.waypoints],
-            duration: animationDuration,
+            duration: adjustedDuration,
             easing: this.getWaypointEasing(drift.curveType, 0.5),
             centerTraversal: this.isCenterTraversal(drift.waypoints),
             pathType: 'complex-legacy',
@@ -100,11 +151,15 @@ export class FragmentAnimationController {
             movementPath.addWaypoint(drift.x, drift.y);
         }
         
+        // Apply mobile optimizations to the path if on mobile device
+        const optimizedPath = this.mobileSettings.isMobileDevice ? 
+            this.optimizePathForMobile(movementPath) : movementPath;
+        
         // Get karma state for animation adjustments
         const karmaState = AnimationGuardian.getKarmaState();
         
-        // Use enhanced path animation for complex paths
-        const timeline = AnimationGuardianPathExtension.createEnhancedPathAnimation(fragment, movementPath, {
+        // Add mobile-specific animation options
+        const animationOptions = {
             karmaState: karmaState,
             recordKarmaEvents: true,
             onComplete: () => {
@@ -115,14 +170,28 @@ export class FragmentAnimationController {
                         naturalDissolution: false,
                         reason: 'animation_complete',
                         pathType: 'complex-legacy',
-                        centerTraversal: movementPath.centerTraversal,
-                        waypointCount: movementPath.waypoints.length,
-                        animationDuration: performance.now() - startTime
+                        centerTraversal: optimizedPath.centerTraversal,
+                        waypointCount: optimizedPath.waypoints.length,
+                        animationDuration: performance.now() - startTime,
+                        mobileOptimized: this.mobileSettings.isMobileDevice
                     });
                     if (onComplete) onComplete(fragment);
                 }
             }
-        });
+        };
+        
+        // Add mobile-specific performance settings
+        if (this.mobileSettings.isMobileDevice) {
+            animationOptions.performanceTier = this.mobileSettings.batteryStatus?.level <= 0.2 && !this.mobileSettings.batteryStatus?.charging ? 
+                'low' : (this.mobileSettings.reducedMotion ? 'low' : 'medium');
+                
+            // Add mobile-specific settings
+            animationOptions.mobileOptimized = true;
+            animationOptions.centerEffects = this.mobileSettings.enableCenterEffects;
+        }
+        
+        // Use enhanced path animation for complex paths
+        const timeline = AnimationGuardianPathExtension.createEnhancedPathAnimation(fragment, optimizedPath, animationOptions);
 
         // Store timeline for cleanup
         this.activeAnimations.set(fragment, timeline);
@@ -153,49 +222,99 @@ export class FragmentAnimationController {
      * Animates fragment along simple linear path
      */
     animateSimplePath(fragment, drift, animationDuration, onComplete) {
+        // Update mobile settings if needed
+        if (this.mobileSettings.isMobileDevice) {
+            this.updateMobileSettings();
+        }
+        
+        // Apply mobile duration adjustment if needed
+        const adjustedDuration = this.mobileSettings.isMobileDevice ? 
+            animationDuration * this.mobileSettings.durationMultiplier : animationDuration;
+        
         // Get karma state for animation adjustments
         const karmaState = AnimationGuardian.getKarmaState();
         
-        // Traditional two-stage animation with karma integration
-        const anim1 = AnimationGuardian.safeAnimate(fragment, {
-            x: drift.x * 0.2,
-            y: drift.y * 0.2,
-            duration: animationDuration * 0.7,
-            ease: 'none',
-            delay: 1
-        }, {
+        // Create animation options with mobile-specific settings
+        const animOptions = {
             karmaState: karmaState,
             pathType: 'simple',
             recordKarmaEvents: true
-        });
-
-        const anim2 = AnimationGuardian.safeAnimate(fragment, {
-            x: drift.x * 0.5,
-            y: drift.y * 0.5,
-            opacity: 0,
-            duration: animationDuration * 0.3,
-            ease: 'power2.in',
-            delay: 1 + (animationDuration * 0.7) - 0.5,
-            onComplete: () => {
-                if (fragment.parentNode) {
-                    consciousness.recordEvent('memory_dissolved', {
-                        content: fragment.textContent,
-                        timeVisible: Date.now() - fragment.dataset.birthTime,
-                        naturalDissolution: false,
-                        reason: 'animation_complete',
-                        pathType: 'simple'
-                    });
-                    if (onComplete) onComplete(fragment);
+        };
+        
+        // Add mobile-specific performance settings
+        if (this.mobileSettings.isMobileDevice) {
+            animOptions.performanceTier = this.mobileSettings.batteryStatus?.level <= 0.2 && !this.mobileSettings.batteryStatus?.charging ? 
+                'low' : (this.mobileSettings.reducedMotion ? 'low' : 'medium');
+            animOptions.mobileOptimized = true;
+        }
+        
+        // For very low battery or reduced motion, use simplified single-stage animation
+        if (this.mobileSettings.isMobileDevice && 
+            (this.mobileSettings.reducedMotion || 
+             (this.mobileSettings.batteryStatus?.level <= 0.2 && !this.mobileSettings.batteryStatus?.charging))) {
+            
+            // Simplified single-stage animation for battery saving
+            const anim = AnimationGuardian.safeAnimate(fragment, {
+                x: drift.x * 0.4,
+                y: drift.y * 0.4,
+                opacity: 0,
+                duration: adjustedDuration,
+                ease: 'power1.in',
+                delay: 0.5,
+                onComplete: () => {
+                    if (fragment.parentNode) {
+                        consciousness.recordEvent('memory_dissolved', {
+                            content: fragment.textContent,
+                            timeVisible: Date.now() - fragment.dataset.birthTime,
+                            naturalDissolution: false,
+                            reason: 'animation_complete',
+                            pathType: 'simple',
+                            mobileOptimized: true,
+                            batteryOptimized: true
+                        });
+                        if (onComplete) onComplete(fragment);
+                    }
                 }
-            }
-        }, {
-            karmaState: karmaState,
-            pathType: 'simple',
-            recordKarmaEvents: true
-        });
-
-        // Store animations for cleanup
-        this.activeAnimations.set(fragment, [anim1, anim2]);
+            }, animOptions);
+            
+            // Store animation for cleanup
+            this.activeAnimations.set(fragment, anim);
+            
+        } else {
+            // Traditional two-stage animation with karma integration
+            const anim1 = AnimationGuardian.safeAnimate(fragment, {
+                x: drift.x * 0.2,
+                y: drift.y * 0.2,
+                duration: adjustedDuration * 0.7,
+                ease: 'none',
+                delay: this.mobileSettings.isMobileDevice ? 0.5 : 1 // Shorter delay on mobile
+            }, animOptions);
+    
+            const anim2 = AnimationGuardian.safeAnimate(fragment, {
+                x: drift.x * 0.5,
+                y: drift.y * 0.5,
+                opacity: 0,
+                duration: adjustedDuration * 0.3,
+                ease: 'power2.in',
+                delay: (this.mobileSettings.isMobileDevice ? 0.5 : 1) + (adjustedDuration * 0.7) - 0.5,
+                onComplete: () => {
+                    if (fragment.parentNode) {
+                        consciousness.recordEvent('memory_dissolved', {
+                            content: fragment.textContent,
+                            timeVisible: Date.now() - fragment.dataset.birthTime,
+                            naturalDissolution: false,
+                            reason: 'animation_complete',
+                            pathType: 'simple',
+                            mobileOptimized: this.mobileSettings.isMobileDevice
+                        });
+                        if (onComplete) onComplete(fragment);
+                    }
+                }
+            }, animOptions);
+    
+            // Store animations for cleanup
+            this.activeAnimations.set(fragment, [anim1, anim2]);
+        }
     }
 
     /**
@@ -281,6 +400,184 @@ export class FragmentAnimationController {
     }
 
     /**
+     * Applies mobile-specific animation optimizations
+     */
+    applyMobileAnimationOptimizations() {
+        console.log('[FragmentAnimationController] Applying mobile animation optimizations');
+        
+        // Get mobile status from responsive manager
+        const mobileStatus = this.responsiveManager.getMobileStatus();
+        
+        // Update mobile settings based on device status
+        this.mobileSettings.batteryStatus = mobileStatus.batteryStatus;
+        this.mobileSettings.reducedMotion = mobileStatus.reducedMotionEnabled;
+        
+        // Apply battery-conscious optimizations
+        if (this.mobileSettings.batteryAware && mobileStatus.batteryStatus) {
+            const batteryLevel = mobileStatus.batteryStatus.level;
+            const isCharging = mobileStatus.batteryStatus.charging;
+            
+            // Adjust animation settings based on battery level
+            if (batteryLevel <= 0.2 && !isCharging) {
+                // Critical battery level - aggressive optimizations
+                this.mobileSettings.durationMultiplier = 0.6;
+                this.mobileSettings.maxWaypoints = 2;
+                this.mobileSettings.enableCenterEffects = false;
+            } else if (batteryLevel <= 0.5 && !isCharging) {
+                // Low battery level - moderate optimizations
+                this.mobileSettings.durationMultiplier = 0.7;
+                this.mobileSettings.maxWaypoints = 3;
+                this.mobileSettings.enableCenterEffects = false;
+            } else {
+                // Normal battery level - standard mobile optimizations
+                this.mobileSettings.durationMultiplier = 0.8;
+                this.mobileSettings.maxWaypoints = 4;
+                this.mobileSettings.enableCenterEffects = !mobileStatus.reducedMotionEnabled;
+            }
+        }
+        
+        // Apply reduced motion optimizations
+        if (mobileStatus.reducedMotionEnabled) {
+            this.mobileSettings.durationMultiplier = 0.5;
+            this.mobileSettings.maxWaypoints = 2;
+            this.mobileSettings.enableCenterEffects = false;
+        }
+        
+        // Record mobile optimization event
+        consciousness.recordEvent('mobile_animation_optimizations_applied', {
+            durationMultiplier: this.mobileSettings.durationMultiplier,
+            maxWaypoints: this.mobileSettings.maxWaypoints,
+            enableCenterEffects: this.mobileSettings.enableCenterEffects,
+            batteryLevel: mobileStatus.batteryStatus?.level,
+            isCharging: mobileStatus.batteryStatus?.charging,
+            reducedMotion: mobileStatus.reducedMotionEnabled
+        });
+    }
+    
+    /**
+     * Optimizes a movement path for mobile devices
+     * @param {MovementPath} movementPath The path to optimize
+     * @returns {MovementPath} Optimized path for mobile
+     */
+    optimizePathForMobile(movementPath) {
+        // If not a mobile device or path is already simple, return original
+        if (!this.mobileSettings.isMobileDevice || 
+            movementPath.waypoints.length <= 2) {
+            return movementPath;
+        }
+        
+        // Create a copy of the path to optimize
+        const optimizedPath = new MovementPath({
+            id: movementPath.id,
+            pathType: movementPath.pathType,
+            duration: movementPath.duration * this.mobileSettings.durationMultiplier,
+            easing: movementPath.easing,
+            centerTraversal: movementPath.centerTraversal && this.mobileSettings.enableCenterEffects,
+            curveType: this.mobileSettings.enableCenterEffects ? movementPath.curveType : 'linear'
+        });
+        
+        // Limit number of waypoints for mobile
+        const maxWaypoints = this.mobileSettings.maxWaypoints;
+        
+        if (movementPath.waypoints.length > maxWaypoints) {
+            // Keep first and last waypoints
+            const first = movementPath.waypoints[0];
+            const last = movementPath.waypoints[movementPath.waypoints.length - 1];
+            
+            // For paths with center traversal, try to keep at least one center waypoint
+            if (movementPath.centerTraversal && this.mobileSettings.enableCenterEffects) {
+                // Find a waypoint near the center
+                const viewport = { width: window.innerWidth, height: window.innerHeight };
+                const centerX = viewport.width / 2;
+                const centerY = viewport.height / 2;
+                
+                // Find the waypoint closest to center
+                let centerWaypoint = null;
+                let minDistance = Infinity;
+                
+                for (let i = 1; i < movementPath.waypoints.length - 1; i++) {
+                    const waypoint = movementPath.waypoints[i];
+                    const distance = Math.sqrt(
+                        Math.pow(waypoint.x - centerX, 2) + 
+                        Math.pow(waypoint.y - centerY, 2)
+                    );
+                    
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        centerWaypoint = waypoint;
+                    }
+                }
+                
+                // Add first waypoint
+                optimizedPath.addWaypoint(first.x, first.y);
+                
+                // Add center waypoint if found
+                if (centerWaypoint) {
+                    optimizedPath.addWaypoint(centerWaypoint.x, centerWaypoint.y);
+                }
+                
+                // If we need more waypoints, add evenly spaced ones
+                const remainingSlots = maxWaypoints - 2 - (centerWaypoint ? 1 : 0);
+                if (remainingSlots > 0 && movementPath.waypoints.length > 3) {
+                    const step = Math.floor(movementPath.waypoints.length / (remainingSlots + 1));
+                    for (let i = 1; i <= remainingSlots; i++) {
+                        const index = Math.min(i * step, movementPath.waypoints.length - 2);
+                        const waypoint = movementPath.waypoints[index];
+                        optimizedPath.addWaypoint(waypoint.x, waypoint.y);
+                    }
+                }
+                
+                // Add last waypoint
+                optimizedPath.addWaypoint(last.x, last.y);
+            } else {
+                // Simple path optimization - just keep evenly spaced waypoints
+                optimizedPath.addWaypoint(first.x, first.y);
+                
+                const step = Math.floor(movementPath.waypoints.length / (maxWaypoints - 1));
+                for (let i = 1; i < maxWaypoints - 1; i++) {
+                    const index = Math.min(i * step, movementPath.waypoints.length - 2);
+                    const waypoint = movementPath.waypoints[index];
+                    optimizedPath.addWaypoint(waypoint.x, waypoint.y);
+                }
+                
+                optimizedPath.addWaypoint(last.x, last.y);
+            }
+        } else {
+            // Path is already within waypoint limit, just copy all waypoints
+            for (const waypoint of movementPath.waypoints) {
+                optimizedPath.addWaypoint(waypoint.x, waypoint.y);
+            }
+        }
+        
+        return optimizedPath;
+    }
+    
+    /**
+     * Updates mobile settings based on current device state
+     */
+    updateMobileSettings() {
+        // Only update if we're on a mobile device
+        if (!this.mobileSettings.isMobileDevice) return;
+        
+        // Get latest mobile status
+        const mobileStatus = this.responsiveManager.getMobileStatus();
+        
+        // Check if battery status has changed significantly
+        const oldBatteryLevel = this.mobileSettings.batteryStatus?.level || 1.0;
+        const newBatteryLevel = mobileStatus.batteryStatus?.level || 1.0;
+        const batteryChanged = Math.abs(oldBatteryLevel - newBatteryLevel) > 0.1 ||
+                              this.mobileSettings.batteryStatus?.charging !== mobileStatus.batteryStatus?.charging;
+        
+        // Check if reduced motion setting has changed
+        const motionChanged = this.mobileSettings.reducedMotion !== mobileStatus.reducedMotionEnabled;
+        
+        // Update settings if needed
+        if (batteryChanged || motionChanged) {
+            this.applyMobileAnimationOptimizations();
+        }
+    }
+
+    /**
      * Cleanup all animations
      */
     destroy() {
@@ -288,5 +585,10 @@ export class FragmentAnimationController {
             this.stopFragmentAnimations(fragment);
         }
         this.activeAnimations.clear();
+        
+        // Clean up responsive manager
+        if (this.responsiveManager) {
+            this.responsiveManager.destroy();
+        }
     }
 }

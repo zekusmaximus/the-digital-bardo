@@ -97,13 +97,24 @@ export class PositionZoneManager {
             balanceScore: 1.0
         };
 
+        // Viewport tracking
+        this.lastViewport = {
+            width: 0,
+            height: 0,
+            orientation: 'landscape'
+        };
+
         // Configuration
         this.config = {
             edgeMargin: 0.05, // 5% margin from screen edges
             centerZoneSize: 0.4, // 40% of screen for center zone
             transitionZoneWidth: 0.15, // 15% width for transition zones
             maxDensityRatio: 2.0, // Maximum density ratio between zones
-            rebalanceThreshold: 0.3 // Trigger rebalancing when balance score drops below this
+            rebalanceThreshold: 0.3, // Trigger rebalancing when balance score drops below this
+            resizeDebounceTime: 250, // Debounce time for resize events in ms
+            orientationChangeDelay: 300, // Additional delay for orientation changes in ms
+            minZoneSize: 40, // Minimum zone size in pixels
+            aspectRatioThreshold: 0.2 // Threshold for significant aspect ratio changes
         };
 
         this.initializeZones();
@@ -116,6 +127,12 @@ export class PositionZoneManager {
     initializeZones() {
         const viewport = this.getViewportDimensions();
         this.zones.clear();
+        
+        // Store current viewport for change detection
+        this.lastViewport = { ...viewport };
+        
+        // Adjust configuration based on viewport characteristics
+        this.adjustConfigForViewport(viewport);
         
         // Calculate zone boundaries
         const edgeMargin = viewport.width * this.config.edgeMargin;
@@ -220,12 +237,42 @@ export class PositionZoneManager {
      * Gets viewport dimensions accounting for different screen sizes and orientations
      */
     getViewportDimensions() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const aspectRatio = width / height;
+        const orientation = width > height ? 'landscape' : 'portrait';
+        
         return {
-            width: window.innerWidth,
-            height: window.innerHeight,
-            aspectRatio: window.innerWidth / window.innerHeight,
-            orientation: window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'
+            width,
+            height,
+            aspectRatio,
+            orientation,
+            isSmall: Math.min(width, height) < 600,
+            isLarge: Math.min(width, height) >= 1200,
+            devicePixelRatio: window.devicePixelRatio || 1
         };
+    }
+    
+    /**
+     * Determines if viewport has changed significantly enough to require zone recalculation
+     */
+    hasViewportChangedSignificantly(newViewport) {
+        // Always recalculate on first run
+        if (this.lastViewport.width === 0) return true;
+        
+        // Check for orientation change
+        const orientationChanged = this.lastViewport.orientation !== newViewport.orientation;
+        
+        // Check for significant size change (more than 10% in either dimension)
+        const widthChangePct = Math.abs(newViewport.width - this.lastViewport.width) / this.lastViewport.width;
+        const heightChangePct = Math.abs(newViewport.height - this.lastViewport.height) / this.lastViewport.height;
+        const sizeChanged = widthChangePct > 0.1 || heightChangePct > 0.1;
+        
+        // Check for significant aspect ratio change
+        const aspectRatioChange = Math.abs(newViewport.aspectRatio - this.lastViewport.aspectRatio);
+        const aspectRatioChanged = aspectRatioChange > this.config.aspectRatioThreshold;
+        
+        return orientationChanged || sizeChanged || aspectRatioChanged;
     }
 
     /**
@@ -533,23 +580,183 @@ export class PositionZoneManager {
         
         const handleResize = () => {
             clearTimeout(resizeTimeout);
+            
+            const newViewport = this.getViewportDimensions();
+            const isOrientationChange = this.lastViewport.orientation !== newViewport.orientation;
+            
+            // Use longer delay for orientation changes to allow browser UI adjustments
+            const delay = isOrientationChange ? 
+                this.config.resizeDebounceTime + this.config.orientationChangeDelay : 
+                this.config.resizeDebounceTime;
+            
             resizeTimeout = setTimeout(() => {
-                console.log('[PositionZoneManager] Viewport changed, recalculating zones');
-                this.initializeZones();
-                
-                consciousness.recordEvent('zones_recalculated', {
-                    reason: 'viewport_resize',
-                    newDimensions: this.getViewportDimensions()
-                });
-            }, 250); // Debounce resize events
+                // Only recalculate if viewport changed significantly
+                if (this.hasViewportChangedSignificantly(newViewport)) {
+                    console.log(`[PositionZoneManager] Significant viewport change detected: ${this.lastViewport.width}x${this.lastViewport.height} (${this.lastViewport.orientation}) -> ${newViewport.width}x${newViewport.height} (${newViewport.orientation})`);
+                    
+                    // Store current fragment positions for smooth transition
+                    const fragmentPositions = this.captureCurrentFragmentPositions();
+                    
+                    // Recalculate zones
+                    this.recalculateZonesForViewport(newViewport);
+                    
+                    // Redistribute fragments if needed
+                    if (fragmentPositions.length > 0) {
+                        this.redistributeFragments(fragmentPositions);
+                    }
+                    
+                    // Update viewport tracking
+                    this.lastViewport = { ...newViewport };
+                    
+                    consciousness.recordEvent('zones_recalculated', {
+                        reason: isOrientationChange ? 'orientation_change' : 'viewport_resize',
+                        newDimensions: newViewport,
+                        fragmentsRedistributed: fragmentPositions.length
+                    });
+                }
+            }, delay);
         };
         
+        // Initial viewport capture
+        this.lastViewport = this.getViewportDimensions();
+        
+        // Set up event listeners
         window.addEventListener('resize', handleResize);
         window.addEventListener('orientationchange', handleResize);
         
-        this.guardian.register(handleResize, () => {
+        // Handle visibility changes (tab switching, etc.)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // Check for viewport changes when tab becomes visible again
+                handleResize();
+            }
+        });
+        
+        this.guardian.register(() => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('orientationchange', handleResize);
+            document.removeEventListener('visibilitychange', handleResize);
+            clearTimeout(resizeTimeout);
+        });
+    }
+    
+    /**
+     * Recalculates zones based on new viewport dimensions
+     */
+    recalculateZonesForViewport(viewport) {
+        console.log(`[PositionZoneManager] Recalculating zones for ${viewport.width}x${viewport.height} viewport (${viewport.orientation})`);
+        
+        // Store active fragments count by zone type for redistribution
+        const fragmentsByType = {
+            edge: 0,
+            center: 0,
+            transition: 0
+        };
+        
+        // Count fragments by zone type
+        for (const zone of this.zones.values()) {
+            fragmentsByType[zone.type] += zone.activeFragments;
+        }
+        
+        // Clear existing zones
+        this.zones.clear();
+        
+        // Adjust configuration based on viewport characteristics
+        this.adjustConfigForViewport(viewport);
+        
+        // Initialize new zones
+        this.initializeZones();
+        
+        console.log(`[PositionZoneManager] Zone recalculation complete. Active fragments: ${Object.values(fragmentsByType).reduce((a, b) => a + b, 0)}`);
+    }
+    
+    /**
+     * Adjusts zone configuration based on viewport characteristics
+     */
+    adjustConfigForViewport(viewport) {
+        // Adjust edge margin for different screen sizes
+        if (viewport.isSmall) {
+            // Smaller margins on small screens to maximize usable space
+            this.config.edgeMargin = 0.03; // 3% margin
+            this.config.centerZoneSize = 0.5; // 50% for center zone
+        } else if (viewport.isLarge) {
+            // Larger margins on big screens for better aesthetics
+            this.config.edgeMargin = 0.06; // 6% margin
+            this.config.centerZoneSize = 0.35; // 35% for center zone
+        } else {
+            // Default values for medium screens
+            this.config.edgeMargin = 0.05; // 5% margin
+            this.config.centerZoneSize = 0.4; // 40% for center zone
+        }
+        
+        // Adjust for extreme aspect ratios
+        const aspectRatio = viewport.aspectRatio;
+        if (aspectRatio > 2.0) {
+            // Very wide screen - adjust horizontal distribution
+            this.config.centerZoneSize = Math.min(this.config.centerZoneSize, 0.3);
+            this.config.transitionZoneWidth = 0.2;
+        } else if (aspectRatio < 0.5) {
+            // Very tall screen - adjust vertical distribution
+            this.config.centerZoneSize = Math.min(this.config.centerZoneSize, 0.3);
+            this.config.transitionZoneWidth = 0.2;
+        }
+        
+        // Ensure minimum zone size in pixels
+        const minDimension = Math.min(viewport.width, viewport.height);
+        const minZonePercentage = this.config.minZoneSize / minDimension;
+        
+        this.config.edgeMargin = Math.max(this.config.edgeMargin, minZonePercentage);
+        this.config.centerZoneSize = Math.max(this.config.centerZoneSize, minZonePercentage * 4);
+        this.config.transitionZoneWidth = Math.max(this.config.transitionZoneWidth, minZonePercentage * 2);
+        
+        // Orientation-specific adjustments
+        if (viewport.orientation === 'portrait') {
+            // In portrait mode, make center zone slightly taller
+            this.config.centerZoneSize *= 1.1;
+        }
+    }
+    
+    /**
+     * Captures current fragment positions for smooth transition during viewport changes
+     * Returns array of {id, element, zoneId, position} objects
+     */
+    captureCurrentFragmentPositions() {
+        // This is a placeholder - in a real implementation, this would interact with the DOM
+        // to find all active fragments and their current positions
+        const positions = [];
+        
+        // In a real implementation, we would do something like:
+        // document.querySelectorAll('.fragment').forEach(element => {
+        //     const id = element.dataset.fragmentId;
+        //     const zoneId = element.dataset.zoneId;
+        //     const rect = element.getBoundingClientRect();
+        //     positions.push({
+        //         id,
+        //         element,
+        //         zoneId,
+        //         position: { x: rect.left, y: rect.top }
+        //     });
+        // });
+        
+        return positions;
+    }
+    
+    /**
+     * Redistributes fragments after zone recalculation
+     */
+    redistributeFragments(fragmentPositions) {
+        // This is a placeholder - in a real implementation, this would update fragment positions
+        // based on the new zone layout
+        console.log(`[PositionZoneManager] Redistributing ${fragmentPositions.length} fragments after zone recalculation`);
+        
+        // In a real implementation, we would:
+        // 1. Find appropriate new zones for each fragment
+        // 2. Update their positions with animations
+        // 3. Update zone tracking data
+        
+        // For now, we'll just log that this would happen
+        consciousness.recordEvent('fragments_redistributed', {
+            count: fragmentPositions.length
         });
     }
 
