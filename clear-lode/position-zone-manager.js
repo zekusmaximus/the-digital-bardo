@@ -1,5 +1,6 @@
 import { consciousness } from '../src/consciousness/digital-soul.js';
 import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+import { PerformanceTierIntegration } from './performance-tier-integration.js';
 
 /**
  * Represents a positioning zone on the screen with boundaries and distribution tracking
@@ -89,6 +90,9 @@ export class PositionZoneManager {
         this.maxHistorySize = 50;
         this.guardian = new ResourceGuardian();
         
+        // Initialize performance tier integration
+        this.performanceTier = new PerformanceTierIntegration();
+        
         // Distribution tracking
         this.distributionState = {
             zoneDensity: new Map(),
@@ -114,11 +118,22 @@ export class PositionZoneManager {
             resizeDebounceTime: 250, // Debounce time for resize events in ms
             orientationChangeDelay: 300, // Additional delay for orientation changes in ms
             minZoneSize: 40, // Minimum zone size in pixels
-            aspectRatioThreshold: 0.2 // Threshold for significant aspect ratio changes
+            aspectRatioThreshold: 0.2, // Threshold for significant aspect ratio changes
+            performanceMonitoringInterval: 5000 // Interval for performance monitoring in ms
+        };
+        
+        // Performance monitoring
+        this.performanceState = {
+            lastMonitorTime: 0,
+            frameRateHistory: [],
+            activeFragmentsHistory: [],
+            lastFrameTimestamp: performance.now(),
+            frameCount: 0
         };
 
         this.initializeZones();
         this.setupResizeHandler();
+        this.setupPerformanceMonitoring();
     }
 
     /**
@@ -213,14 +228,119 @@ export class PositionZoneManager {
             y: { min: centerY + halfCenter, max: viewport.height - edgeMargin }
         }, 1.0);
 
+        // Apply performance tier-specific zone weights
+        this.applyPerformanceTierZoneWeights();
+
         console.log(`[PositionZoneManager] Initialized ${this.zones.size} zones for ${viewport.width}x${viewport.height} viewport`);
         
         // Record zone initialization event
         consciousness.recordEvent('zones_initialized', {
             zoneCount: this.zones.size,
             viewport: viewport,
-            centerUtilization: this.getCenterUtilization()
+            centerUtilization: this.getCenterUtilization(),
+            performanceTier: this.performanceTier.getCurrentTier()
         });
+    }
+
+    /**
+     * Applies performance tier-specific weights to zones
+     */
+    applyPerformanceTierZoneWeights() {
+        // Update zone weights based on current performance tier
+        this.performanceTier.updateZoneWeights(this.zones);
+    }
+
+    /**
+     * Sets up performance monitoring
+     */
+    setupPerformanceMonitoring() {
+        // Set up animation frame callback for frame rate monitoring
+        const monitorFrameRate = () => {
+            this.performanceState.frameCount++;
+            
+            // Calculate frame rate every second
+            const now = performance.now();
+            const elapsed = now - this.performanceState.lastFrameTimestamp;
+            
+            if (elapsed >= 1000) { // 1 second
+                const frameRate = Math.round((this.performanceState.frameCount * 1000) / elapsed);
+                this.performanceState.frameRateHistory.push(frameRate);
+                
+                // Keep history to last 5 measurements
+                if (this.performanceState.frameRateHistory.length > 5) {
+                    this.performanceState.frameRateHistory.shift();
+                }
+                
+                // Reset counters
+                this.performanceState.frameCount = 0;
+                this.performanceState.lastFrameTimestamp = now;
+                
+                // Update active fragments history
+                const totalActiveFragments = this.getTotalActiveFragments();
+                this.performanceState.activeFragmentsHistory.push(totalActiveFragments);
+                
+                // Keep history to last 5 measurements
+                if (this.performanceState.activeFragmentsHistory.length > 5) {
+                    this.performanceState.activeFragmentsHistory.shift();
+                }
+            }
+            
+            // Continue monitoring
+            requestAnimationFrame(monitorFrameRate);
+        };
+        
+        // Start monitoring
+        requestAnimationFrame(monitorFrameRate);
+        
+        // Register cleanup with guardian
+        this.guardian.register(() => {
+            // No specific cleanup needed for requestAnimationFrame
+            this.performanceState.frameCount = 0;
+            this.performanceState.frameRateHistory = [];
+            this.performanceState.activeFragmentsHistory = [];
+        });
+    }
+
+    /**
+     * Monitors performance and adjusts tier if necessary
+     */
+    monitorPerformance() {
+        const now = Date.now();
+        
+        // Only check performance at the configured interval
+        if (now - this.performanceState.lastMonitorTime < this.config.performanceMonitoringInterval) {
+            return;
+        }
+        
+        this.performanceState.lastMonitorTime = now;
+        
+        // Calculate average frame rate
+        const avgFrameRate = this.performanceState.frameRateHistory.length > 0 ?
+            this.performanceState.frameRateHistory.reduce((sum, rate) => sum + rate, 0) / 
+            this.performanceState.frameRateHistory.length : 60;
+        
+        // Calculate average active fragments
+        const avgActiveFragments = this.performanceState.activeFragmentsHistory.length > 0 ?
+            this.performanceState.activeFragmentsHistory.reduce((sum, count) => sum + count, 0) / 
+            this.performanceState.activeFragmentsHistory.length : 0;
+        
+        // Check if we're exceeding performance limits
+        const isExceedingLimits = this.performanceTier.monitorPerformance(avgFrameRate, avgActiveFragments);
+        
+        // If we're exceeding limits, trigger rebalancing
+        if (isExceedingLimits) {
+            this.triggerRebalancing();
+        }
+        
+        // Log performance stats periodically
+        console.log(`[PositionZoneManager] Performance stats: ${avgFrameRate.toFixed(1)} FPS, ${avgActiveFragments.toFixed(1)} fragments, tier: ${this.performanceTier.getCurrentTier()}`);
+    }
+
+    /**
+     * Gets the total number of active fragments across all zones
+     */
+    getTotalActiveFragments() {
+        return Array.from(this.zones.values()).reduce((sum, zone) => sum + zone.activeFragments, 0);
     }
 
     /**
@@ -277,9 +397,19 @@ export class PositionZoneManager {
 
     /**
      * Selects an optimal zone for fragment placement using distribution algorithms
+     * @param {string} [distributionStrategy] - Optional strategy override, if not provided uses performance tier strategy
+     * @returns {PositionZone} The selected zone
      */
-    selectZone(distributionStrategy = 'balanced') {
+    selectZone(distributionStrategy) {
         const availableZones = Array.from(this.zones.values());
+        
+        // If no strategy provided, use the one from performance tier
+        if (!distributionStrategy) {
+            distributionStrategy = this.performanceTier.getDistributionStrategy();
+        }
+        
+        // Monitor performance before selecting zone
+        this.monitorPerformance();
         
         switch (distributionStrategy) {
             case 'center-weighted':
@@ -304,8 +434,15 @@ export class PositionZoneManager {
             // Reduce weight for high-density zones
             const density = zone.getDensity();
             const avgDensity = this.getAverageDensity();
+            const maxDensity = this.performanceTier.getMaxZoneDensity();
+            
             if (density > avgDensity * this.config.maxDensityRatio) {
                 adjustedWeight *= 0.3;
+            }
+            
+            // Further reduce weight if exceeding performance tier density limit
+            if (density > maxDensity) {
+                adjustedWeight *= 0.2;
             }
             
             // Boost weight for underutilized zones
@@ -314,8 +451,10 @@ export class PositionZoneManager {
                 adjustedWeight *= 1.5;
             }
             
-            // Boost center zones if underutilized
-            if (zone.type === 'center' && this.getCenterUtilization() < 0.3) {
+            // Boost center zones if underutilized and center traversal is enabled
+            if (zone.type === 'center' && 
+                this.getCenterUtilization() < 0.3 && 
+                this.performanceTier.isCenterTraversalEnabled()) {
                 adjustedWeight *= 2.0;
             }
             
@@ -341,6 +480,11 @@ export class PositionZoneManager {
      * Selects zone with center bias
      */
     selectCenterWeightedZone(zones) {
+        // Only use center-weighted if center traversal is enabled in current performance tier
+        if (!this.performanceTier.isCenterTraversalEnabled()) {
+            return this.selectEdgeZone(zones);
+        }
+        
         const centerZones = zones.filter(zone => zone.type === 'center');
         const otherZones = zones.filter(zone => zone.type !== 'center');
         
@@ -366,12 +510,17 @@ export class PositionZoneManager {
      * Selects zone using organic flow patterns
      */
     selectOrganicZone(zones) {
+        // Only use organic flow if complex paths are enabled in current performance tier
+        if (!this.performanceTier.useComplexPaths()) {
+            return this.selectBalancedZone(zones);
+        }
+        
         // Consider recent placement patterns for organic flow
         const recentZones = this.distributionHistory.slice(-5);
         const recentTypes = recentZones.map(entry => entry.zone.type);
         
         // If recent placements were all edges, bias toward center
-        if (recentTypes.every(type => type === 'edge')) {
+        if (recentTypes.every(type => type === 'edge') && this.performanceTier.isCenterTraversalEnabled()) {
             return this.selectCenterWeightedZone(zones);
         }
         
@@ -411,6 +560,21 @@ export class PositionZoneManager {
         // Check if rebalancing is needed
         if (this.distributionState.balanceScore < this.config.rebalanceThreshold) {
             this.triggerRebalancing();
+        }
+        
+        // Check if we're exceeding the maximum active fragments for current tier
+        const totalActiveFragments = this.getTotalActiveFragments();
+        const maxActiveFragments = this.performanceTier.getMaxActiveFragments();
+        
+        if (totalActiveFragments > maxActiveFragments) {
+            console.log(`[PositionZoneManager] Exceeding maximum active fragments (${totalActiveFragments}/${maxActiveFragments})`);
+            
+            // Record event for exceeding fragment limit
+            consciousness.recordEvent('max_fragments_exceeded', {
+                tier: this.performanceTier.getCurrentTier(),
+                activeFragments: totalActiveFragments,
+                maxAllowed: maxActiveFragments
+            });
         }
     }
 
@@ -496,6 +660,9 @@ export class PositionZoneManager {
     triggerRebalancing() {
         console.log('[PositionZoneManager] Triggering distribution rebalancing');
         
+        // Apply performance tier-specific zone weights
+        this.applyPerformanceTierZoneWeights();
+        
         // Temporarily boost weights for underutilized zones
         const avgDensity = this.getAverageDensity();
         
@@ -513,7 +680,8 @@ export class PositionZoneManager {
         consciousness.recordEvent('zone_rebalancing_triggered', {
             balanceScore: this.distributionState.balanceScore,
             centerUtilization: this.distributionState.centerUtilization,
-            avgDensity: avgDensity
+            avgDensity: avgDensity,
+            performanceTier: this.performanceTier.getCurrentTier()
         });
         
         // Reset weights after a delay
@@ -526,20 +694,8 @@ export class PositionZoneManager {
      * Resets zone weights to their original values
      */
     resetZoneWeights() {
-        // Reset to original weights based on zone type
-        for (const zone of this.zones.values()) {
-            switch (zone.type) {
-                case 'center':
-                    zone.weight = zone.id === 'center' ? 1.5 : 1.2;
-                    break;
-                case 'edge':
-                    zone.weight = 0.8;
-                    break;
-                case 'transition':
-                    zone.weight = 1.0;
-                    break;
-            }
-        }
+        // Apply performance tier-specific zone weights
+        this.applyPerformanceTierZoneWeights();
     }
 
     /**
@@ -568,7 +724,10 @@ export class PositionZoneManager {
                 center: this.getZonesByType('center').length,
                 transition: this.getZonesByType('transition').length
             },
-            averageDensity: this.getAverageDensity()
+            averageDensity: this.getAverageDensity(),
+            performanceTier: this.performanceTier.getCurrentTier(),
+            centerTraversalEnabled: this.performanceTier.isCenterTraversalEnabled(),
+            maxActiveFragments: this.performanceTier.getMaxActiveFragments()
         };
     }
 
@@ -611,7 +770,8 @@ export class PositionZoneManager {
                     consciousness.recordEvent('zones_recalculated', {
                         reason: isOrientationChange ? 'orientation_change' : 'viewport_resize',
                         newDimensions: newViewport,
-                        fragmentsRedistributed: fragmentPositions.length
+                        fragmentsRedistributed: fragmentPositions.length,
+                        performanceTier: this.performanceTier.getCurrentTier()
                     });
                 }
             }, delay);
@@ -714,6 +874,12 @@ export class PositionZoneManager {
             // In portrait mode, make center zone slightly taller
             this.config.centerZoneSize *= 1.1;
         }
+        
+        // Performance tier-specific adjustments
+        if (!this.performanceTier.isCenterTraversalEnabled()) {
+            // If center traversal is disabled, reduce center zone size
+            this.config.centerZoneSize *= 0.8;
+        }
     }
     
     /**
@@ -756,8 +922,60 @@ export class PositionZoneManager {
         
         // For now, we'll just log that this would happen
         consciousness.recordEvent('fragments_redistributed', {
-            count: fragmentPositions.length
+            count: fragmentPositions.length,
+            performanceTier: this.performanceTier.getCurrentTier()
         });
+    }
+
+    /**
+     * Gets the current performance tier
+     * @returns {string} The current performance tier ('high', 'medium', or 'low')
+     */
+    getPerformanceTier() {
+        return this.performanceTier.getCurrentTier();
+    }
+
+    /**
+     * Sets the performance tier explicitly
+     * @param {string} tier - The performance tier to set ('high', 'medium', or 'low')
+     */
+    setPerformanceTier(tier) {
+        this.performanceTier.setTier(tier);
+        this.applyPerformanceTierZoneWeights();
+        
+        console.log(`[PositionZoneManager] Performance tier set to: ${tier}`);
+        
+        // Record tier change event
+        consciousness.recordEvent('position_zone_tier_changed', {
+            tier: tier,
+            centerTraversalEnabled: this.performanceTier.isCenterTraversalEnabled(),
+            distributionStrategy: this.performanceTier.getDistributionStrategy()
+        });
+    }
+
+    /**
+     * Gets performance monitoring statistics
+     * @returns {Object} Performance monitoring statistics
+     */
+    getPerformanceStats() {
+        const avgFrameRate = this.performanceState.frameRateHistory.length > 0 ?
+            this.performanceState.frameRateHistory.reduce((sum, rate) => sum + rate, 0) / 
+            this.performanceState.frameRateHistory.length : 60;
+        
+        const avgActiveFragments = this.performanceState.activeFragmentsHistory.length > 0 ?
+            this.performanceState.activeFragmentsHistory.reduce((sum, count) => sum + count, 0) / 
+            this.performanceState.activeFragmentsHistory.length : 0;
+        
+        return {
+            frameRate: avgFrameRate,
+            activeFragments: avgActiveFragments,
+            maxActiveFragments: this.performanceTier.getMaxActiveFragments(),
+            performanceTier: this.performanceTier.getCurrentTier(),
+            centerTraversalEnabled: this.performanceTier.isCenterTraversalEnabled(),
+            distributionStrategy: this.performanceTier.getDistributionStrategy(),
+            useComplexPaths: this.performanceTier.useComplexPaths(),
+            maxWaypoints: this.performanceTier.getMaxWaypoints()
+        };
     }
 
     /**
