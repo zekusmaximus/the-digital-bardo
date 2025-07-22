@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recognition Timing Test - Clear Lode</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, #001122 0%, #000000 100%);
+            color: white;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 2000;
+        }
+
+        .test-controls h3 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+
+        .test-controls button {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .test-controls button:hover {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .test-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 2000;
+            min-width: 250px;
+        }
+
+        .test-info h3 {
+            margin: 0 0 10px 0;
+            color: #2196F3;
+        }
+
+        .test-info .status {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .light-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.1) 70%, transparent 100%);
+            border-radius: 50%;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        @keyframes ripple-expand {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+
+        .error-flash {
+            animation: error-flash 0.2s ease-out;
+        }
+
+        @keyframes error-flash {
+            0%, 100% { background: rgba(255, 255, 255, 0.1); }
+            50% { background: rgba(255, 100, 100, 0.3); }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h3>Recognition Timing Test</h3>
+        <button onclick="startTest()">Start Recognition Test</button>
+        <button onclick="simulateActivity()">Simulate User Activity</button>
+        <button onclick="testExtension()">Test Extension Logic</button>
+        <button onclick="resetTest()">Reset Test</button>
+    </div>
+
+    <div class="test-info">
+        <h3>Test Status</h3>
+        <div class="status" id="window-status">Window: Closed</div>
+        <div class="status" id="time-elapsed">Time Elapsed: 0s</div>
+        <div class="status" id="extensions-used">Extensions: 0/2</div>
+        <div class="status" id="user-activity">User Active: No</div>
+        <div class="status" id="warnings-shown">Warnings: None</div>
+    </div>
+
+    <div class="light-core"></div>
+
+    <script type="module">
+        import { ClearLodeEventBridge } from './event-bridge.js';
+        import { RecognitionGuideController } from './recognition-guide-controller.js';
+        import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+
+        // Test configuration
+        const testConfig = {
+            recognitionWindow: {
+                baseWindowDuration: 15000,  // 15 seconds
+                extensionDuration: 5000,    // 5 seconds per extension
+                maxExtensions: 2,           // Maximum extensions
+                warningThreshold: 0.75      // Warning at 75% elapsed
+            }
+        };
+
+        let testEventBridge;
+        let testGuideController;
+        let testGuardian;
+        let testStartTime;
+        let statusUpdateInterval;
+
+        // Initialize test environment
+        function initializeTest() {
+            testGuardian = new ResourceGuardian();
+            testEventBridge = new ClearLodeEventBridge();
+            
+            testGuideController = new RecognitionGuideController({
+                eventBridge: testEventBridge,
+                guardian: testGuardian,
+                config: testConfig
+            });
+
+            testGuideController.init();
+
+            // Set up event listeners for testing
+            testEventBridge.on('recognition:timeout', () => {
+                console.log('🔥 Recognition timeout event received');
+                updateStatus('window-status', 'Window: TIMEOUT');
+                updateStatus('warnings-shown', 'Warnings: TIMEOUT');
+            });
+
+            testEventBridge.on('recognition:attempt', (detail) => {
+                console.log('🎯 Recognition attempt:', detail);
+                updateStatus('user-activity', `User Active: Yes (${detail.method})`);
+            });
+
+            console.log('✅ Test environment initialized');
+        }
+
+        // Start recognition test
+        window.startTest = function() {
+            console.log('🚀 Starting recognition timing test...');
+            testStartTime = Date.now();
+            
+            // Set initial consciousness state
+            consciousness.setState('clearLode.recognitionActive', true);
+            consciousness.setState('clearLode.recognized', false);
+            
+            // Start the guidance system
+            testEventBridge.emit('state:recognitionWindowOpened');
+            
+            updateStatus('window-status', 'Window: OPEN');
+            updateStatus('time-elapsed', 'Time Elapsed: 0s');
+            updateStatus('extensions-used', 'Extensions: 0/2');
+            updateStatus('user-activity', 'User Active: No');
+            updateStatus('warnings-shown', 'Warnings: None');
+
+            // Start status updates
+            if (statusUpdateInterval) clearInterval(statusUpdateInterval);
+            statusUpdateInterval = setInterval(updateTestStatus, 1000);
+        };
+
+        // Simulate user activity
+        window.simulateActivity = function() {
+            console.log('🎮 Simulating user activity...');
+            
+            // Simulate different types of recognition attempts
+            const methods = ['center-click', 'keyword-typing', 'spacebar-hold'];
+            const method = methods[Math.floor(Math.random() * methods.length)];
+            const progress = Math.random() * 0.8 + 0.2; // 20-100% progress
+            
+            testEventBridge.emit('recognition:attempt', {
+                method: method,
+                progress: progress,
+                timestamp: Date.now()
+            });
+        };
+
+        // Test extension logic
+        window.testExtension = function() {
+            console.log('⏰ Testing extension logic...');
+            
+            // Simulate high-progress attempt to trigger extension
+            testEventBridge.emit('recognition:attempt', {
+                method: 'spacebar-hold',
+                progress: 0.8,
+                timestamp: Date.now()
+            });
+        };
+
+        // Reset test
+        window.resetTest = function() {
+            console.log('🔄 Resetting test...');
+            
+            if (statusUpdateInterval) {
+                clearInterval(statusUpdateInterval);
+                statusUpdateInterval = null;
+            }
+            
+            if (testGuideController) {
+                testGuideController.destroy();
+            }
+            
+            if (testGuardian) {
+                testGuardian.cleanupAll();
+            }
+            
+            // Clear any remaining UI elements
+            const guideElements = document.querySelectorAll('#recognition-guide, .timeout-warning, .extension-notification');
+            guideElements.forEach(el => el.remove());
+            
+            // Reinitialize
+            setTimeout(initializeTest, 100);
+            
+            updateStatus('window-status', 'Window: Reset');
+            updateStatus('time-elapsed', 'Time Elapsed: 0s');
+            updateStatus('extensions-used', 'Extensions: 0/2');
+            updateStatus('user-activity', 'User Active: No');
+            updateStatus('warnings-shown', 'Warnings: Reset');
+        };
+
+        // Update test status display
+        function updateTestStatus() {
+            if (!testStartTime) return;
+            
+            const elapsed = Math.floor((Date.now() - testStartTime) / 1000);
+            updateStatus('time-elapsed', `Time Elapsed: ${elapsed}s`);
+            
+            if (testGuideController) {
+                const extensions = testGuideController.timeExtensions || 0;
+                const maxExtensions = testGuideController.maxTimeExtensions || 2;
+                updateStatus('extensions-used', `Extensions: ${extensions}/${maxExtensions}`);
+            }
+        }
+
+        function updateStatus(elementId, text) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = text;
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeTest);
+
+        // Add some keyboard shortcuts for testing
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case '1':
+                    startTest();
+                    break;
+                case '2':
+                    simulateActivity();
+                    break;
+                case '3':
+                    testExtension();
+                    break;
+                case '0':
+                    resetTest();
+                    break;
+            }
+        });
+
+        console.log('🧪 Recognition Timing Test loaded. Use buttons or keys 1-3, 0 to control.');
+    </script>
+</body>
+</html>

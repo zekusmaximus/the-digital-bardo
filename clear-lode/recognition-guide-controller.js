@@ -42,11 +42,21 @@ export class RecognitionGuideController {
         /** @private */
         this.timeExtensions = 0;
         /** @private */
-        this.maxTimeExtensions = 2;
+        this.maxTimeExtensions = this.config.recognitionWindow.maxExtensions || 2;
         /** @private */
-        this.baseWindowDuration = 15000; // 15 seconds minimum
+        this.baseWindowDuration = this.config.recognitionWindow.baseWindowDuration || 15000;
         /** @private */
-        this.extensionDuration = 5000; // 5 seconds per extension
+        this.extensionDuration = this.config.recognitionWindow.extensionDuration || 5000;
+        /** @private */
+        this.warningThreshold = this.config.recognitionWindow.warningThreshold || 0.75;
+        /** @private */
+        this.timeoutTimer = null;
+        /** @private */
+        this.warningTimer = null;
+        /** @private */
+        this.isUserActive = false;
+        /** @private */
+        this.lastActivityTime = null;
 
         // UI elements
         /** @private */
@@ -162,6 +172,9 @@ export class RecognitionGuideController {
 
         // Start progressive hint system
         this.startProgressiveHints();
+
+        // Set up activity tracking
+        this.setupActivityTracking();
 
         // Set up timeout warning system
         this.scheduleTimeoutWarning();
@@ -444,35 +457,83 @@ export class RecognitionGuideController {
     }
 
     /**
-     * Schedules timeout warning system
+     * Sets up activity tracking to detect user engagement
+     * @private
+     */
+    setupActivityTracking() {
+        const activityEvents = ['click', 'keydown', 'touchstart', 'mousemove'];
+        
+        const activityHandler = () => {
+            this.isUserActive = true;
+            this.lastActivityTime = Date.now();
+        };
+
+        activityEvents.forEach(eventType => {
+            document.addEventListener(eventType, activityHandler, { passive: true });
+            this.guardian.registerCleanup(() => {
+                document.removeEventListener(eventType, activityHandler);
+            });
+        });
+
+        // Reset activity flag periodically
+        const activityResetTimer = setInterval(() => {
+            if (this.lastActivityTime && Date.now() - this.lastActivityTime > 2000) {
+                this.isUserActive = false;
+            }
+        }, 1000);
+
+        this.guardian.registerTimer(activityResetTimer);
+    }
+
+    /**
+     * Schedules timeout warning system with dynamic extensions
      * @private
      */
     scheduleTimeoutWarning() {
-        // Warning at 75% of time elapsed
-        const warningTime = this.baseWindowDuration * 0.75;
-        const warningTimer = setTimeout(() => {
+        // Clear any existing timers
+        if (this.warningTimer) {
+            clearTimeout(this.warningTimer);
+            this.warningTimer = null;
+        }
+        if (this.timeoutTimer) {
+            clearTimeout(this.timeoutTimer);
+            this.timeoutTimer = null;
+        }
+
+        const currentWindowDuration = this.baseWindowDuration + (this.timeExtensions * this.extensionDuration);
+        
+        // Warning at configured threshold of time elapsed
+        const warningTime = currentWindowDuration * this.warningThreshold;
+        this.warningTimer = setTimeout(() => {
             if (this.isActive && !this.isDestroyed) {
                 this.showTimeoutWarning();
             }
         }, warningTime);
 
-        this.guardian.registerTimer(warningTimer);
-
         // Final timeout
-        const timeoutTimer = setTimeout(() => {
+        this.timeoutTimer = setTimeout(() => {
             if (this.isActive && !this.isDestroyed) {
                 this.handleTimeout();
             }
-        }, this.baseWindowDuration);
+        }, currentWindowDuration);
 
-        this.guardian.registerTimer(timeoutTimer);
+        this.guardian.registerTimer(this.warningTimer);
+        this.guardian.registerTimer(this.timeoutTimer);
+
+        console.log(`[RecognitionGuideController] Scheduled timeout warning at ${warningTime}ms, timeout at ${currentWindowDuration}ms`);
     }
 
     /**
-     * Shows timeout warning to user
+     * Shows timeout warning to user with countdown
      * @private
      */
     showTimeoutWarning() {
+        // Remove any existing warning
+        if (this.timeoutWarning) {
+            this.timeoutWarning.remove();
+            this.timeoutWarning = null;
+        }
+
         this.timeoutWarning = manifestElement('div', {
             attributes: {
                 class: 'timeout-warning',
@@ -481,49 +542,285 @@ export class RecognitionGuideController {
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
-                    background: rgba(255, 0, 0, 0.1);
-                    border: 2px solid rgba(255, 0, 0, 0.5);
-                    color: rgba(255, 200, 200, 1);
-                    padding: 20px;
-                    border-radius: 8px;
+                    background: rgba(255, 100, 100, 0.15);
+                    border: 2px solid rgba(255, 150, 150, 0.8);
+                    color: rgba(255, 220, 220, 1);
+                    padding: 25px 35px;
+                    border-radius: 12px;
                     text-align: center;
-                    font-size: 18px;
+                    font-size: 20px;
+                    font-weight: bold;
                     opacity: 0;
-                    transition: opacity 0.3s ease;
-                    animation: pulse 1s infinite;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 0 20px rgba(255, 100, 100, 0.3);
+                    z-index: 1001;
                 `
             }
         });
 
-        const remainingTime = Math.ceil((this.baseWindowDuration - (Date.now() - this.recognitionStartTime)) / 1000);
-        this.timeoutWarning.textContent = `Recognition window closing in ${remainingTime} seconds...`;
+        const currentWindowDuration = this.baseWindowDuration + (this.timeExtensions * this.extensionDuration);
+        const elapsedTime = Date.now() - this.recognitionStartTime;
+        const remainingTime = Math.ceil((currentWindowDuration - elapsedTime) / 1000);
+
+        // Create warning content
+        const warningContent = manifestElement('div', {
+            attributes: {
+                class: 'warning-content'
+            }
+        });
+
+        const warningTitle = manifestElement('div', {
+            attributes: {
+                style: 'font-size: 22px; margin-bottom: 10px; color: rgba(255, 200, 200, 1);'
+            }
+        });
+        warningTitle.textContent = '⚠ Recognition Window Closing';
+
+        const countdownDisplay = manifestElement('div', {
+            attributes: {
+                class: 'countdown-display',
+                style: 'font-size: 28px; margin: 15px 0; color: rgba(255, 255, 255, 1);'
+            }
+        });
+
+        const extensionInfo = manifestElement('div', {
+            attributes: {
+                style: 'font-size: 14px; margin-top: 10px; opacity: 0.8;'
+            }
+        });
+
+        if (this.timeExtensions < this.maxTimeExtensions) {
+            extensionInfo.textContent = `Continue attempting recognition to extend time (${this.maxTimeExtensions - this.timeExtensions} extensions remaining)`;
+        } else {
+            extensionInfo.textContent = 'No more extensions available';
+            extensionInfo.style.color = 'rgba(255, 150, 150, 1)';
+        }
+
+        warningContent.appendChild(warningTitle);
+        warningContent.appendChild(countdownDisplay);
+        warningContent.appendChild(extensionInfo);
+        this.timeoutWarning.appendChild(warningContent);
 
         this.guideContainer.appendChild(this.timeoutWarning);
+
+        // Start countdown animation
+        this.startCountdownAnimation(countdownDisplay, remainingTime);
 
         requestAnimationFrame(() => {
             if (this.timeoutWarning) {
                 this.timeoutWarning.style.opacity = '1';
+                this.timeoutWarning.style.transform = 'translate(-50%, -50%) scale(1.05)';
             }
         });
+
+        // Add pulsing animation
+        const pulseKeyframes = `
+            @keyframes timeout-pulse {
+                0%, 100% { transform: translate(-50%, -50%) scale(1.05); }
+                50% { transform: translate(-50%, -50%) scale(1.1); }
+            }
+        `;
+        
+        if (!document.querySelector('#timeout-pulse-style')) {
+            const style = manifestElement('style', {
+                attributes: { id: 'timeout-pulse-style' }
+            });
+            style.textContent = pulseKeyframes;
+            document.head.appendChild(style);
+        }
+
+        this.timeoutWarning.style.animation = 'timeout-pulse 1.5s ease-in-out infinite';
 
         // Record timeout warning
         consciousness.recordEvent('recognition_timeout_warning', {
             remainingTime: remainingTime,
+            extensionsUsed: this.timeExtensions,
+            extensionsRemaining: this.maxTimeExtensions - this.timeExtensions,
             timestamp: Date.now()
         });
     }
 
     /**
-     * Handles recognition timeout
+     * Starts countdown animation for timeout warning
+     * @private
+     * @param {HTMLElement} countdownElement - Element to update with countdown
+     * @param {number} initialTime - Initial countdown time in seconds
+     */
+    startCountdownAnimation(countdownElement, initialTime) {
+        let timeRemaining = initialTime;
+        
+        const updateCountdown = () => {
+            if (!this.isActive || !countdownElement.parentNode) return;
+            
+            countdownElement.textContent = `${timeRemaining}s`;
+            
+            // Change color as time gets critical
+            if (timeRemaining <= 3) {
+                countdownElement.style.color = 'rgba(255, 100, 100, 1)';
+                countdownElement.style.textShadow = '0 0 10px rgba(255, 100, 100, 0.8)';
+            } else if (timeRemaining <= 5) {
+                countdownElement.style.color = 'rgba(255, 200, 100, 1)';
+            }
+            
+            timeRemaining--;
+            
+            if (timeRemaining >= 0) {
+                setTimeout(updateCountdown, 1000);
+            }
+        };
+        
+        updateCountdown();
+    }
+
+    /**
+     * Handles recognition timeout with intelligent extension logic
      * @private
      */
     handleTimeout() {
-        if (this.timeExtensions < this.maxTimeExtensions) {
+        // Check if user has been active and extensions are available
+        if (this.timeExtensions < this.maxTimeExtensions && this.isUserActive) {
+            console.log('[RecognitionGuideController] User is active - extending recognition window');
             this.extendRecognitionWindow();
+        } else if (this.timeExtensions < this.maxTimeExtensions) {
+            // Show final chance warning
+            this.showFinalChanceWarning();
         } else {
             console.log('[RecognitionGuideController] Recognition window timeout - no more extensions available');
-            this.eventBridge.emit('recognition:timeout');
+            this.showTransitionIndicator();
+            
+            // Delay the actual timeout to show transition
+            setTimeout(() => {
+                if (this.isActive && !this.isDestroyed) {
+                    this.eventBridge.emit('recognition:timeout');
+                }
+            }, 2000);
         }
+    }
+
+    /**
+     * Shows final chance warning when user is inactive but extensions remain
+     * @private
+     */
+    showFinalChanceWarning() {
+        const finalWarning = manifestElement('div', {
+            attributes: {
+                class: 'final-chance-warning',
+                style: `
+                    position: absolute;
+                    top: 45%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(255, 50, 50, 0.2);
+                    border: 3px solid rgba(255, 100, 100, 0.9);
+                    color: rgba(255, 255, 255, 1);
+                    padding: 30px;
+                    border-radius: 15px;
+                    text-align: center;
+                    font-size: 18px;
+                    font-weight: bold;
+                    opacity: 0;
+                    transition: all 0.5s ease;
+                    box-shadow: 0 0 30px rgba(255, 50, 50, 0.5);
+                    z-index: 1002;
+                `
+            }
+        });
+
+        finalWarning.innerHTML = `
+            <div style="font-size: 24px; margin-bottom: 15px;">⚠ FINAL CHANCE ⚠</div>
+            <div style="margin-bottom: 10px;">Recognition window is closing</div>
+            <div style="font-size: 16px; opacity: 0.9;">Make any recognition attempt to extend time</div>
+        `;
+
+        this.guideContainer.appendChild(finalWarning);
+
+        requestAnimationFrame(() => {
+            finalWarning.style.opacity = '1';
+            finalWarning.style.transform = 'translate(-50%, -50%) scale(1.1)';
+        });
+
+        // Give user 3 seconds to respond
+        setTimeout(() => {
+            if (this.isUserActive && this.timeExtensions < this.maxTimeExtensions) {
+                this.extendRecognitionWindow();
+                if (finalWarning.parentNode) {
+                    finalWarning.remove();
+                }
+            } else {
+                // No activity - proceed to timeout
+                this.showTransitionIndicator();
+                setTimeout(() => {
+                    if (this.isActive && !this.isDestroyed) {
+                        this.eventBridge.emit('recognition:timeout');
+                    }
+                }, 2000);
+            }
+        }, 3000);
+
+        consciousness.recordEvent('recognition_final_chance_warning', {
+            timestamp: Date.now(),
+            extensionsRemaining: this.maxTimeExtensions - this.timeExtensions
+        });
+    }
+
+    /**
+     * Shows clear transition indicator when recognition phase ends
+     * @private
+     */
+    showTransitionIndicator() {
+        // Remove any existing warnings
+        if (this.timeoutWarning) {
+            this.timeoutWarning.remove();
+            this.timeoutWarning = null;
+        }
+
+        const transitionIndicator = manifestElement('div', {
+            attributes: {
+                class: 'transition-indicator',
+                style: `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(0, 0, 0, 0.8);
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    color: rgba(255, 255, 255, 0.9);
+                    padding: 40px;
+                    border-radius: 20px;
+                    text-align: center;
+                    font-size: 20px;
+                    opacity: 0;
+                    transition: all 0.8s ease;
+                    z-index: 1003;
+                `
+            }
+        });
+
+        transitionIndicator.innerHTML = `
+            <div style="font-size: 28px; margin-bottom: 20px;">Recognition Phase Complete</div>
+            <div style="font-size: 16px; opacity: 0.8; margin-bottom: 15px;">The window of clear light has closed</div>
+            <div style="font-size: 14px; opacity: 0.6;">Transitioning to next phase...</div>
+        `;
+
+        this.guideContainer.appendChild(transitionIndicator);
+
+        requestAnimationFrame(() => {
+            transitionIndicator.style.opacity = '1';
+            transitionIndicator.style.transform = 'translate(-50%, -50%) scale(1.05)';
+        });
+
+        // Add fade-out animation
+        setTimeout(() => {
+            if (transitionIndicator.parentNode) {
+                transitionIndicator.style.opacity = '0';
+                transitionIndicator.style.transform = 'translate(-50%, -50%) scale(0.95)';
+            }
+        }, 1500);
+
+        consciousness.recordEvent('recognition_transition_indicator_shown', {
+            timestamp: Date.now(),
+            totalExtensionsUsed: this.timeExtensions
+        });
     }
 
     /**
@@ -531,10 +828,15 @@ export class RecognitionGuideController {
      * @private
      */
     extendRecognitionWindow() {
+        if (this.timeExtensions >= this.maxTimeExtensions) {
+            console.log('[RecognitionGuideController] Maximum extensions reached');
+            return;
+        }
+
         this.timeExtensions++;
         console.log(`[RecognitionGuideController] Extending recognition window (${this.timeExtensions}/${this.maxTimeExtensions})`);
 
-        // Remove timeout warning
+        // Remove any existing warnings
         if (this.timeoutWarning) {
             this.timeoutWarning.remove();
             this.timeoutWarning = null;
@@ -543,13 +845,41 @@ export class RecognitionGuideController {
         // Show extension notification
         this.showExtensionNotification();
 
-        // Schedule next timeout
+        // Update progress bar to reflect new duration
+        this.updateProgressBar();
+
+        // Schedule next timeout with extended duration
         this.scheduleTimeoutWarning();
 
         // Record extension
         consciousness.recordEvent('recognition_window_extended', {
             extensionNumber: this.timeExtensions,
+            newTotalDuration: this.baseWindowDuration + (this.timeExtensions * this.extensionDuration),
             timestamp: Date.now()
+        });
+    }
+
+    /**
+     * Updates progress bar to reflect extended duration
+     * @private
+     */
+    updateProgressBar() {
+        if (!this.progressIndicator) return;
+
+        const progressBar = this.progressIndicator.querySelector('.progress-bar');
+        if (!progressBar) return;
+
+        const elapsedTime = Date.now() - this.recognitionStartTime;
+        const newTotalDuration = this.baseWindowDuration + (this.timeExtensions * this.extensionDuration);
+        const remainingTime = newTotalDuration - elapsedTime;
+
+        // Reset and restart progress bar with new duration
+        progressBar.style.transition = 'none';
+        progressBar.style.transform = `translateX(-${(elapsedTime / newTotalDuration) * 100}%)`;
+        
+        requestAnimationFrame(() => {
+            progressBar.style.transition = `transform ${remainingTime}ms linear`;
+            progressBar.style.transform = 'translateX(0%)';
         });
     }
 
@@ -563,35 +893,71 @@ export class RecognitionGuideController {
                 class: 'extension-notification',
                 style: `
                     position: absolute;
-                    top: 40%;
+                    top: 35%;
                     left: 50%;
-                    transform: translateX(-50%);
+                    transform: translate(-50%, -50%);
+                    background: rgba(100, 255, 100, 0.15);
+                    border: 2px solid rgba(150, 255, 150, 0.8);
                     color: rgba(200, 255, 200, 1);
-                    font-size: 16px;
+                    padding: 20px 30px;
+                    border-radius: 12px;
                     text-align: center;
+                    font-size: 18px;
+                    font-weight: bold;
                     opacity: 0;
-                    transition: opacity 0.5s ease;
+                    transition: all 0.5s ease;
+                    box-shadow: 0 0 20px rgba(100, 255, 100, 0.3);
+                    z-index: 1001;
                 `
             }
         });
 
-        notification.textContent = `Recognition window extended (+${this.extensionDuration / 1000} seconds)`;
+        const extensionContent = manifestElement('div');
+        
+        const title = manifestElement('div', {
+            attributes: {
+                style: 'font-size: 20px; margin-bottom: 8px;'
+            }
+        });
+        title.textContent = '⏰ Time Extended';
+
+        const details = manifestElement('div', {
+            attributes: {
+                style: 'font-size: 16px; margin-bottom: 5px;'
+            }
+        });
+        details.textContent = `+${this.extensionDuration / 1000} seconds added`;
+
+        const remaining = manifestElement('div', {
+            attributes: {
+                style: 'font-size: 14px; opacity: 0.8;'
+            }
+        });
+        remaining.textContent = `${this.maxTimeExtensions - this.timeExtensions} extensions remaining`;
+
+        extensionContent.appendChild(title);
+        extensionContent.appendChild(details);
+        extensionContent.appendChild(remaining);
+        notification.appendChild(extensionContent);
+
         this.guideContainer.appendChild(notification);
 
         requestAnimationFrame(() => {
             notification.style.opacity = '1';
+            notification.style.transform = 'translate(-50%, -50%) scale(1.05)';
         });
 
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.style.opacity = '0';
+                notification.style.transform = 'translate(-50%, -50%) scale(0.95)';
                 setTimeout(() => {
                     if (notification.parentNode) {
                         notification.remove();
                     }
                 }, 500);
             }
-        }, 3000);
+        }, 4000);
     }
 
     /**
@@ -789,16 +1155,31 @@ export class RecognitionGuideController {
         const { method, progress } = detail;
         this.provideFeedback(method, progress);
 
-        // If user is actively attempting, consider extending window
-        if (this.timeExtensions < this.maxTimeExtensions) {
+        // Mark user as active
+        this.isUserActive = true;
+        this.lastActivityTime = Date.now();
+
+        // If user is actively attempting and making meaningful progress, consider extending window
+        if (this.timeExtensions < this.maxTimeExtensions && progress > 0.2) {
             const timeElapsed = Date.now() - this.recognitionStartTime;
-            const timeRemaining = this.baseWindowDuration - timeElapsed;
+            const currentWindowDuration = this.baseWindowDuration + (this.timeExtensions * this.extensionDuration);
+            const timeRemaining = currentWindowDuration - timeElapsed;
             
-            // If less than 3 seconds remaining and user is actively trying
-            if (timeRemaining < 3000 && progress > 0.1) {
+            // If less than 4 seconds remaining and user is making good progress
+            if (timeRemaining < 4000) {
+                console.log(`[RecognitionGuideController] User making progress (${Math.round(progress * 100)}%) - extending window`);
                 this.extendRecognitionWindow();
             }
         }
+
+        // Record attempt for analytics
+        consciousness.recordEvent('recognition_attempt_tracked', {
+            method: method,
+            progress: progress,
+            timeElapsed: Date.now() - this.recognitionStartTime,
+            extensionsUsed: this.timeExtensions,
+            timestamp: Date.now()
+        });
     }
 
     /**
@@ -811,9 +1192,19 @@ export class RecognitionGuideController {
         console.log('[RecognitionGuideController] Stopping guidance system...');
         this.isActive = false;
 
-        // Clear all hint timers
+        // Clear all timers
         this.hintTimers.forEach(timer => clearTimeout(timer));
         this.hintTimers = [];
+        
+        if (this.warningTimer) {
+            clearTimeout(this.warningTimer);
+            this.warningTimer = null;
+        }
+        
+        if (this.timeoutTimer) {
+            clearTimeout(this.timeoutTimer);
+            this.timeoutTimer = null;
+        }
 
         // Fade out guide container
         if (this.guideContainer) {
@@ -833,6 +1224,10 @@ export class RecognitionGuideController {
         this.recognitionStartTime = null;
         this.currentHintIndex = 0;
         this.timeExtensions = 0;
+        this.isUserActive = false;
+        this.lastActivityTime = null;
+        this.warningTimer = null;
+        this.timeoutTimer = null;
 
         // Record guidance end
         consciousness.recordEvent('recognition_guidance_ended', {

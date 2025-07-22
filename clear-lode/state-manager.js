@@ -38,6 +38,10 @@ export class ClearLodeStateManager {
             (newState) => this.handleFSMStateChange(newState)
         );
 
+        // Listen for timeout events from recognition guide controller
+        this.eventBridge.on('recognition:timeout', this.handleRecognitionTimeout.bind(this));
+        this.guardian.registerCleanup(() => this.eventBridge.off('recognition:timeout', this.handleRecognitionTimeout.bind(this)));
+
         // Register the unsubscribe function for cleanup when destroy() is called
         this.guardian.registerCleanup(unsubscribe);
         console.log('StateManager initialized and subscribed to FSM.');
@@ -88,6 +92,14 @@ export class ClearLodeStateManager {
             console.log('[StateManager] Triggering FSM timeout...');
             recognitionFSM.transition('onTimeout');
         }
+    }
+
+    /**
+     * Handles timeout event from recognition guide controller
+     */
+    handleRecognitionTimeout() {
+        console.log('[StateManager] Recognition timeout received from guide controller');
+        this.triggerTimeout();
     }
 
 

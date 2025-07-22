@@ -24,14 +24,14 @@
 
 - [x] 4. Create recognition guidance and hint system
 
-
   - Implement RecognitionGuideController with progressive hint display
   - Add clear visual instructions for each recognition method (center click, keywords, spacebar hold)
   - Create visual feedback system for recognition attempts and progress
   - Add recognition method indicators that appear when window opens
   - _Requirements: 2.1, 2.2, 2.3, 2.5_
 
-- [ ] 5. Extend recognition timing and add timeout warnings
+- [x] 5. Extend recognition timing and add timeout warnings
+
 
   - Increase minimum recognition window duration to 15 seconds
   - Implement timeout warning system that alerts users before window closes

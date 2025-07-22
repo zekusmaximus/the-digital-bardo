@@ -11,7 +11,11 @@ export const CLEAR_LODE_CONFIG = {
      */
     recognitionWindow: {
         start: 3500,  // ms after light manifestation starts
-        end: 6500     // ms after light manifestation starts (3-second window)
+        end: 18500,   // ms after light manifestation starts (15-second minimum window)
+        baseWindowDuration: 15000,  // 15 seconds minimum duration
+        extensionDuration: 5000,    // 5 seconds per extension
+        maxExtensions: 2,           // Maximum number of extensions allowed
+        warningThreshold: 0.75      // Show warning at 75% of time elapsed
     },
 
     /**

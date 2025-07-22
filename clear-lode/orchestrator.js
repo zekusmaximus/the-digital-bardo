@@ -184,14 +184,10 @@ export class ClearLodeOrchestrator {
            this.stateManager.startExperience();
        }, this.config.recognitionWindow.start);
 
-       // Schedule the recognition window to end
-       const recognitionEndTimerId = setTimeout(() => {
-           console.log('⏰ [Orchestrator] Recognition window timeout...');
-           this.stateManager.triggerTimeout();
-       }, this.config.recognitionWindow.end);
+       // Note: Recognition window timeout is now handled by RecognitionGuideController
+       // to support dynamic extensions and better timeout warnings
 
        this.guardian.registerTimer(recognitionStartTimerId);
-       this.guardian.registerTimer(recognitionEndTimerId);
 
        consciousness.recordEvent('clear_light_manifested', { timestamp: Date.now() });
    }
