@@ -4,7 +4,7 @@ import { consciousness } from '../src/consciousness/digital-soul.js';
 import { manifestElement } from '../src/security/consciousness-purification.js';
 import { createKarmicValidator, thoughtFragmentSchema } from '../src/security/karmic-validation.js';
 import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
-import { AnimationGuardian } from '../src/utils/animation-guardian.js';
+// AnimationGuardian import removed - not used in current implementation
 import { createSeededRandom } from '../src/utils/seeded-random.js';
 import { PositionZoneManager } from './position-zone-manager.js';
 import { FragmentAnimationController } from './fragment-animation-controller.js';
@@ -416,7 +416,7 @@ export class FragmentGenerator {
         });
         
         // Apply visual corruption
-        this.applyVisualCorruption(fragment, degradationLevel, thoughtText);
+        this.applyVisualCorruption(fragment, degradationLevel);
 
         // Select zone and position fragment using readability-focused positioning
         const distributionStrategy = this.positioningService.getDistributionStrategy(this.performanceTier);
@@ -568,7 +568,7 @@ export class FragmentGenerator {
         fragment.dataset.readabilityMonitor = monitoringInterval;
     }
 
-    applyVisualCorruption(fragment, degradationLevel, originalText) {
+    applyVisualCorruption(fragment, degradationLevel) {
         if (!this.visualEnhancements.corruptionEnabled) return;
         
         const corruptionClasses = {
