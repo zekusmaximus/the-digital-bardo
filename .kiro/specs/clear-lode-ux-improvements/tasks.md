@@ -32,14 +32,14 @@
 
 - [x] 5. Extend recognition timing and add timeout warnings
 
-
   - Increase minimum recognition window duration to 15 seconds
   - Implement timeout warning system that alerts users before window closes
   - Add time extension logic for users actively attempting recognition
   - Create clear transition indicators when recognition phase ends
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 6. Implement synchronized audio-visual degradation
+- [x] 6. Implement synchronized audio-visual degradation
+
 
   - Enhance existing degradation system to coordinate audio and visual corruption
   - Add karma-responsive visual updates that sync with audio parameter changes

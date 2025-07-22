@@ -54,6 +54,8 @@ export class ClearLodeAudio {
         this.pitchDriftInterval = null;
         /** @private */
         this.fallbackNoiseSource = null;
+        /** @private */
+        this.lastDegradationLevel = 0;
 
         // Master effects chain components
         /** @private */
@@ -117,6 +119,11 @@ export class ClearLodeAudio {
             // Resume context if suspended
             if (this.audioContext.state === 'suspended') {
                 await this.audioContext.resume();
+                
+                // Emit context resumed event
+                if (this.eventBridge) {
+                    this.eventBridge.emit('audio:contextResumed');
+                }
             }
 
             this.isInitialized = true;
@@ -135,6 +142,12 @@ export class ClearLodeAudio {
         } catch (error) {
             console.error('[AudioEngine] AudioContext initialization failed:', error);
             this.isInitialized = false;
+            
+            // Emit initialization failure event for synchronized degradation
+            if (this.eventBridge) {
+                this.eventBridge.emit('audio:initializationFailed', error);
+            }
+            
             throw error; // Re-throw for the orchestrator to handle
         }
     }
@@ -199,6 +212,10 @@ export class ClearLodeAudio {
         // If audio isn't initialized, try to start it first
         if (!this.isInitialized) {
             console.log('[AudioEngine] Audio not ready for degradation start.');
+            // Emit initialization failure event for synchronized degradation
+            if (this.eventBridge) {
+                this.eventBridge.emit('audio:initializationFailed', 'Audio not initialized for degradation');
+            }
             return;
         }
         this.completeDigitalStatic();
@@ -694,12 +711,22 @@ export class ClearLodeAudio {
             await this.audioContext.resume();
             console.log('[Audio] Context resumed after user gesture');
             
+            // Emit context resumed event
+            if (this.eventBridge) {
+                this.eventBridge.emit('audio:contextResumed');
+            }
+            
             // Initialize master chain if it was pending
             if (this.masterChainPending) {
                 await this.initializeMasterChain();
             }
         } catch (error) {
             console.error('[Audio] Failed to resume context after user gesture:', error);
+            
+            // Emit context suspension event
+            if (this.eventBridge) {
+                this.eventBridge.emit('audio:contextSuspended');
+            }
         }
     }
 
@@ -931,6 +958,22 @@ export class ClearLodeAudio {
                 this.schedulePitchDrift(params);
             }
 
+            // Calculate overall degradation level and emit if changed
+            const currentDegradationLevel = this.calculateOverallDegradationLevel(params);
+            if (Math.abs(currentDegradationLevel - this.lastDegradationLevel) > 0.05) {
+                this.lastDegradationLevel = currentDegradationLevel;
+                this.eventBridge.emit('audio:degradationChanged', {
+                    level: currentDegradationLevel,
+                    source: 'karma_update'
+                });
+            }
+
+            // Emit karma parameters updated event
+            this.eventBridge.emit('audio:karmaParametersUpdated', {
+                parameters: params,
+                karmaState: karmaState
+            });
+
         } catch (error) {
             console.warn('[AudioEngine] Karma parameter update failed:', error);
         }
@@ -1005,6 +1048,49 @@ export class ClearLodeAudio {
             // Interaction effects
             allTypesInteraction
         };
+    }
+
+    /**
+     * Calculates overall degradation level from audio parameters
+     * @param {object} params - Calculated audio parameters
+     * @returns {number} Overall degradation level (0-1)
+     */
+    calculateOverallDegradationLevel(params) {
+        // Weight different parameters to calculate overall degradation
+        const weights = {
+            noiseLevel: 0.4,        // Noise is primary degradation indicator
+            pitchInstability: 0.2,  // Pitch instability indicates computational karma
+            harmonicJitter: 0.15,   // Harmonic chaos indicates emotional karma
+            timeDissolution: 0.15,  // Time effects indicate temporal karma
+            allTypesInteraction: 0.1 // Overall interaction level
+        };
+        
+        let degradationLevel = 0;
+        
+        // Noise level (0-1)
+        degradationLevel += (params.noiseLevel || 0) * weights.noiseLevel;
+        
+        // Pitch instability (0-15 Hz -> 0-1)
+        degradationLevel += Math.min(1, (params.pitchInstability || 0) / 15) * weights.pitchInstability;
+        
+        // Harmonic jitter (0-0.1 -> 0-1)
+        degradationLevel += Math.min(1, (params.harmonicJitter || 0) / 0.1) * weights.harmonicJitter;
+        
+        // Time dissolution (0-0.2 -> 0-1)
+        degradationLevel += Math.min(1, (params.timeDissolution || 0) / 0.2) * weights.timeDissolution;
+        
+        // All types interaction (0-1)
+        degradationLevel += (params.allTypesInteraction || 0) * weights.allTypesInteraction;
+        
+        return Math.max(0, Math.min(1, degradationLevel));
+    }
+
+    /**
+     * Gets current degradation level
+     * @returns {number} Current degradation level (0-1)
+     */
+    getDegradationLevel() {
+        return this.lastDegradationLevel;
     }
 
     /**

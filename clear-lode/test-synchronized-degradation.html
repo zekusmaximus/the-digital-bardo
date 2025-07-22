@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synchronized Audio-Visual Degradation Test</title>
+    <link rel="stylesheet" href="../src/styles/reality.css">
+    <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <link rel="stylesheet" href="synchronized-degradation.css">
+    <style>
+        body {
+            background: #000;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #1a1a1a;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+        
+        button:hover {
+            background: #00ff88;
+            color: #000;
+        }
+        
+        .status-display {
+            background: #111;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .fragment-test {
+            position: relative;
+            height: 200px;
+            border: 1px solid #333;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .test-fragment {
+            position: absolute;
+            padding: 5px 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        .karma-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .karma-control {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        .log-output {
+            background: #0a0a0a;
+            color: #888;
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 11px;
+            border: 1px solid #333;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Synchronized Audio-Visual Degradation Test</h1>
+        
+        <div class="test-section">
+            <h2>System Status</h2>
+            <div id="system-status" class="status-display">
+                Initializing...
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Audio Fallback Mode</h2>
+            <div class="test-controls">
+                <button onclick="testAudioFallback()">Activate Audio Fallback</button>
+                <button onclick="testAudioRestore()">Restore Audio</button>
+                <button onclick="testAudioInitFailure()">Simulate Audio Init Failure</button>
+            </div>
+            <div id="fallback-status" class="status-display">
+                Audio fallback: Inactive
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Karma Synchronization</h2>
+            <div class="karma-controls">
+                <div class="karma-control">
+                    <label>Computational: <span id="computational-value">0</span></label>
+                    <input type="range" id="computational" min="0" max="100" value="0" oninput="updateKarma()">
+                </div>
+                <div class="karma-control">
+                    <label>Emotional: <span id="emotional-value">0</span></label>
+                    <input type="range" id="emotional" min="0" max="100" value="0" oninput="updateKarma()">
+                </div>
+                <div class="karma-control">
+                    <label>Void: <span id="void-value">0</span></label>
+                    <input type="range" id="void" min="0" max="100" value="0" oninput="updateKarma()">
+                </div>
+                <div class="karma-control">
+                    <label>Temporal: <span id="temporal-value">0</span></label>
+                    <input type="range" id="temporal" min="0" max="100" value="0" oninput="updateKarma()">
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Recognition Feedback</h2>
+            <div class="test-controls">
+                <button onclick="testRecognitionAttempt()">Recognition Attempt</button>
+                <button onclick="testRecognitionSuccess()">Recognition Success</button>
+                <button onclick="testRecognitionFailure()">Recognition Failure</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Visual Fragment Test</h2>
+            <div class="test-controls">
+                <button onclick="createTestFragments()">Create Test Fragments</button>
+                <button onclick="clearTestFragments()">Clear Fragments</button>
+                <button onclick="testCorruptionSync()">Test Corruption Sync</button>
+            </div>
+            <div id="fragment-container" class="fragment-test"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Synchronization Health</h2>
+            <div class="test-controls">
+                <button onclick="checkSyncHealth()">Check Sync Health</button>
+                <button onclick="forceSyncCorrection()">Force Sync Correction</button>
+            </div>
+            <div id="sync-health" class="status-display">
+                Click "Check Sync Health" to view status
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Event Log</h2>
+            <div id="event-log" class="log-output"></div>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+        import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+        import { KarmicEngine } from '../src/consciousness/karmic-engine.js';
+        import { ClearLodeEventBridge } from './event-bridge.js';
+        import { SynchronizedDegradationController } from './synchronized-degradation-controller.js';
+        import { CorruptionProgression } from './corruption-progression.js';
+
+        // Test setup
+        let syncController;
+        let eventBridge;
+        let guardian;
+        let karmicEngine;
+        let corruptionProgression;
+        let testFragments = [];
+
+        // Mock audio engine for testing
+        class MockAudioEngine {
+            constructor() {
+                this.isInitialized = true;
+                this.degradationLevel = 0;
+                this.eventBridge = eventBridge;
+            }
+
+            getDegradationLevel() {
+                return this.degradationLevel;
+            }
+
+            setDegradationLevel(level) {
+                this.degradationLevel = level;
+                if (this.eventBridge) {
+                    this.eventBridge.emit('audio:degradationChanged', {
+                        level: level,
+                        source: 'test'
+                    });
+                }
+            }
+
+            createGlitchBurst() {
+                log('Audio: Glitch burst created');
+            }
+
+            achieveResonance() {
+                log('Audio: Recognition resonance achieved');
+            }
+
+            accelerateDegradation(amount) {
+                this.degradationLevel = Math.min(1, this.degradationLevel + amount);
+                log(`Audio: Degradation accelerated by ${amount}, now ${this.degradationLevel.toFixed(3)}`);
+            }
+        }
+
+        // Initialize test environment
+        async function initializeTest() {
+            try {
+                guardian = new ResourceGuardian();
+                eventBridge = new ClearLodeEventBridge();
+                karmicEngine = new KarmicEngine();
+                corruptionProgression = new CorruptionProgression(karmicEngine);
+
+                const mockAudio = new MockAudioEngine();
+
+                const dependencies = {
+                    eventBridge: eventBridge,
+                    guardian: guardian,
+                    config: { syncThreshold: 0.05 },
+                    audioEngine: mockAudio,
+                    corruptionProgression: corruptionProgression
+                };
+
+                syncController = new SynchronizedDegradationController(dependencies);
+                syncController.init();
+
+                // Set up event logging
+                setupEventLogging();
+
+                updateSystemStatus('Initialized successfully');
+                log('Test environment initialized');
+
+            } catch (error) {
+                console.error('Test initialization failed:', error);
+                updateSystemStatus(`Initialization failed: ${error.message}`);
+            }
+        }
+
+        function setupEventLogging() {
+            const events = [
+                'audio:degradationChanged',
+                'audio:karmaParametersUpdated',
+                'audio:initializationFailed',
+                'audio:contextSuspended',
+                'audio:contextResumed',
+                'degradation:audioFallbackActivated',
+                'degradation:audioFallbackDeactivated'
+            ];
+
+            events.forEach(eventName => {
+                eventBridge.on(eventName, (data) => {
+                    log(`Event: ${eventName}`, data);
+                });
+            });
+        }
+
+        function updateSystemStatus(message) {
+            document.getElementById('system-status').textContent = message;
+        }
+
+        function log(message, data = null) {
+            const logElement = document.getElementById('event-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            if (data) {
+                logElement.innerHTML += `${logEntry}\n${JSON.stringify(data, null, 2)}\n\n`;
+            } else {
+                logElement.innerHTML += `${logEntry}\n`;
+            }
+            
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // Test functions
+        window.testAudioFallback = function() {
+            eventBridge.emit('audio:initializationFailed', 'Test audio failure');
+            document.getElementById('fallback-status').textContent = 'Audio fallback: Active (test)';
+            log('Activated audio fallback mode');
+        };
+
+        window.testAudioRestore = function() {
+            eventBridge.emit('audio:contextResumed');
+            document.getElementById('fallback-status').textContent = 'Audio fallback: Inactive';
+            log('Restored audio mode');
+        };
+
+        window.testAudioInitFailure = function() {
+            eventBridge.emit('audio:initializationFailed', new Error('Simulated audio initialization failure'));
+            log('Simulated audio initialization failure');
+        };
+
+        window.updateKarma = function() {
+            const computational = parseInt(document.getElementById('computational').value);
+            const emotional = parseInt(document.getElementById('emotional').value);
+            const voidValue = parseInt(document.getElementById('void').value);
+            const temporal = parseInt(document.getElementById('temporal').value);
+
+            // Update display values
+            document.getElementById('computational-value').textContent = computational;
+            document.getElementById('emotional-value').textContent = emotional;
+            document.getElementById('void-value').textContent = voidValue;
+            document.getElementById('temporal-value').textContent = temporal;
+
+            // Update consciousness karma state
+            const karmaState = {
+                computational: computational,
+                emotional: emotional,
+                void: voidValue,
+                temporal: temporal
+            };
+
+            consciousness.setState('karma', karmaState);
+            log('Karma updated', karmaState);
+        };
+
+        window.testRecognitionAttempt = function() {
+            eventBridge.emit('recognition:attempt', {
+                method: 'test',
+                progress: 0.5
+            });
+            log('Recognition attempt triggered');
+        };
+
+        window.testRecognitionSuccess = function() {
+            eventBridge.emit('state:recognitionSucceeded', {
+                method: 'test',
+                karmaImpact: { computational: 5, emotional: 3, void: -2, temporal: 1 }
+            });
+            log('Recognition success triggered');
+        };
+
+        window.testRecognitionFailure = function() {
+            eventBridge.emit('state:recognitionFailed', {});
+            log('Recognition failure triggered');
+        };
+
+        window.createTestFragments = function() {
+            const container = document.getElementById('fragment-container');
+            clearTestFragments();
+
+            const fragmentTexts = [
+                'Digital consciousness fragment',
+                'Memory trace in the void',
+                'Karmic resonance pattern',
+                'Temporal distortion echo'
+            ];
+
+            fragmentTexts.forEach((text, index) => {
+                const fragment = document.createElement('div');
+                fragment.className = 'test-fragment consciousness-fragment';
+                fragment.textContent = text;
+                fragment.dataset.birthTime = Date.now() + index;
+                fragment.dataset.fragmentId = `test-${index}`;
+                
+                // Random positioning
+                fragment.style.left = Math.random() * 70 + '%';
+                fragment.style.top = Math.random() * 70 + '%';
+                
+                container.appendChild(fragment);
+                testFragments.push(fragment);
+
+                // Initialize with corruption progression
+                if (corruptionProgression) {
+                    corruptionProgression.initializeCleanFragment(fragment);
+                }
+            });
+
+            log(`Created ${fragmentTexts.length} test fragments`);
+        };
+
+        window.clearTestFragments = function() {
+            const container = document.getElementById('fragment-container');
+            container.innerHTML = '';
+            testFragments = [];
+            log('Cleared test fragments');
+        };
+
+        window.testCorruptionSync = function() {
+            const audioLevel = Math.random();
+            eventBridge.emit('audio:degradationChanged', {
+                level: audioLevel,
+                source: 'corruption_test'
+            });
+            log(`Triggered corruption sync with audio level: ${audioLevel.toFixed(3)}`);
+        };
+
+        window.checkSyncHealth = function() {
+            if (syncController) {
+                const status = syncController.getSynchronizationStatus();
+                document.getElementById('sync-health').innerHTML = `
+                    <strong>Sync Health:</strong> ${status.isHealthy ? 'Healthy' : 'Issues Detected'}<br>
+                    <strong>Audio Level:</strong> ${status.syncState.audioLevel.toFixed(3)}<br>
+                    <strong>Visual Level:</strong> ${status.syncState.visualLevel.toFixed(3)}<br>
+                    <strong>Missed Syncs:</strong> ${status.performanceMetrics.missedSyncs}<br>
+                    <strong>Fallback Active:</strong> ${status.audioFallback.isActive ? 'Yes' : 'No'}
+                `;
+                log('Sync health checked', status);
+            }
+        };
+
+        window.forceSyncCorrection = function() {
+            if (syncController) {
+                syncController.correctSyncDrift();
+                log('Forced sync correction');
+            }
+        };
+
+        window.clearLog = function() {
+            document.getElementById('event-log').innerHTML = '';
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeTest);
+    </script>
+</body>
+</html>

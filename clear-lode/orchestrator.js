@@ -17,6 +17,7 @@ import { RecognitionGuideController } from './recognition-guide-controller.js';
 import { DegradationSystem } from './degradation-system.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator-refactored.js';
+import { SynchronizedDegradationController } from './synchronized-degradation-controller.js';
 import { dataGuardian } from '../src/security/data-flow-guardian.js';
 
 // Consciousness & Karmic Systems
@@ -61,6 +62,14 @@ export class ClearLodeOrchestrator {
         this.recognition = new RecognitionHandler(dependencies); // Assuming RecognitionHandler is updated for DI
         this.recognitionGuide = new RecognitionGuideController(dependencies);
         this.degradation = new DegradationSystem(dependencies); // Assuming DegradationSystem is updated for DI
+        
+        // Initialize synchronized degradation controller
+        const syncDependencies = {
+            ...dependencies,
+            audioEngine: this.audio,
+            corruptionProgression: this.fragments.corruptionProgression
+        };
+        this.synchronizedDegradation = new SynchronizedDegradationController(syncDependencies);
 
         // Register subsystems for cleanup
         this.guardian.registerCleanup(() => this.stateManager.destroy());
@@ -70,6 +79,7 @@ export class ClearLodeOrchestrator {
         this.guardian.registerCleanup(() => this.degradation.destroy());
         this.guardian.registerCleanup(() => this.fragments.destroy());
         this.guardian.registerCleanup(() => this.audio.destroy());
+        this.guardian.registerCleanup(() => this.synchronizedDegradation.destroy());
     }
 
     /**
@@ -91,6 +101,7 @@ export class ClearLodeOrchestrator {
             this.recognitionGuide.init();
             this.degradation.init();
             this.audio.init();
+            this.synchronizedDegradation.init();
 
             this.setupInternalEventListeners();
             this.setupWindowLifecycleListeners();
