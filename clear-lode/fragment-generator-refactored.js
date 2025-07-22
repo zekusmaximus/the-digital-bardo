@@ -12,6 +12,7 @@ import { FragmentDriftCalculator } from './fragment-drift-calculator.js';
 import { FragmentPositioningService } from './fragment-positioning-service.js';
 import { FragmentPositionManager } from './fragment-position-manager.js';
 import { CorruptionProgression } from './corruption-progression.js';
+import { FragmentSpeedController } from './fragment-speed-controller.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);

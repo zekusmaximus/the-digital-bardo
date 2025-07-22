@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragment Speed Control Integration Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        #fragment-field {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .consciousness-fragment {
+            position: absolute;
+            color: #0f0;
+            font-size: 14px;
+            white-space: nowrap;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+        
+        .consciousness-fragment:hover {
+            color: #fff;
+            text-shadow: 0 0 10px #0f0;
+        }
+        
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #0f0;
+        }
+        
+        button {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            margin: 2px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        
+        #stats {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #0f0;
+            font-size: 12px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button onclick="startTest()">Start Speed Test</button>
+        <button onclick="stopTest()">Stop Test</button>
+        <button onclick="createShortFragment()">Create Short Fragment</button>
+        <button onclick="createLongFragment()">Create Long Fragment</button>
+        <button onclick="showStats()">Show Stats</button>
+    </div>
+    
+    <div id="stats">
+        <div>Fragment Speed Control Integration Test</div>
+        <div id="stats-content">Click "Show Stats" to see performance metrics</div>
+    </div>
+    
+    <div id="fragment-field"></div>
+
+    <script type="module">
+        import { FragmentSpeedController } from './fragment-speed-controller.js';
+        import { FragmentPositionManager } from './fragment-position-manager.js';
+        
+        // Mock consciousness for testing
+        window.consciousness = {
+            recordEvent: (event, data) => console.log(`Event: ${event}`, data),
+            getState: () => ({})
+        };
+        
+        let speedController;
+        let positionManager;
+        let testInterval;
+        let fragmentCounter = 0;
+        
+        // Initialize systems
+        function initializeSystems() {
+            speedController = new FragmentSpeedController();
+            positionManager = new FragmentPositionManager();
+            
+            console.log('Speed control and position management systems initialized');
+        }
+        
+        // Create a test fragment with specified content
+        function createTestFragment(content, id = null) {
+            const fragmentId = id || `test-fragment-${fragmentCounter++}`;
+            
+            const fragment = document.createElement('div');
+            fragment.className = 'consciousness-fragment';
+            fragment.textContent = content;
+            fragment.dataset.fragmentId = fragmentId;
+            fragment.dataset.birthTime = Date.now();
+            
+            // Get safe position from position manager
+            const safePosition = positionManager.getSafePosition();
+            fragment.style.left = `${safePosition.x}px`;
+            fragment.style.top = `${safePosition.y}px`;
+            
+            // Register with speed controller and get optimal speed
+            const optimalSpeed = speedController.registerFragment(fragmentId, fragment, 60);
+            
+            // Add to DOM
+            document.getElementById('fragment-field').appendChild(fragment);
+            
+            // Animate fragment movement with optimal speed
+            animateFragment(fragment, optimalSpeed);
+            
+            // Set up cleanup after 10 seconds
+            setTimeout(() => {
+                if (fragment.parentNode) {
+                    speedController.unregisterFragment(fragmentId);
+                    fragment.remove();
+                }
+            }, 10000);
+            
+            return fragment;
+        }
+        
+        // Animate fragment with speed-controlled movement
+        function animateFragment(fragment, speed) {
+            const startX = parseFloat(fragment.style.left);
+            const startY = parseFloat(fragment.style.top);
+            const endX = Math.random() * (window.innerWidth - 200);
+            const endY = Math.random() * (window.innerHeight - 100);
+            
+            const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            const duration = speedController.speedToDuration(speed, distance);
+            
+            console.log(`Animating fragment: distance=${distance.toFixed(1)}px, speed=${speed.toFixed(1)}px/s, duration=${duration.toFixed(1)}s`);
+            
+            fragment.animate([
+                { left: `${startX}px`, top: `${startY}px` },
+                { left: `${endX}px`, top: `${endY}px` }
+            ], {
+                duration: duration * 1000,
+                easing: 'linear',
+                fill: 'forwards'
+            });
+        }
+        
+        // Global functions for controls
+        window.startTest = function() {
+            if (testInterval) return;
+            
+            speedController.startSpeedControl();
+            
+            testInterval = setInterval(() => {
+                // Create fragments with varying content lengths
+                const contents = [
+                    'Short',
+                    'This is a medium length fragment',
+                    'This is a much longer fragment that should move slower to ensure readability according to the speed control system',
+                    'Hi',
+                    'A moderately sized piece of text that tests the speed calculation algorithm'
+                ];
+                
+                const content = contents[Math.floor(Math.random() * contents.length)];
+                createTestFragment(content);
+            }, 2000);
+            
+            console.log('Speed test started');
+        };
+        
+        window.stopTest = function() {
+            if (testInterval) {
+                clearInterval(testInterval);
+                testInterval = null;
+            }
+            
+            speedController.stopSpeedControl();
+            
+            // Clear all fragments
+            document.querySelectorAll('.consciousness-fragment').forEach(fragment => {
+                const fragmentId = fragment.dataset.fragmentId;
+                if (fragmentId) {
+                    speedController.unregisterFragment(fragmentId);
+                }
+                fragment.remove();
+            });
+            
+            console.log('Speed test stopped');
+        };
+        
+        window.createShortFragment = function() {
+            createTestFragment('Short text');
+        };
+        
+        window.createLongFragment = function() {
+            createTestFragment('This is a very long fragment that should move much slower than short fragments to ensure that users have enough time to read the content before it disappears from view');
+        };
+        
+        window.showStats = function() {
+            const speedStats = speedController.getPerformanceStats();
+            const positionStats = positionManager.getPerformanceStats();
+            
+            const statsContent = document.getElementById('stats-content');
+            statsContent.innerHTML = `
+                <h4>Speed Controller Stats:</h4>
+                <div>Speed Calculations: ${speedStats.speedCalculations}</div>
+                <div>Transitions Applied: ${speedStats.transitionsApplied}</div>
+                <div>Average Speed: ${speedStats.averageSpeed.toFixed(1)}px/s</div>
+                <div>Tracked Fragments: ${speedStats.trackedFragments}</div>
+                <div>Speed Violations: ${speedStats.speedViolations}</div>
+                
+                <h4>Position Manager Stats:</h4>
+                <div>Repositions: ${positionStats.repositionCount}</div>
+                <div>Average Readability: ${positionStats.averageReadability.toFixed(2)}</div>
+                <div>Safe Zone Ratio: ${(positionStats.safeZoneRatio * 100).toFixed(1)}%</div>
+                <div>Tracked Fragments: ${positionStats.trackedFragments}</div>
+            `;
+        };
+        
+        // Initialize on load
+        initializeSystems();
+        
+        // Add some demo fragments on load
+        setTimeout(() => {
+            createTestFragment('Welcome to the speed control test');
+            createTestFragment('This fragment has more content and should move slower');
+            createTestFragment('Short');
+        }, 1000);
+    </script>
+</body>
+</html>
