@@ -255,6 +255,16 @@ export class RecognitionHandler {
                     progress: Math.max(0, 1 - (dist / CENTER_RADIUS)),
                     timestamp: Date.now()
                 });
+                
+                // Emit failed attempt if click was far from center
+                if (dist > CENTER_RADIUS * 1.5) {
+                    this.eventBridge.emit('recognition:attemptFailed', {
+                        method: 'center-click',
+                        reason: 'too_far_from_center',
+                        distance: dist,
+                        timestamp: Date.now()
+                    });
+                }
             }
         };
 
@@ -320,6 +330,14 @@ export class RecognitionHandler {
             if (KEYWORDS.includes(this.typedBuffer)) {
                 this.achieveRecognition(`typed-${this.typedBuffer.toLowerCase()}`, { word: this.typedBuffer });
             } else if (!KEYWORDS.some(k => k.startsWith(this.typedBuffer))) {
+                // Emit failed attempt for invalid keyword
+                this.eventBridge.emit('recognition:attemptFailed', {
+                    method: 'keyword-typing',
+                    reason: 'invalid_keyword',
+                    typedText: this.typedBuffer,
+                    timestamp: Date.now()
+                });
+                
                 this.typedBuffer = '';
                 display.classList.add('error-flash');
                 setTimeout(() => display.classList.remove('error-flash'), 200);
@@ -367,6 +385,20 @@ export class RecognitionHandler {
                         method: 'spacebar-hold',
                         progress: progress,
                         duration: duration,
+                        timestamp: Date.now()
+                    });
+                    
+                    // Emit failed attempt for insufficient hold duration
+                    let reason = 'released_too_early';
+                    if (duration > HOLD_SWEET_SPOT.max) {
+                        reason = 'held_too_long';
+                    }
+                    
+                    this.eventBridge.emit('recognition:attemptFailed', {
+                        method: 'spacebar-hold',
+                        reason: reason,
+                        duration: duration,
+                        targetRange: HOLD_SWEET_SPOT,
                         timestamp: Date.now()
                     });
                 }

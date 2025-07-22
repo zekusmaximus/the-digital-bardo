@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Feedback Test - Clear Lode UX Improvements</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .test-button {
+            background: rgba(100, 150, 255, 0.3);
+            border: 1px solid rgba(100, 150, 255, 0.6);
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .test-button:hover {
+            background: rgba(100, 150, 255, 0.5);
+        }
+        
+        .light-core {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+            border-radius: 50%;
+            margin: 20px auto;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+    <link rel="stylesheet" href="recognition-guide.css">
+</head>
+<body>
+    <div class="test-container">
+        <h1>Progress Feedback System Test</h1>
+        <p>Testing enhanced user progress feedback and confirmation systems for Clear Lode UX improvements.</p>
+        
+        <div class="test-section">
+            <h2>1. Spacebar Hold Progress Feedback</h2>
+            <p>Test the enhanced spacebar hold progress indicator with real-time feedback.</p>
+            <button class="test-button" onclick="testSpacebarProgress()">Test Spacebar Progress</button>
+            <button class="test-button" onclick="testSpacebarFailure()">Test Spacebar Failure</button>
+            <div class="status" id="spacebar-status">Ready to test spacebar progress feedback</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Keyword Typing Progress Feedback</h2>
+            <p>Test the keyword typing progress with partial word matching.</p>
+            <button class="test-button" onclick="testKeywordProgress()">Test Keyword Progress</button>
+            <button class="test-button" onclick="testKeywordFailure()">Test Invalid Keyword</button>
+            <div class="status" id="keyword-status">Ready to test keyword progress feedback</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Center Click Progress Feedback</h2>
+            <p>Test the center click progress with distance-based feedback.</p>
+            <div class="light-core" onclick="testCenterClick(event)"></div>
+            <button class="test-button" onclick="testCenterClickFailure()">Test Far Click Failure</button>
+            <div class="status" id="center-click-status">Click the light core to test center click feedback</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. Success Confirmation Animations</h2>
+            <p>Test the enhanced success feedback with particles and method-specific messages.</p>
+            <button class="test-button" onclick="testSuccessAnimation('center-click-perfect')">Perfect Center Click</button>
+            <button class="test-button" onclick="testSuccessAnimation('perfect-hold')">Perfect Hold</button>
+            <button class="test-button" onclick="testSuccessAnimation('typed-recognize')">Keyword Recognition</button>
+            <div class="status" id="success-status">Ready to test success animations</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>5. Recognition Failure Feedback</h2>
+            <p>Test the clear feedback for failed recognition attempts.</p>
+            <button class="test-button" onclick="testRecognitionFailure()">Test Recognition Timeout</button>
+            <div class="status" id="failure-status">Ready to test failure feedback</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { manifestElement } from '../src/security/consciousness-purification.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+        import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+        import { ClearLodeEventBridge } from './event-bridge.js';
+        import { RecognitionGuideController } from './recognition-guide-controller.js';
+
+        // Initialize test environment
+        const guardian = new ResourceGuardian();
+        const eventBridge = new ClearLodeEventBridge({ guardian });
+        
+        const config = {
+            recognitionWindow: {
+                baseWindowDuration: 15000,
+                extensionDuration: 5000,
+                maxExtensions: 2,
+                warningThreshold: 0.75
+            }
+        };
+        
+        const guideController = new RecognitionGuideController({
+            eventBridge,
+            guardian,
+            config
+        });
+        
+        guideController.init();
+        
+        // Make functions available globally for button clicks
+        window.testSpacebarProgress = function() {
+            document.getElementById('spacebar-status').textContent = 'Testing spacebar progress...';
+            
+            // Start guidance
+            guideController.startGuidance();
+            
+            // Simulate progressive spacebar hold
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 0.1;
+                guideController.handleRecognitionAttempt({
+                    method: 'spacebar-hold',
+                    progress: progress,
+                    duration: progress * 3000,
+                    timestamp: Date.now()
+                });
+                
+                if (progress >= 1) {
+                    clearInterval(interval);
+                    document.getElementById('spacebar-status').textContent = 'Spacebar progress test completed';
+                }
+            }, 300);
+        };
+        
+        window.testSpacebarFailure = function() {
+            document.getElementById('spacebar-status').textContent = 'Testing spacebar failure...';
+            
+            guideController.startGuidance();
+            
+            // Simulate failed spacebar hold (released too early)
+            setTimeout(() => {
+                guideController.handleAttemptFailure({
+                    method: 'spacebar-hold',
+                    reason: 'released_too_early',
+                    duration: 1500,
+                    targetRange: { min: 2800, max: 3200 },
+                    timestamp: Date.now()
+                });
+                
+                document.getElementById('spacebar-status').textContent = 'Spacebar failure test completed';
+            }, 500);
+        };
+        
+        window.testKeywordProgress = function() {
+            document.getElementById('keyword-status').textContent = 'Testing keyword progress...';
+            
+            guideController.startGuidance();
+            
+            // Simulate typing "RECOGNIZE" progressively
+            const word = 'RECOGNIZE';
+            let index = 0;
+            
+            const interval = setInterval(() => {
+                index++;
+                const progress = index / word.length;
+                
+                guideController.handleRecognitionAttempt({
+                    method: 'keyword-typing',
+                    progress: progress,
+                    partialWord: word.substring(0, index),
+                    timestamp: Date.now()
+                });
+                
+                if (index >= word.length) {
+                    clearInterval(interval);
+                    document.getElementById('keyword-status').textContent = 'Keyword progress test completed';
+                }
+            }, 400);
+        };
+        
+        window.testKeywordFailure = function() {
+            document.getElementById('keyword-status').textContent = 'Testing invalid keyword...';
+            
+            guideController.startGuidance();
+            
+            setTimeout(() => {
+                guideController.handleAttemptFailure({
+                    method: 'keyword-typing',
+                    reason: 'invalid_keyword',
+                    typedText: 'INVALID',
+                    timestamp: Date.now()
+                });
+                
+                document.getElementById('keyword-status').textContent = 'Invalid keyword test completed';
+            }, 500);
+        };
+        
+        window.testCenterClick = function(event) {
+            const rect = event.target.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const clickX = event.clientX;
+            const clickY = event.clientY;
+            
+            const distance = Math.hypot(clickX - centerX, clickY - centerY);
+            const progress = Math.max(0, 1 - (distance / 50)); // 50px radius
+            
+            document.getElementById('center-click-status').textContent = `Click distance: ${Math.round(distance)}px, Progress: ${Math.round(progress * 100)}%`;
+            
+            guideController.startGuidance();
+            
+            guideController.handleRecognitionAttempt({
+                method: 'center-click',
+                progress: progress,
+                timestamp: Date.now()
+            });
+        };
+        
+        window.testCenterClickFailure = function() {
+            document.getElementById('center-click-status').textContent = 'Testing far click failure...';
+            
+            guideController.startGuidance();
+            
+            setTimeout(() => {
+                guideController.handleAttemptFailure({
+                    method: 'center-click',
+                    reason: 'too_far_from_center',
+                    distance: 120,
+                    timestamp: Date.now()
+                });
+                
+                document.getElementById('center-click-status').textContent = 'Far click failure test completed';
+            }, 500);
+        };
+        
+        window.testSuccessAnimation = function(method) {
+            document.getElementById('success-status').textContent = `Testing ${method} success animation...`;
+            
+            guideController.startGuidance();
+            
+            setTimeout(() => {
+                const detail = {
+                    method: method,
+                    karmaData: {
+                        bonus: method.includes('perfect') ? 5 : 0
+                    }
+                };
+                
+                guideController.handleRecognitionSuccess(detail);
+                
+                document.getElementById('success-status').textContent = `${method} success animation completed`;
+            }, 500);
+        };
+        
+        window.testRecognitionFailure = function() {
+            document.getElementById('failure-status').textContent = 'Testing recognition failure...';
+            
+            guideController.startGuidance();
+            
+            setTimeout(() => {
+                guideController.handleRecognitionFailure({
+                    reason: 'timeout'
+                });
+                
+                document.getElementById('failure-status').textContent = 'Recognition failure test completed';
+            }, 1000);
+        };
+        
+        // Initialize consciousness state for testing
+        consciousness.setState('clearLode.recognitionActive', false);
+        consciousness.setState('clearLode.recognized', false);
+        
+        console.log('Progress feedback test environment initialized');
+    </script>
+</body>
+</html>

@@ -141,7 +141,8 @@ export class RecognitionGuideController {
             ['state:recognitionSucceeded', this.handleRecognitionSuccess.bind(this)],
             ['state:recognitionFailed', this.handleRecognitionFailure.bind(this)],
             ['recognition:attachment', this.handleAttachmentFeedback.bind(this)],
-            ['recognition:attempt', this.handleRecognitionAttempt.bind(this)]
+            ['recognition:attempt', this.handleRecognitionAttempt.bind(this)],
+            ['recognition:attemptFailed', this.handleAttemptFailure.bind(this)]
         ];
 
         listeners.forEach(([eventName, handler]) => {
@@ -1004,6 +1005,303 @@ export class RecognitionGuideController {
      * @param {number} progress - Progress value (0-1)
      */
     showProgressFeedback(method, progress) {
+        // Remove any existing progress feedback for this method
+        const existingFeedback = this.guideContainer?.querySelector(`.progress-feedback.progress-${method}`);
+        if (existingFeedback) {
+            existingFeedback.remove();
+        }
+
+        // Create method-specific progress feedback
+        switch (method) {
+            case 'spacebar-hold':
+                this.showSpacebarProgressFeedback(progress);
+                break;
+            case 'keyword-typing':
+                this.showKeywordProgressFeedback(progress);
+                break;
+            case 'center-click':
+                this.showCenterClickProgressFeedback(progress);
+                break;
+            default:
+                this.showGenericProgressFeedback(method, progress);
+        }
+    }
+
+    /**
+     * Shows enhanced progress feedback for spacebar hold method
+     * @private
+     * @param {number} progress - Progress value (0-1)
+     */
+    showSpacebarProgressFeedback(progress) {
+        // Create or update the spacebar progress indicator
+        let progressContainer = this.guideContainer?.querySelector('.spacebar-progress-container');
+        
+        if (!progressContainer) {
+            progressContainer = manifestElement('div', {
+                attributes: {
+                    class: 'spacebar-progress-container progress-feedback progress-spacebar-hold',
+                    style: `
+                        position: absolute;
+                        top: 65%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        text-align: center;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    `
+                }
+            });
+
+            // Progress bar background
+            const progressBg = manifestElement('div', {
+                attributes: {
+                    class: 'spacebar-progress-bg',
+                    style: `
+                        width: 200px;
+                        height: 8px;
+                        background: rgba(255, 255, 255, 0.2);
+                        border-radius: 4px;
+                        margin: 0 auto 10px;
+                        overflow: hidden;
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                    `
+                }
+            });
+
+            // Progress bar fill
+            const progressFill = manifestElement('div', {
+                attributes: {
+                    class: 'spacebar-progress-fill',
+                    style: `
+                        height: 100%;
+                        width: 0%;
+                        background: linear-gradient(90deg, #4CAF50, #8BC34A, #CDDC39);
+                        border-radius: 3px;
+                        transition: width 0.1s ease, background-color 0.3s ease;
+                        box-shadow: 0 0 10px rgba(139, 195, 74, 0.5);
+                    `
+                }
+            });
+
+            // Progress text
+            const progressText = manifestElement('div', {
+                attributes: {
+                    class: 'spacebar-progress-text',
+                    style: `
+                        color: rgba(255, 255, 255, 0.9);
+                        font-size: 14px;
+                        font-weight: bold;
+                        margin-bottom: 5px;
+                    `
+                }
+            });
+
+            // Hold instruction
+            const holdInstruction = manifestElement('div', {
+                attributes: {
+                    class: 'spacebar-hold-instruction',
+                    style: `
+                        color: rgba(255, 255, 255, 0.7);
+                        font-size: 12px;
+                        margin-top: 5px;
+                    `
+                }
+            });
+
+            progressBg.appendChild(progressFill);
+            progressContainer.appendChild(progressText);
+            progressContainer.appendChild(progressBg);
+            progressContainer.appendChild(holdInstruction);
+            this.guideContainer.appendChild(progressContainer);
+
+            requestAnimationFrame(() => {
+                progressContainer.style.opacity = '1';
+            });
+        }
+
+        // Update progress
+        const progressFill = progressContainer.querySelector('.spacebar-progress-fill');
+        const progressText = progressContainer.querySelector('.spacebar-progress-text');
+        const holdInstruction = progressContainer.querySelector('.spacebar-hold-instruction');
+
+        if (progressFill && progressText && holdInstruction) {
+            const progressPercent = Math.round(progress * 100);
+            progressFill.style.width = `${progressPercent}%`;
+            
+            // Update text based on progress
+            if (progress < 0.3) {
+                progressText.textContent = 'Hold spacebar...';
+                holdInstruction.textContent = 'Keep holding for recognition';
+                progressFill.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A)';
+            } else if (progress < 0.7) {
+                progressText.textContent = `${progressPercent}% - Keep holding...`;
+                holdInstruction.textContent = 'You\'re making progress!';
+                progressFill.style.background = 'linear-gradient(90deg, #8BC34A, #CDDC39)';
+            } else if (progress < 0.9) {
+                progressText.textContent = `${progressPercent}% - Almost there!`;
+                holdInstruction.textContent = 'Recognition imminent...';
+                progressFill.style.background = 'linear-gradient(90deg, #CDDC39, #FFC107)';
+                progressFill.style.boxShadow = '0 0 15px rgba(255, 193, 7, 0.7)';
+            } else {
+                progressText.textContent = `${progressPercent}% - Perfect!`;
+                holdInstruction.textContent = 'Recognition achieved!';
+                progressFill.style.background = 'linear-gradient(90deg, #FFC107, #FF9800)';
+                progressFill.style.boxShadow = '0 0 20px rgba(255, 152, 0, 0.9)';
+            }
+        }
+
+        // Auto-remove after delay if progress stops
+        setTimeout(() => {
+            if (progressContainer && progressContainer.parentNode && this.isActive) {
+                progressContainer.style.opacity = '0';
+                setTimeout(() => {
+                    if (progressContainer.parentNode) {
+                        progressContainer.remove();
+                    }
+                }, 300);
+            }
+        }, 3000);
+    }
+
+    /**
+     * Shows enhanced progress feedback for keyword typing method
+     * @private
+     * @param {number} progress - Progress value (0-1)
+     */
+    showKeywordProgressFeedback(progress) {
+        let feedbackElement = this.guideContainer?.querySelector('.keyword-progress-feedback');
+        
+        if (!feedbackElement) {
+            feedbackElement = manifestElement('div', {
+                attributes: {
+                    class: 'keyword-progress-feedback progress-feedback progress-keyword-typing',
+                    style: `
+                        position: absolute;
+                        top: 65%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        text-align: center;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                        background: rgba(0, 0, 0, 0.4);
+                        padding: 15px 25px;
+                        border-radius: 8px;
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                    `
+                }
+            });
+
+            this.guideContainer.appendChild(feedbackElement);
+            
+            requestAnimationFrame(() => {
+                feedbackElement.style.opacity = '1';
+            });
+        }
+
+        const progressPercent = Math.round(progress * 100);
+        let feedbackText = '';
+        let color = 'rgba(255, 255, 255, 0.9)';
+
+        if (progress < 0.3) {
+            feedbackText = `Typing progress: ${progressPercent}%`;
+            color = 'rgba(255, 255, 255, 0.8)';
+        } else if (progress < 0.7) {
+            feedbackText = `${progressPercent}% - Keep typing...`;
+            color = 'rgba(200, 255, 200, 0.9)';
+        } else {
+            feedbackText = `${progressPercent}% - Almost complete!`;
+            color = 'rgba(255, 255, 100, 1)';
+        }
+
+        feedbackElement.innerHTML = `
+            <div style="color: ${color}; font-size: 14px; font-weight: bold; margin-bottom: 5px;">
+                ${feedbackText}
+            </div>
+            <div style="color: rgba(255, 255, 255, 0.7); font-size: 12px;">
+                Type: RECOGNIZE, SELF, or HOME
+            </div>
+        `;
+
+        // Auto-remove after delay
+        setTimeout(() => {
+            if (feedbackElement && feedbackElement.parentNode && this.isActive) {
+                feedbackElement.style.opacity = '0';
+                setTimeout(() => {
+                    if (feedbackElement.parentNode) {
+                        feedbackElement.remove();
+                    }
+                }, 300);
+            }
+        }, 2500);
+    }
+
+    /**
+     * Shows enhanced progress feedback for center click method
+     * @private
+     * @param {number} progress - Progress value (0-1)
+     */
+    showCenterClickProgressFeedback(progress) {
+        const feedbackElement = manifestElement('div', {
+            attributes: {
+                class: 'center-click-progress-feedback progress-feedback progress-center-click',
+                style: `
+                    position: absolute;
+                    top: 65%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    text-align: center;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                `
+            }
+        });
+
+        const progressPercent = Math.round(progress * 100);
+        let feedbackText = '';
+        let color = 'rgba(255, 255, 255, 0.9)';
+
+        if (progress < 0.5) {
+            feedbackText = `${progressPercent}% - Click closer to center`;
+            color = 'rgba(255, 200, 200, 0.9)';
+        } else if (progress < 0.8) {
+            feedbackText = `${progressPercent}% - Getting closer!`;
+            color = 'rgba(255, 255, 200, 0.9)';
+        } else {
+            feedbackText = `${progressPercent}% - Very close!`;
+            color = 'rgba(200, 255, 200, 0.9)';
+        }
+
+        feedbackElement.innerHTML = `
+            <div style="color: ${color}; font-size: 14px; font-weight: bold;">
+                ${feedbackText}
+            </div>
+        `;
+
+        this.guideContainer.appendChild(feedbackElement);
+
+        requestAnimationFrame(() => {
+            feedbackElement.style.opacity = '1';
+        });
+
+        setTimeout(() => {
+            if (feedbackElement.parentNode) {
+                feedbackElement.style.opacity = '0';
+                setTimeout(() => {
+                    if (feedbackElement.parentNode) {
+                        feedbackElement.remove();
+                    }
+                }, 300);
+            }
+        }, 1500);
+    }
+
+    /**
+     * Shows generic progress feedback for other methods
+     * @private
+     * @param {string} method - The recognition method
+     * @param {number} progress - Progress value (0-1)
+     */
+    showGenericProgressFeedback(method, progress) {
         const feedbackElement = manifestElement('div', {
             attributes: {
                 class: `progress-feedback progress-${method}`,
@@ -1054,51 +1352,454 @@ export class RecognitionGuideController {
     }
 
     /**
-     * Shows success feedback animation
+     * Shows enhanced success feedback animation with confirmation
      * @private
      * @param {object} detail - Recognition success details
      */
     showSuccessFeedback(detail) {
-        const successElement = manifestElement('div', {
+        // Clear any existing progress feedback
+        const existingFeedback = this.guideContainer?.querySelectorAll('.progress-feedback');
+        existingFeedback?.forEach(element => element.remove());
+
+        // Create main success container
+        const successContainer = manifestElement('div', {
             attributes: {
-                class: 'recognition-success',
+                class: 'recognition-success-container',
                 style: `
                     position: absolute;
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
-                    color: rgba(200, 255, 200, 1);
-                    font-size: 24px;
                     text-align: center;
-                    text-shadow: 0 0 20px rgba(200, 255, 200, 0.8);
                     opacity: 0;
-                    transition: all 0.5s ease;
+                    transition: all 0.8s ease;
+                    z-index: 1001;
                 `
             }
         });
 
-        successElement.textContent = '✓ Recognition Achieved';
-        this.guideContainer.appendChild(successElement);
+        // Success icon with animation
+        const successIcon = manifestElement('div', {
+            attributes: {
+                class: 'success-icon',
+                style: `
+                    font-size: 48px;
+                    color: rgba(100, 255, 100, 1);
+                    text-shadow: 0 0 30px rgba(100, 255, 100, 0.8);
+                    margin-bottom: 15px;
+                    transform: scale(0);
+                    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                `
+            }
+        });
+        successIcon.textContent = '✓';
 
+        // Success message
+        const successMessage = manifestElement('div', {
+            attributes: {
+                class: 'success-message',
+                style: `
+                    color: rgba(200, 255, 200, 1);
+                    font-size: 24px;
+                    font-weight: bold;
+                    text-shadow: 0 0 20px rgba(200, 255, 200, 0.8);
+                    margin-bottom: 10px;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 0.6s ease 0.3s;
+                `
+            }
+        });
+        successMessage.textContent = 'Recognition Achieved';
+
+        // Method-specific confirmation
+        const methodMessage = manifestElement('div', {
+            attributes: {
+                class: 'method-confirmation',
+                style: `
+                    color: rgba(255, 255, 255, 0.9);
+                    font-size: 16px;
+                    margin-bottom: 15px;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 0.6s ease 0.5s;
+                `
+            }
+        });
+
+        // Set method-specific message
+        const method = detail?.method || 'unknown';
+        switch (method) {
+            case 'center-click':
+            case 'center-click-perfect':
+            case 'center-click-near':
+                methodMessage.textContent = 'Perfect focus achieved through direct recognition';
+                break;
+            case 'perfect-hold':
+                methodMessage.textContent = 'Sustained attention mastered';
+                break;
+            case 'typed-recognize':
+            case 'typed-self':
+            case 'typed-home':
+                methodMessage.textContent = 'Sacred word recognition successful';
+                break;
+            default:
+                methodMessage.textContent = 'Consciousness recognition complete';
+        }
+
+        // Karma bonus indicator if applicable
+        const karmaBonus = detail?.karmaData?.bonus || 0;
+        let bonusMessage = null;
+        if (karmaBonus > 0) {
+            bonusMessage = manifestElement('div', {
+                attributes: {
+                    class: 'karma-bonus',
+                    style: `
+                        color: rgba(255, 215, 0, 1);
+                        font-size: 14px;
+                        font-style: italic;
+                        opacity: 0;
+                        transform: translateY(20px);
+                        transition: all 0.6s ease 0.7s;
+                    `
+                }
+            });
+            bonusMessage.textContent = `+${karmaBonus} karma bonus`;
+        }
+
+        // Transition indicator
+        const transitionMessage = manifestElement('div', {
+            attributes: {
+                class: 'transition-message',
+                style: `
+                    color: rgba(255, 255, 255, 0.7);
+                    font-size: 14px;
+                    margin-top: 20px;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 0.6s ease 0.9s;
+                `
+            }
+        });
+        transitionMessage.textContent = 'Consciousness state preserved...';
+
+        // Assemble success container
+        successContainer.appendChild(successIcon);
+        successContainer.appendChild(successMessage);
+        successContainer.appendChild(methodMessage);
+        if (bonusMessage) {
+            successContainer.appendChild(bonusMessage);
+        }
+        successContainer.appendChild(transitionMessage);
+
+        this.guideContainer.appendChild(successContainer);
+
+        // Create particle effect background
+        this.createSuccessParticles();
+
+        // Animate elements in sequence
         requestAnimationFrame(() => {
-            successElement.style.opacity = '1';
-            successElement.style.transform = 'translate(-50%, -50%) scale(1.2)';
+            successContainer.style.opacity = '1';
+            
+            // Icon bounces in
+            setTimeout(() => {
+                successIcon.style.transform = 'scale(1)';
+            }, 100);
+
+            // Messages fade in with stagger
+            setTimeout(() => {
+                successMessage.style.opacity = '1';
+                successMessage.style.transform = 'translateY(0)';
+            }, 400);
+
+            setTimeout(() => {
+                methodMessage.style.opacity = '1';
+                methodMessage.style.transform = 'translateY(0)';
+            }, 600);
+
+            if (bonusMessage) {
+                setTimeout(() => {
+                    bonusMessage.style.opacity = '1';
+                    bonusMessage.style.transform = 'translateY(0)';
+                }, 800);
+            }
+
+            setTimeout(() => {
+                transitionMessage.style.opacity = '1';
+                transitionMessage.style.transform = 'translateY(0)';
+            }, 1000);
         });
 
         // Record success feedback
         consciousness.recordEvent('recognition_success_feedback_shown', {
-            method: detail?.method || 'unknown',
+            method: method,
+            karmaBonus: karmaBonus,
             timestamp: Date.now()
         });
     }
 
     /**
-     * Handles recognition failure
+     * Creates particle effect for success feedback
      * @private
      */
-    handleRecognitionFailure() {
-        console.log('[RecognitionGuideController] Recognition failed - stopping guidance');
-        this.stopGuidance();
+    createSuccessParticles() {
+        const particleContainer = manifestElement('div', {
+            attributes: {
+                class: 'success-particles',
+                style: `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 300px;
+                    height: 300px;
+                    pointer-events: none;
+                    z-index: 1000;
+                `
+            }
+        });
+
+        // Create multiple particles
+        for (let i = 0; i < 12; i++) {
+            const particle = manifestElement('div', {
+                attributes: {
+                    class: 'success-particle',
+                    style: `
+                        position: absolute;
+                        width: 4px;
+                        height: 4px;
+                        background: rgba(200, 255, 200, 0.8);
+                        border-radius: 50%;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        opacity: 0;
+                    `
+                }
+            });
+
+            particleContainer.appendChild(particle);
+
+            // Animate particle outward
+            const angle = (i / 12) * Math.PI * 2;
+            const distance = 100 + Math.random() * 50;
+            const duration = 1000 + Math.random() * 500;
+
+            setTimeout(() => {
+                particle.style.transition = `all ${duration}ms ease-out`;
+                particle.style.opacity = '1';
+                particle.style.transform = `translate(-50%, -50%) translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
+                
+                setTimeout(() => {
+                    particle.style.opacity = '0';
+                }, duration * 0.7);
+            }, i * 50);
+        }
+
+        this.guideContainer.appendChild(particleContainer);
+
+        // Clean up particles
+        setTimeout(() => {
+            if (particleContainer.parentNode) {
+                particleContainer.remove();
+            }
+        }, 2000);
+    }
+
+    /**
+     * Handles recognition failure with clear feedback
+     * @private
+     * @param {object} detail - Failure event detail
+     */
+    handleRecognitionFailure(detail) {
+        console.log('[RecognitionGuideController] Recognition failed - showing failure feedback');
+        this.showFailureFeedback(detail);
+        
+        // Delay stopping guidance to show feedback
+        setTimeout(() => {
+            this.stopGuidance();
+        }, 3000);
+    }
+
+    /**
+     * Shows clear feedback for failed recognition attempts
+     * @private
+     * @param {object} detail - Failure details
+     */
+    showFailureFeedback(detail) {
+        // Clear any existing progress feedback
+        const existingFeedback = this.guideContainer?.querySelectorAll('.progress-feedback');
+        existingFeedback?.forEach(element => element.remove());
+
+        // Create failure feedback container
+        const failureContainer = manifestElement('div', {
+            attributes: {
+                class: 'recognition-failure-container',
+                style: `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    text-align: center;
+                    opacity: 0;
+                    transition: all 0.6s ease;
+                    z-index: 1001;
+                `
+            }
+        });
+
+        // Failure icon
+        const failureIcon = manifestElement('div', {
+            attributes: {
+                class: 'failure-icon',
+                style: `
+                    font-size: 36px;
+                    color: rgba(255, 150, 150, 0.9);
+                    text-shadow: 0 0 20px rgba(255, 150, 150, 0.5);
+                    margin-bottom: 15px;
+                    transform: scale(0);
+                    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                `
+            }
+        });
+        failureIcon.textContent = '○';
+
+        // Main failure message
+        const failureMessage = manifestElement('div', {
+            attributes: {
+                class: 'failure-message',
+                style: `
+                    color: rgba(255, 200, 200, 0.9);
+                    font-size: 20px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 0.5s ease 0.2s;
+                `
+            }
+        });
+        failureMessage.textContent = 'Recognition Window Closed';
+
+        // Explanation message
+        const explanationMessage = manifestElement('div', {
+            attributes: {
+                class: 'explanation-message',
+                style: `
+                    color: rgba(255, 255, 255, 0.8);
+                    font-size: 16px;
+                    margin-bottom: 15px;
+                    line-height: 1.4;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 0.5s ease 0.4s;
+                `
+            }
+        });
+        explanationMessage.textContent = 'The clear light has passed without recognition';
+
+        // Karmic consequence message
+        const karmaMessage = manifestElement('div', {
+            attributes: {
+                class: 'karma-message',
+                style: `
+                    color: rgba(255, 180, 100, 0.9);
+                    font-size: 14px;
+                    font-style: italic;
+                    margin-bottom: 20px;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 0.5s ease 0.6s;
+                `
+            }
+        });
+        karmaMessage.textContent = 'Consciousness will now experience degradation';
+
+        // Transition message
+        const transitionMessage = manifestElement('div', {
+            attributes: {
+                class: 'transition-message',
+                style: `
+                    color: rgba(255, 255, 255, 0.6);
+                    font-size: 14px;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 0.5s ease 0.8s;
+                `
+            }
+        });
+        transitionMessage.textContent = 'Entering intermediate state...';
+
+        // Assemble failure container
+        failureContainer.appendChild(failureIcon);
+        failureContainer.appendChild(failureMessage);
+        failureContainer.appendChild(explanationMessage);
+        failureContainer.appendChild(karmaMessage);
+        failureContainer.appendChild(transitionMessage);
+
+        this.guideContainer.appendChild(failureContainer);
+
+        // Animate elements in sequence
+        requestAnimationFrame(() => {
+            failureContainer.style.opacity = '1';
+            
+            // Icon appears
+            setTimeout(() => {
+                failureIcon.style.transform = 'scale(1)';
+            }, 100);
+
+            // Messages fade in with stagger
+            setTimeout(() => {
+                failureMessage.style.opacity = '1';
+                failureMessage.style.transform = 'translateY(0)';
+            }, 300);
+
+            setTimeout(() => {
+                explanationMessage.style.opacity = '1';
+                explanationMessage.style.transform = 'translateY(0)';
+            }, 500);
+
+            setTimeout(() => {
+                karmaMessage.style.opacity = '1';
+                karmaMessage.style.transform = 'translateY(0)';
+            }, 700);
+
+            setTimeout(() => {
+                transitionMessage.style.opacity = '1';
+                transitionMessage.style.transform = 'translateY(0)';
+            }, 900);
+        });
+
+        // Add subtle fade effect to background
+        const fadeOverlay = manifestElement('div', {
+            attributes: {
+                class: 'failure-fade-overlay',
+                style: `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.1);
+                    opacity: 0;
+                    transition: opacity 1s ease;
+                    pointer-events: none;
+                    z-index: 999;
+                `
+            }
+        });
+
+        this.guideContainer.appendChild(fadeOverlay);
+
+        setTimeout(() => {
+            fadeOverlay.style.opacity = '1';
+        }, 1000);
+
+        // Record failure feedback
+        consciousness.recordEvent('recognition_failure_feedback_shown', {
+            reason: detail?.reason || 'timeout',
+            timestamp: Date.now()
+        });
     }
 
     /**
@@ -1180,6 +1881,152 @@ export class RecognitionGuideController {
             extensionsUsed: this.timeExtensions,
             timestamp: Date.now()
         });
+    }
+
+    /**
+     * Handles failed recognition attempts with immediate feedback
+     * @private
+     * @param {object} detail - Failed attempt event detail
+     */
+    handleAttemptFailure(detail) {
+        if (!this.isActive || this.isDestroyed) return;
+
+        const { method, reason } = detail;
+        this.showAttemptFailureFeedback(method, reason, detail);
+
+        // Record attempt failure
+        consciousness.recordEvent('recognition_attempt_failed', {
+            method: method,
+            reason: reason,
+            detail: detail,
+            timestamp: Date.now()
+        });
+    }
+
+    /**
+     * Shows immediate feedback for failed recognition attempts
+     * @private
+     * @param {string} method - The recognition method that failed
+     * @param {string} reason - The reason for failure
+     * @param {object} detail - Additional failure details
+     */
+    showAttemptFailureFeedback(method, reason, detail) {
+        // Remove any existing attempt failure feedback
+        const existingFailure = this.guideContainer?.querySelector('.attempt-failure-feedback');
+        if (existingFailure) {
+            existingFailure.remove();
+        }
+
+        const failureFeedback = manifestElement('div', {
+            attributes: {
+                class: 'attempt-failure-feedback',
+                style: `
+                    position: absolute;
+                    top: 70%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(255, 100, 100, 0.15);
+                    border: 1px solid rgba(255, 150, 150, 0.6);
+                    color: rgba(255, 200, 200, 0.9);
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    text-align: center;
+                    font-size: 14px;
+                    opacity: 0;
+                    transition: all 0.4s ease;
+                    backdrop-filter: blur(5px);
+                    box-shadow: 0 0 15px rgba(255, 100, 100, 0.2);
+                `
+            }
+        });
+
+        // Create method-specific failure messages
+        let failureMessage = '';
+        let helpText = '';
+
+        switch (method) {
+            case 'center-click':
+                if (reason === 'too_far_from_center') {
+                    failureMessage = '✗ Click closer to the center';
+                    helpText = 'Aim for the bright core of the light';
+                }
+                break;
+            case 'keyword-typing':
+                if (reason === 'invalid_keyword') {
+                    failureMessage = '✗ Invalid word';
+                    helpText = 'Type: RECOGNIZE, SELF, or HOME';
+                }
+                break;
+            case 'spacebar-hold':
+                if (reason === 'released_too_early') {
+                    failureMessage = '✗ Released too early';
+                    helpText = 'Hold for 3 seconds in the sweet spot';
+                } else if (reason === 'held_too_long') {
+                    failureMessage = '✗ Held too long';
+                    helpText = 'Release after 3 seconds for perfect timing';
+                }
+                break;
+            default:
+                failureMessage = '✗ Recognition attempt failed';
+                helpText = 'Try again with focus';
+        }
+
+        failureFeedback.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 5px;">
+                ${failureMessage}
+            </div>
+            <div style="font-size: 12px; opacity: 0.8;">
+                ${helpText}
+            </div>
+        `;
+
+        this.guideContainer.appendChild(failureFeedback);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            failureFeedback.style.opacity = '1';
+            failureFeedback.style.transform = 'translateX(-50%) translateY(-5px)';
+        });
+
+        // Auto-remove after delay
+        setTimeout(() => {
+            if (failureFeedback.parentNode) {
+                failureFeedback.style.opacity = '0';
+                failureFeedback.style.transform = 'translateX(-50%) translateY(5px)';
+                setTimeout(() => {
+                    if (failureFeedback.parentNode) {
+                        failureFeedback.remove();
+                    }
+                }, 400);
+            }
+        }, 2500);
+
+        // Provide corrective guidance by highlighting the correct method
+        this.highlightCorrectMethod(method);
+    }
+
+    /**
+     * Highlights the correct method indicator after a failed attempt
+     * @private
+     * @param {string} method - The method that failed
+     */
+    highlightCorrectMethod(method) {
+        const methodIndicator = this.methodIndicators?.querySelector(`[data-method="${method}"]`);
+        if (methodIndicator) {
+            // Add corrective highlighting
+            methodIndicator.style.borderColor = 'rgba(255, 200, 100, 0.8)';
+            methodIndicator.style.backgroundColor = 'rgba(255, 200, 100, 0.1)';
+            methodIndicator.style.boxShadow = '0 0 15px rgba(255, 200, 100, 0.3)';
+
+            // Reset after delay
+            setTimeout(() => {
+                if (methodIndicator && this.isActive) {
+                    methodIndicator.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    methodIndicator.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+                    methodIndicator.style.boxShadow = 'none';
+                }
+            }, 3000);
+        }
     }
 
     /**

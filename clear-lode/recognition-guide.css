@@ -111,6 +111,106 @@
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+/* Enhanced spacebar progress feedback */
+.spacebar-progress-container {
+    backdrop-filter: blur(5px);
+}
+
+.spacebar-progress-bg {
+    position: relative;
+    overflow: hidden;
+}
+
+.spacebar-progress-fill {
+    position: relative;
+    transition: width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.spacebar-progress-text {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.spacebar-hold-instruction {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+/* Keyword progress feedback */
+.keyword-progress-feedback {
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Center click progress feedback */
+.center-click-progress-feedback {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Success feedback enhancements */
+.recognition-success-container {
+    backdrop-filter: blur(10px);
+}
+
+.success-icon {
+    filter: drop-shadow(0 0 20px rgba(100, 255, 100, 0.6));
+}
+
+.success-message {
+    filter: drop-shadow(0 0 15px rgba(200, 255, 200, 0.5));
+}
+
+.method-confirmation {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.karma-bonus {
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.success-particles {
+    pointer-events: none;
+}
+
+.success-particle {
+    box-shadow: 0 0 6px rgba(200, 255, 200, 0.8);
+}
+
+/* Failure feedback styles */
+.recognition-failure-container {
+    backdrop-filter: blur(10px);
+}
+
+.failure-icon {
+    filter: drop-shadow(0 0 15px rgba(255, 150, 150, 0.4));
+}
+
+.failure-message {
+    text-shadow: 0 0 10px rgba(255, 200, 200, 0.5);
+}
+
+.explanation-message {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.karma-message {
+    text-shadow: 0 0 8px rgba(255, 180, 100, 0.4);
+}
+
+.failure-fade-overlay {
+    backdrop-filter: blur(2px);
+}
+
+/* Attempt failure feedback styles */
+.attempt-failure-feedback {
+    backdrop-filter: blur(5px);
+    animation: attemptFailureShake 0.5s ease-out;
+}
+
+@keyframes attemptFailureShake {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    25% { transform: translateX(-50%) translateY(-3px) translateX(-2px); }
+    75% { transform: translateX(-50%) translateY(-3px) translateX(2px); }
+}
+
 /* Attachment warning */
 .attachment-warning {
     font-style: italic;
