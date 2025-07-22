@@ -10,6 +10,7 @@ import { PositionZoneManager } from './position-zone-manager.js';
 import { FragmentAnimationController } from './fragment-animation-controller.js';
 import { FragmentDriftCalculator } from './fragment-drift-calculator.js';
 import { FragmentPositioningService } from './fragment-positioning-service.js';
+import { FragmentPositionManager } from './fragment-position-manager.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -150,11 +151,15 @@ export class FragmentGenerator {
         this.animationController = new FragmentAnimationController();
         this.driftCalculator = new FragmentDriftCalculator(this.zoneManager);
         this.positioningService = new FragmentPositioningService(this.zoneManager);
+        
+        // Initialize new readability-focused position manager
+        this.positionManager = new FragmentPositionManager();
 
         // Register components for cleanup
         this.guardian.register(this.zoneManager, (manager) => manager.destroy());
         this.guardian.register(this.animationController, (controller) => controller.destroy());
         this.guardian.register(this.positioningService, (service) => service.destroy());
+        this.guardian.register(this.positionManager, (manager) => manager.destroy());
 
         // Visual enhancement integration
         this.visualEnhancements = {
@@ -413,11 +418,21 @@ export class FragmentGenerator {
         // Apply visual corruption
         this.applyVisualCorruption(fragment, degradationLevel, thoughtText);
 
-        // Select zone and position fragment
+        // Select zone and position fragment using readability-focused positioning
         const distributionStrategy = this.positioningService.getDistributionStrategy(this.performanceTier);
         const selectedZone = this.zoneManager.selectZone(distributionStrategy);
         this.zoneManager.recordZoneUsage(selectedZone);
-        this.positioningService.positionFragment(fragment, selectedZone);
+        
+        // Use new position manager for readable placement
+        const safePosition = this.positionManager.getSafePosition();
+        fragment.style.position = 'absolute';
+        fragment.style.left = `${safePosition.x}px`;
+        fragment.style.top = `${safePosition.y}px`;
+        
+        // Calculate and store optimal speed for this fragment
+        const optimalSpeed = this.positionManager.calculateOptimalSpeed(thoughtText);
+        fragment.dataset.speed = optimalSpeed;
+        fragment.dataset.zoneId = selectedZone.id;
 
         // Add to DOM and track
         document.getElementById('fragment-field').appendChild(fragment);
@@ -432,14 +447,24 @@ export class FragmentGenerator {
             this.fragmentObserver.observe(fragment);
         }
 
-        // Animate
+        // Animate with readability considerations
         const drift = this.driftCalculator.calculateDrift(selectedZone);
         const { animationDuration } = this.tierSettings;
 
         this.animationController.animateFragmentAppearance(fragment);
-        this.animationController.animateFragmentMovement(fragment, drift, animationDuration, (fragment) => {
+        
+        // Use optimal speed for animation
+        const adjustedDrift = {
+            ...drift,
+            speed: optimalSpeed
+        };
+        
+        this.animationController.animateFragmentMovement(fragment, adjustedDrift, animationDuration, (fragment) => {
             this.removeFragment(fragment);
         });
+        
+        // Set up readability monitoring for this fragment
+        this.setupReadabilityMonitoring(fragment);
 
         this.performanceMetrics.fragmentsCreated++;
     }
@@ -501,6 +526,48 @@ export class FragmentGenerator {
         });
     }
 
+    /**
+     * Sets up readability monitoring for a fragment to ensure it remains readable
+     * Requirements: 1.4, 1.5
+     */
+    setupReadabilityMonitoring(fragment) {
+        if (!this.positionManager) return;
+        
+        // Monitor fragment readability periodically
+        const monitoringInterval = setInterval(() => {
+            if (!fragment.parentNode) {
+                clearInterval(monitoringInterval);
+                return;
+            }
+            
+            // Validate current placement
+            const validation = this.positionManager.validateFragmentPlacement(fragment);
+            
+            // Update readability metrics
+            this.positionManager.updateReadabilityMetrics(validation.score);
+            
+            // Reposition if needed
+            if (!validation.isValid) {
+                const repositioned = this.positionManager.repositionIfNeeded(fragment);
+                
+                if (repositioned) {
+                    consciousness.recordEvent('fragment_repositioned_for_readability', {
+                        fragmentId: fragment.dataset.birthTime || 'unknown',
+                        readabilityScore: validation.score,
+                        issues: validation.issues,
+                        performanceTier: this.performanceTier
+                    });
+                }
+            }
+        }, 2000); // Check every 2 seconds
+        
+        // Register cleanup
+        this.guardian.register(monitoringInterval, (intervalId) => clearInterval(intervalId));
+        
+        // Store monitoring interval on fragment for cleanup
+        fragment.dataset.readabilityMonitor = monitoringInterval;
+    }
+
     applyVisualCorruption(fragment, degradationLevel, originalText) {
         if (!this.visualEnhancements.corruptionEnabled) return;
         
@@ -542,6 +609,11 @@ export class FragmentGenerator {
 
         // Stop animations
         this.animationController.stopFragmentAnimations(fragment);
+        
+        // Stop readability monitoring
+        if (fragment.dataset.readabilityMonitor) {
+            clearInterval(parseInt(fragment.dataset.readabilityMonitor));
+        }
 
         // Record zone release in both zone manager and positioning service
         if (fragment.dataset.zoneId) {
@@ -602,11 +674,22 @@ export class FragmentGenerator {
     }
 
     getPerformanceStats() {
-        return {
+        const baseStats = {
             ...this.performanceMetrics,
             activeFragments: this.activeFragments.length,
             performanceTier: this.performanceTier
         };
+        
+        // Add readability stats if position manager is available
+        if (this.positionManager) {
+            const readabilityStats = this.positionManager.getPerformanceStats();
+            return {
+                ...baseStats,
+                readability: readabilityStats
+            };
+        }
+        
+        return baseStats;
     }
 
     updateVisualEnhancements(performanceTier) {
