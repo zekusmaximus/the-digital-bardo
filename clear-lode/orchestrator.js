@@ -13,6 +13,7 @@ import { ClearLodeEventBridge } from './event-bridge.js';
 import { ClearLodeStateManager } from './state-manager.js';
 import { ClearLodeTransitionController } from './transition-controller.js';
 import { RecognitionHandler } from './recognition-handler.js';
+import { RecognitionGuideController } from './recognition-guide-controller.js';
 import { DegradationSystem } from './degradation-system.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator-refactored.js';
@@ -58,12 +59,14 @@ export class ClearLodeOrchestrator {
         this.fragments = new FragmentGenerator(this.karmicEngine.createFragmentCallbacks());
         this.audio = new ClearLodeAudio(dependencies); // Assuming AudioEngine can also be updated for DI
         this.recognition = new RecognitionHandler(dependencies); // Assuming RecognitionHandler is updated for DI
+        this.recognitionGuide = new RecognitionGuideController(dependencies);
         this.degradation = new DegradationSystem(dependencies); // Assuming DegradationSystem is updated for DI
 
         // Register subsystems for cleanup
         this.guardian.registerCleanup(() => this.stateManager.destroy());
         this.guardian.registerCleanup(() => this.transitionController.destroy());
         this.guardian.registerCleanup(() => this.recognition.destroy());
+        this.guardian.registerCleanup(() => this.recognitionGuide.destroy());
         this.guardian.registerCleanup(() => this.degradation.destroy());
         this.guardian.registerCleanup(() => this.fragments.destroy());
         this.guardian.registerCleanup(() => this.audio.destroy());
@@ -85,6 +88,7 @@ export class ClearLodeOrchestrator {
             this.stateManager.init();
             this.transitionController.init();
             this.recognition.init();
+            this.recognitionGuide.init();
             this.degradation.init();
             this.audio.init();
 

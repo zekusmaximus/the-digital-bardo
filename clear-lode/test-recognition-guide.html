@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recognition Guide Controller Test</title>
+    <link rel="stylesheet" href="../src/styles/reality.css">
+    <link rel="stylesheet" href="../src/styles/clear-lode.css">
+    <link rel="stylesheet" href="recognition-guide.css">
+    <style>
+        body {
+            background: linear-gradient(45deg, #000428, #004e92);
+            color: white;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .test-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 2000;
+        }
+        
+        .test-controls h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        
+        .test-controls button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .test-controls button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .test-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 2000;
+            max-width: 400px;
+        }
+        
+        .test-status h4 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        
+        .status-item {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .status-success { color: #4CAF50; }
+        .status-warning { color: #FF9800; }
+        .status-error { color: #F44336; }
+        
+        .light-core {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+            border-radius: 50%;
+            z-index: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="light-core"></div>
+    
+    <div class="test-controls">
+        <h3>Recognition Guide Test</h3>
+        <button onclick="startGuidance()">Start Guidance</button>
+        <button onclick="stopGuidance()">Stop Guidance</button>
+        <button onclick="simulateRecognitionAttempt()">Simulate Attempt</button>
+        <button onclick="simulateSuccess()">Simulate Success</button>
+        <button onclick="simulateFailure()">Simulate Failure</button>
+        <button onclick="simulateAttachment()">Simulate Attachment</button>
+        <button onclick="testTimeoutWarning()">Test Timeout Warning</button>
+        <button onclick="testExtension()">Test Extension</button>
+        <button onclick="resetTest()">Reset Test</button>
+    </div>
+    
+    <div class="test-status">
+        <h4>Test Status</h4>
+        <div id="status-log"></div>
+    </div>
+
+    <script type="module">
+        import { RecognitionGuideController } from './recognition-guide-controller.js';
+        import { ClearLodeEventBridge } from './event-bridge.js';
+        import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+
+        // Test setup
+        let guideController = null;
+        let eventBridge = null;
+        let guardian = null;
+        
+        const statusLog = document.getElementById('status-log');
+        
+        function logStatus(message, type = 'info') {
+            const statusItem = document.createElement('div');
+            statusItem.className = `status-item status-${type}`;
+            statusItem.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            statusLog.appendChild(statusItem);
+            statusLog.scrollTop = statusLog.scrollHeight;
+            
+            // Keep only last 10 messages
+            while (statusLog.children.length > 10) {
+                statusLog.removeChild(statusLog.firstChild);
+            }
+        }
+
+        function initializeTest() {
+            try {
+                // Initialize dependencies
+                eventBridge = new ClearLodeEventBridge();
+                guardian = new ResourceGuardian();
+                
+                const config = {
+                    recognitionWindow: {
+                        start: 3500,
+                        end: 6500
+                    }
+                };
+
+                // Create guide controller
+                guideController = new RecognitionGuideController({
+                    eventBridge,
+                    guardian,
+                    config
+                });
+
+                // Set up event listeners for testing
+                eventBridge.on('recognition:attempt', (detail) => {
+                    logStatus(`Recognition attempt: ${detail.method} (${Math.round(detail.progress * 100)}%)`, 'info');
+                });
+
+                eventBridge.on('recognition:timeout', () => {
+                    logStatus('Recognition timeout occurred', 'warning');
+                });
+
+                // Initialize the controller
+                guideController.init();
+                
+                logStatus('Test initialized successfully', 'success');
+            } catch (error) {
+                logStatus(`Initialization error: ${error.message}`, 'error');
+                console.error('Test initialization error:', error);
+            }
+        }
+
+        // Test functions
+        window.startGuidance = function() {
+            if (!guideController) {
+                logStatus('Controller not initialized', 'error');
+                return;
+            }
+            
+            try {
+                // Set up consciousness state for recognition window
+                consciousness.setState('clearLode.recognitionActive', true);
+                consciousness.setState('clearLode.recognized', false);
+                consciousness.setState('clearLode.recognitionWindowStartTime', Date.now());
+                
+                eventBridge.emit('state:recognitionWindowOpened');
+                logStatus('Guidance started', 'success');
+            } catch (error) {
+                logStatus(`Start guidance error: ${error.message}`, 'error');
+            }
+        };
+
+        window.stopGuidance = function() {
+            if (!guideController) {
+                logStatus('Controller not initialized', 'error');
+                return;
+            }
+            
+            try {
+                consciousness.setState('clearLode.recognitionActive', false);
+                eventBridge.emit('state:recognitionFailed');
+                logStatus('Guidance stopped', 'success');
+            } catch (error) {
+                logStatus(`Stop guidance error: ${error.message}`, 'error');
+            }
+        };
+
+        window.simulateRecognitionAttempt = function() {
+            if (!eventBridge) {
+                logStatus('Event bridge not initialized', 'error');
+                return;
+            }
+            
+            const methods = ['center-click', 'keyword-typing', 'spacebar-hold'];
+            const method = methods[Math.floor(Math.random() * methods.length)];
+            const progress = Math.random();
+            
+            eventBridge.emit('recognition:attempt', {
+                method: method,
+                progress: progress,
+                timestamp: Date.now()
+            });
+            
+            logStatus(`Simulated ${method} attempt (${Math.round(progress * 100)}%)`, 'info');
+        };
+
+        window.simulateSuccess = function() {
+            if (!eventBridge) {
+                logStatus('Event bridge not initialized', 'error');
+                return;
+            }
+            
+            consciousness.setState('clearLode.recognized', true);
+            eventBridge.emit('state:recognitionSucceeded', {
+                method: 'test-success',
+                timestamp: Date.now()
+            });
+            
+            logStatus('Simulated recognition success', 'success');
+        };
+
+        window.simulateFailure = function() {
+            if (!eventBridge) {
+                logStatus('Event bridge not initialized', 'error');
+                return;
+            }
+            
+            consciousness.setState('clearLode.recognitionActive', false);
+            eventBridge.emit('state:recognitionFailed');
+            
+            logStatus('Simulated recognition failure', 'warning');
+        };
+
+        window.simulateAttachment = function() {
+            if (!eventBridge) {
+                logStatus('Event bridge not initialized', 'error');
+                return;
+            }
+            
+            const attachmentTypes = ['excessive_movement', 'distraction_blur', 'invalid_event_stream'];
+            const type = attachmentTypes[Math.floor(Math.random() * attachmentTypes.length)];
+            
+            eventBridge.emit('recognition:attachment', {
+                type: type,
+                data: { test: true },
+                timestamp: Date.now()
+            });
+            
+            logStatus(`Simulated attachment: ${type}`, 'warning');
+        };
+
+        window.testTimeoutWarning = function() {
+            if (!guideController) {
+                logStatus('Controller not initialized', 'error');
+                return;
+            }
+            
+            // Manually trigger timeout warning for testing
+            try {
+                guideController.showTimeoutWarning();
+                logStatus('Timeout warning displayed', 'warning');
+            } catch (error) {
+                logStatus(`Timeout warning error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testExtension = function() {
+            if (!guideController) {
+                logStatus('Controller not initialized', 'error');
+                return;
+            }
+            
+            try {
+                guideController.extendRecognitionWindow();
+                logStatus('Recognition window extended', 'info');
+            } catch (error) {
+                logStatus(`Extension error: ${error.message}`, 'error');
+            }
+        };
+
+        window.resetTest = function() {
+            try {
+                if (guardian) {
+                    guardian.cleanupAll();
+                }
+                
+                // Clear any remaining UI elements
+                const guideElements = document.querySelectorAll('.recognition-guide-container');
+                guideElements.forEach(el => el.remove());
+                
+                // Reset consciousness state
+                consciousness.setState('clearLode.recognitionActive', false);
+                consciousness.setState('clearLode.recognized', false);
+                
+                // Clear status log
+                statusLog.innerHTML = '';
+                
+                // Reinitialize
+                setTimeout(() => {
+                    initializeTest();
+                }, 100);
+                
+                logStatus('Test reset complete', 'success');
+            } catch (error) {
+                logStatus(`Reset error: ${error.message}`, 'error');
+            }
+        };
+
+        // Initialize test on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTest();
+        });
+
+        // Keyboard shortcuts for testing
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case '1':
+                    startGuidance();
+                    break;
+                case '2':
+                    simulateRecognitionAttempt();
+                    break;
+                case '3':
+                    simulateSuccess();
+                    break;
+                case '4':
+                    simulateFailure();
+                    break;
+                case '5':
+                    simulateAttachment();
+                    break;
+                case 'r':
+                    resetTest();
+                    break;
+            }
+        });
+
+        // Export for debugging
+        window.testGlobals = {
+            guideController: () => guideController,
+            eventBridge: () => eventBridge,
+            guardian: () => guardian
+        };
+    </script>
+</body>
+</html>
