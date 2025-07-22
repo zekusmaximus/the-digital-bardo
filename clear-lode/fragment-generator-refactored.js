@@ -11,6 +11,7 @@ import { FragmentAnimationController } from './fragment-animation-controller.js'
 import { FragmentDriftCalculator } from './fragment-drift-calculator.js';
 import { FragmentPositioningService } from './fragment-positioning-service.js';
 import { FragmentPositionManager } from './fragment-position-manager.js';
+import { CorruptionProgression } from './corruption-progression.js';
 
 // Register GSAP plugins
 gsap.registerPlugin(TextPlugin);
@@ -154,12 +155,23 @@ export class FragmentGenerator {
         
         // Initialize new readability-focused position manager
         this.positionManager = new FragmentPositionManager();
+        
+        // Initialize corruption progression system
+        this.corruptionProgression = new CorruptionProgression(
+            consciousness.karmicEngine,
+            {
+                baseCorruptionRate: 0.002, // Slightly faster corruption for clear-lode
+                karmaMultiplier: 0.8, // Higher karma influence
+                purificationStrength: 0.4 // Stronger purification on recognition
+            }
+        );
 
         // Register components for cleanup
         this.guardian.register(this.zoneManager, (manager) => manager.destroy());
         this.guardian.register(this.animationController, (controller) => controller.destroy());
         this.guardian.register(this.positioningService, (service) => service.destroy());
         this.guardian.register(this.positionManager, (manager) => manager.destroy());
+        this.guardian.register(this.corruptionProgression, (corruption) => corruption.destroy());
 
         // Visual enhancement integration
         this.visualEnhancements = {
@@ -314,7 +326,11 @@ export class FragmentGenerator {
         }, 2000);
     }
 
-    generateLastThoughts(degradationLevel = 'minimal', seed = null) {
+    /**
+     * Generates clean thought fragments without initial corruption
+     * Requirement 4.1: Fragments start in uncorrupted state
+     */
+    generateCleanThought(seed = null) {
         const rng = createSeededRandom(seed || Date.now());
         const isPersonal = rng.next() < 0.7;
         let fragment;
@@ -334,31 +350,17 @@ export class FragmentGenerator {
             fragment = templates[Math.floor(rng.next() * templates.length)];
         }
 
-        // Apply corruption effects
-        const corruption = corruption_levels[degradationLevel] || corruption_levels.minimal;
-
-        if (rng.next() < corruption.charReplace) {
-            const chars = fragment.split('');
-            const numToReplace = Math.floor(chars.length * corruption.charReplace * rng.next());
-            for (let i = 0; i < numToReplace; i++) {
-                const index = Math.floor(rng.next() * chars.length);
-                chars[index] = rng.next() < 0.5 ? '▒' : '-';
-            }
-            fragment = chars.join('');
-        }
-
-        if (rng.next() < corruption.truncation) {
-            const truncateAt = Math.floor(fragment.length * (0.3 + rng.next() * 0.4));
-            fragment = fragment.substring(0, truncateAt) + '...';
-        }
-
-        if (rng.next() < corruption.entity) {
-            const entity = '&#x2620;';
-            const insertAt = Math.floor(rng.next() * fragment.length);
-            fragment = fragment.substring(0, insertAt) + entity + fragment.substring(insertAt);
-        }
-
+        // Return clean fragment without any corruption
         return fragment;
+    }
+
+    /**
+     * Legacy method for backward compatibility - now generates clean thoughts
+     * and lets CorruptionProgression handle corruption over time
+     */
+    generateLastThoughts(degradationLevel = 'minimal', seed = null) {
+        // Generate clean thought and let corruption progression handle corruption
+        return this.generateCleanThought(seed);
     }
 
     startFragmentField() {
@@ -392,8 +394,8 @@ export class FragmentGenerator {
             console.warn('FragmentGenerator: Error accessing degradationLevel:', error.message);
         }
 
-        // Generate and validate thought
-        const thoughtText = this.generateLastThoughts(degradationLevel);
+        // Generate clean thought (no corruption applied initially)
+        const thoughtText = this.generateCleanThought();
         const validateThought = createKarmicValidator(thoughtFragmentSchema);
         if (!validateThought({ content: thoughtText })) {
             console.error("Karmic validation failed for thought fragment.");
@@ -404,19 +406,21 @@ export class FragmentGenerator {
             return;
         }
 
-        // Create fragment element
+        // Create fragment element in clean state
+        const fragmentId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         const fragment = manifestElement('div', {
             attributes: {
                 class: 'consciousness-fragment',
                 'data-birth-time': Date.now(),
-                'data-degradation': degradationLevel,
-                'data-text': thoughtText
+                'data-fragment-id': fragmentId,
+                'data-text': thoughtText,
+                'data-corruption-level': '0'
             },
             textContent: thoughtText
         });
         
-        // Apply visual corruption
-        this.applyVisualCorruption(fragment, degradationLevel);
+        // Initialize fragment in clean state using corruption progression system
+        this.corruptionProgression.initializeCleanFragment(fragment);
 
         // Select zone and position fragment using readability-focused positioning
         const distributionStrategy = this.positioningService.getDistributionStrategy(this.performanceTier);
@@ -465,6 +469,9 @@ export class FragmentGenerator {
         
         // Set up readability monitoring for this fragment
         this.setupReadabilityMonitoring(fragment);
+        
+        // Set up corruption progression monitoring
+        this.setupCorruptionProgression(fragment);
 
         this.performanceMetrics.fragmentsCreated++;
     }
@@ -568,37 +575,39 @@ export class FragmentGenerator {
         fragment.dataset.readabilityMonitor = monitoringInterval;
     }
 
-    applyVisualCorruption(fragment, degradationLevel) {
-        if (!this.visualEnhancements.corruptionEnabled) return;
+    /**
+     * Sets up corruption progression monitoring for a fragment
+     * Integrates with the new CorruptionProgression system
+     */
+    setupCorruptionProgression(fragment) {
+        if (!this.corruptionProgression) return;
         
-        const corruptionClasses = {
-            minimal: 'corrupted-minimal',
-            moderate: 'corrupted-moderate',
-            severe: 'corrupted-severe',
-            complete: 'corrupted-complete'
-        };
+        // The fragment is already initialized in clean state by initializeCleanFragment
+        // Set up periodic corruption updates based on karma
+        const updateInterval = setInterval(() => {
+            if (!fragment.parentNode) {
+                clearInterval(updateInterval);
+                return;
+            }
+            
+            // Get current karma state
+            const karmaState = consciousness.getState('karma') || {
+                computational: 0,
+                emotional: 0,
+                temporal: 0,
+                void: 0
+            };
+            
+            // Apply progressive corruption
+            this.corruptionProgression.applyProgressiveCorruption(fragment, karmaState);
+            
+        }, 2000); // Update every 2 seconds
         
-        if (corruptionClasses[degradationLevel]) {
-            fragment.classList.add(corruptionClasses[degradationLevel]);
-        }
+        // Register cleanup
+        this.guardian.register(updateInterval, (intervalId) => clearInterval(intervalId));
         
-        const corruptionIntensity = {
-            minimal: 0.2, moderate: 0.5, severe: 0.8, complete: 1.0
-        }[degradationLevel] || 0.2;
-        
-        if (degradationLevel === 'severe' || degradationLevel === 'complete') {
-            fragment.classList.add('corrupted-text', 'zalgo');
-        }
-        
-        if (corruptionIntensity >= 0.5) {
-            fragment.classList.add('chromatic-aberration');
-        }
-        
-        if (degradationLevel === 'complete') {
-            fragment.classList.add('digital-noise');
-        }
-        
-        fragment.style.setProperty('--corruption-intensity', corruptionIntensity);
+        // Store interval on fragment for cleanup
+        fragment.dataset.corruptionMonitor = updateInterval;
     }
 
     removeFragment(fragment) {
@@ -613,6 +622,17 @@ export class FragmentGenerator {
         // Stop readability monitoring
         if (fragment.dataset.readabilityMonitor) {
             clearInterval(parseInt(fragment.dataset.readabilityMonitor));
+        }
+        
+        // Stop corruption monitoring and clean up corruption tracking
+        if (fragment.dataset.corruptionMonitor) {
+            clearInterval(parseInt(fragment.dataset.corruptionMonitor));
+        }
+        
+        // Remove from corruption progression tracking
+        const fragmentId = fragment.dataset.fragmentId || fragment.dataset.birthTime;
+        if (fragmentId && this.corruptionProgression) {
+            this.corruptionProgression.removeFragment(fragmentId);
         }
 
         // Record zone release in both zone manager and positioning service
@@ -683,10 +703,13 @@ export class FragmentGenerator {
         // Add readability stats if position manager is available
         if (this.positionManager) {
             const readabilityStats = this.positionManager.getPerformanceStats();
-            return {
-                ...baseStats,
-                readability: readabilityStats
-            };
+            baseStats.readability = readabilityStats;
+        }
+        
+        // Add corruption stats if corruption progression is available
+        if (this.corruptionProgression) {
+            const corruptionStats = this.corruptionProgression.getCorruptionStats();
+            baseStats.corruption = corruptionStats;
         }
         
         return baseStats;
@@ -719,6 +742,68 @@ export class FragmentGenerator {
                 };
                 break;
         }
+    }
+    
+    /**
+     * Purifies all active fragments on successful recognition
+     * Requirement 4.4: Purification effects for successful recognition
+     */
+    purifyFragmentsOnRecognition() {
+        if (!this.corruptionProgression) {
+            console.warn('[FragmentGenerator] CorruptionProgression not available for purification');
+            return 0;
+        }
+        
+        const activeFragmentElements = this.activeFragments.filter(f => f.parentNode);
+        
+        if (activeFragmentElements.length === 0) {
+            console.log('[FragmentGenerator] No active fragments to purify');
+            return 0;
+        }
+        
+        const purifiedCount = this.corruptionProgression.purifyOnRecognition(activeFragmentElements);
+        
+        consciousness.recordEvent('fragment_field_purified_on_recognition', {
+            fragmentsPurified: purifiedCount,
+            totalActiveFragments: activeFragmentElements.length,
+            timestamp: Date.now()
+        });
+        
+        console.log(`[FragmentGenerator] Purified ${purifiedCount} fragments on recognition`);
+        
+        return purifiedCount;
+    }
+    
+    /**
+     * Synchronizes fragment corruption with audio degradation level
+     * Requirement 5.1: Synchronized audio-visual degradation
+     */
+    syncCorruptionWithAudio(audioLevel) {
+        if (!this.corruptionProgression) {
+            console.warn('[FragmentGenerator] CorruptionProgression not available for audio sync');
+            return;
+        }
+        
+        this.corruptionProgression.syncWithAudioDegradation(audioLevel);
+        
+        console.log(`[FragmentGenerator] Synced fragment corruption with audio level: ${audioLevel}`);
+    }
+    
+    /**
+     * Gets corruption statistics for monitoring
+     */
+    getCorruptionStats() {
+        if (!this.corruptionProgression) {
+            return {
+                totalFragments: 0,
+                averageCorruption: 0,
+                maxCorruption: 0,
+                minCorruption: 0,
+                globalLevel: 0
+            };
+        }
+        
+        return this.corruptionProgression.getCorruptionStats();
     }
 }
 

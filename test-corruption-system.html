@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corruption System Test</title>
+    <link rel="stylesheet" href="src/styles/corruption-effects.css">
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+        }
+        
+        .test-fragment {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #333;
+            background: #111;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            margin: 5px;
+            padding: 10px;
+            background: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #555;
+        }
+        
+        #fragment-field {
+            min-height: 200px;
+            border: 1px solid #333;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .stats {
+            background: #222;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Corruption System Test</h1>
+    
+    <div class="controls">
+        <button onclick="initializeSystem()">Initialize System</button>
+        <button onclick="createTestFragment()">Create Test Fragment</button>
+        <button onclick="triggerRecognition()">Trigger Recognition (Purify)</button>
+        <button onclick="syncWithAudio('moderate')">Sync with Audio (Moderate)</button>
+        <button onclick="syncWithAudio('severe')">Sync with Audio (Severe)</button>
+        <button onclick="showStats()">Show Stats</button>
+    </div>
+    
+    <div id="fragment-field"></div>
+    
+    <div class="stats" id="stats">
+        System not initialized
+    </div>
+    
+    <div class="test-fragment">
+        <h3>Manual Corruption Test</h3>
+        <div class="consciousness-fragment corrupted-minimal" id="test1">
+            This is a test fragment with minimal corruption
+        </div>
+        <div class="consciousness-fragment corrupted-moderate" id="test2">
+            This fragment has moderate corruption applied
+        </div>
+        <div class="consciousness-fragment corrupted-severe" id="test3">
+            Severe corruption affects this fragment significantly
+        </div>
+        <div class="consciousness-fragment corrupted-complete" id="test4">
+            Complete corruption makes this nearly unreadable
+        </div>
+    </div>
+
+    <script type="module">
+        // Mock consciousness system for testing
+        window.consciousness = {
+            recordEvent: (event, data) => {
+                console.log('Event:', event, data);
+            },
+            getState: (path) => {
+                if (path === 'karma') {
+                    return {
+                        computational: -0.2,
+                        emotional: -0.1,
+                        temporal: -0.3,
+                        void: -0.4
+                    };
+                }
+                return null;
+            },
+            karmicEngine: {
+                getTotalKarma: (karmaState) => {
+                    return Object.values(karmaState).reduce((sum, val) => sum + val, 0);
+                }
+            }
+        };
+
+        let corruptionSystem = null;
+        let fragmentGenerator = null;
+
+        window.initializeSystem = async function() {
+            try {
+                // Import the corruption system
+                const { CorruptionProgression } = await import('./clear-lode/corruption-progression.js');
+                const { FragmentGenerator } = await import('./clear-lode/fragment-generator-refactored.js');
+                
+                // Initialize corruption system
+                corruptionSystem = new CorruptionProgression(
+                    window.consciousness.karmicEngine,
+                    {
+                        baseCorruptionRate: 0.01, // Faster for testing
+                        karmaMultiplier: 1.0,
+                        purificationStrength: 0.5
+                    }
+                );
+                
+                // Initialize fragment generator
+                fragmentGenerator = new FragmentGenerator();
+                
+                document.getElementById('stats').textContent = 'System initialized successfully';
+                console.log('Corruption system initialized');
+            } catch (error) {
+                console.error('Failed to initialize system:', error);
+                document.getElementById('stats').textContent = 'Failed to initialize: ' + error.message;
+            }
+        };
+
+        window.createTestFragment = function() {
+            if (!corruptionSystem) {
+                alert('Please initialize system first');
+                return;
+            }
+
+            const fragmentField = document.getElementById('fragment-field');
+            const fragment = document.createElement('div');
+            fragment.className = 'consciousness-fragment';
+            fragment.textContent = 'This is a test memory fragment that will be corrupted over time based on karma state.';
+            fragment.dataset.birthTime = Date.now().toString();
+            fragment.dataset.fragmentId = 'test-' + Date.now();
+            
+            fragmentField.appendChild(fragment);
+            
+            // Initialize in clean state
+            corruptionSystem.initializeCleanFragment(fragment);
+            
+            console.log('Test fragment created');
+        };
+
+        window.triggerRecognition = function() {
+            if (!corruptionSystem) {
+                alert('Please initialize system first');
+                return;
+            }
+
+            const fragments = document.querySelectorAll('.consciousness-fragment');
+            const purifiedCount = corruptionSystem.purifyOnRecognition(Array.from(fragments));
+            
+            console.log(`Purified ${purifiedCount} fragments`);
+            document.getElementById('stats').textContent = `Purified ${purifiedCount} fragments`;
+        };
+
+        window.syncWithAudio = function(level) {
+            if (!corruptionSystem) {
+                alert('Please initialize system first');
+                return;
+            }
+
+            corruptionSystem.syncWithAudioDegradation(level);
+            console.log(`Synced with audio level: ${level}`);
+        };
+
+        window.showStats = function() {
+            if (!corruptionSystem) {
+                alert('Please initialize system first');
+                return;
+            }
+
+            const stats = corruptionSystem.getCorruptionStats();
+            document.getElementById('stats').innerHTML = `
+                <strong>Corruption Stats:</strong><br>
+                Total Fragments: ${stats.totalFragments}<br>
+                Average Corruption: ${stats.averageCorruption.toFixed(3)}<br>
+                Max Corruption: ${stats.maxCorruption.toFixed(3)}<br>
+                Min Corruption: ${stats.minCorruption.toFixed(3)}<br>
+                Global Level: ${stats.globalLevel.toFixed(3)}
+            `;
+        };
+
+        // Auto-initialize after a short delay
+        setTimeout(() => {
+            initializeSystem();
+        }, 1000);
+    </script>
+</body>
+</html>

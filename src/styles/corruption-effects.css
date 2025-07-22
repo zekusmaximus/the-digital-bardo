@@ -284,6 +284,50 @@ body.recognized .corrupted-text {
     animation: corruption-purification 2s ease-out forwards;
 }
 
+/* Purification Effect for Individual Fragments */
+.purification-effect {
+    animation: fragment-purification 2s ease-out forwards;
+    position: relative;
+    z-index: 10;
+}
+
+@keyframes fragment-purification {
+    0% {
+        filter: contrast(var(--corruption-intensity)) brightness(calc(1 - var(--corruption-intensity)));
+        text-shadow: 
+            1px 0 0 rgba(255, 0, 0, var(--corruption-intensity)),
+            -1px 0 0 rgba(0, 255, 255, var(--corruption-intensity));
+        transform: scale(1);
+    }
+    25% {
+        filter: contrast(3) brightness(3) saturate(0);
+        text-shadow: 
+            0 0 15px rgba(255, 255, 255, 1),
+            0 0 30px rgba(255, 255, 255, 0.8),
+            0 0 45px rgba(255, 255, 255, 0.6);
+        transform: scale(1.05);
+    }
+    50% {
+        filter: contrast(2) brightness(2) saturate(0.5);
+        text-shadow: 
+            0 0 10px rgba(255, 255, 255, 0.8),
+            0 0 20px rgba(255, 255, 255, 0.6);
+        transform: scale(1.02);
+    }
+    75% {
+        filter: contrast(1.2) brightness(1.2) saturate(1);
+        text-shadow: 
+            0 0 8px rgba(255, 255, 255, 0.4);
+        transform: scale(1.01);
+    }
+    100% {
+        filter: contrast(1) brightness(1) saturate(1);
+        text-shadow: 
+            0 0 5px rgba(255, 255, 255, 0.2);
+        transform: scale(1);
+    }
+}
+
 @keyframes corruption-purification {
     0% {
         filter: contrast(var(--corruption-intensity)) brightness(calc(1 - var(--corruption-intensity)));
