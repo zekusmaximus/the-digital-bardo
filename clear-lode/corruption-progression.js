@@ -163,6 +163,11 @@ export class CorruptionProgression {
         // Update fragment dataset
         fragment.dataset.corruptionLevel = corruptionData.corruptionLevel.toString();
         
+        // Notify performance optimizer if available
+        if (window.clearLodeOrchestrator?.fragmentPerformanceOptimizer) {
+            window.clearLodeOrchestrator.fragmentPerformanceOptimizer.optimizeCorruptionEffect(fragment, corruptionData);
+        }
+        
         // Record corruption progression
         if (totalIncrease > 0) {
             consciousness.recordEvent('fragment_corruption_progressed', {

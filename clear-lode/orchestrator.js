@@ -20,6 +20,7 @@ import { FragmentGenerator } from './fragment-generator-refactored.js';
 import { SynchronizedDegradationController } from './synchronized-degradation-controller.js';
 import { FragmentPositionManager } from './fragment-position-manager.js';
 import { FragmentSpeedController } from './fragment-speed-controller.js';
+import { FragmentPerformanceOptimizer } from './fragment-performance-optimizer.js';
 import { dataGuardian } from '../src/security/data-flow-guardian.js';
 
 // Consciousness & Karmic Systems
@@ -59,16 +60,38 @@ export class ClearLodeOrchestrator {
         this.stateManager = new ClearLodeStateManager(dependencies);
         this.transitionController = new ClearLodeTransitionController(dependencies);
 
-        // Initialize positioning and speed control systems
+        // Initialize positioning, speed control, and performance optimization systems
         this.fragmentPositionManager = new FragmentPositionManager();
         this.fragmentSpeedController = new FragmentSpeedController();
+        this.fragmentPerformanceOptimizer = new FragmentPerformanceOptimizer({
+            // Configure based on clear-lode specific needs
+            pooling: {
+                enabled: true,
+                maxPoolSize: 30,
+                preAllocateCount: 8
+            },
+            corruption: {
+                batchSize: 3, // Smaller batches for clear-lode
+                throttleMs: 16,
+                maxConcurrentEffects: 8
+            },
+            monitoring: {
+                enabled: true,
+                performanceThresholds: {
+                    fps: 25, // Lower threshold for clear-lode
+                    memoryMB: 80,
+                    fragmentCount: 15
+                }
+            }
+        });
 
-        // Pass positioning and speed systems to fragment generator for coordination
+        // Pass positioning, speed, and performance systems to fragment generator for coordination
         this.fragments = new FragmentGenerator(
             this.karmicEngine.createFragmentCallbacks(),
             {
                 positionManager: this.fragmentPositionManager,
-                speedController: this.fragmentSpeedController
+                speedController: this.fragmentSpeedController,
+                performanceOptimizer: this.fragmentPerformanceOptimizer
             }
         );
         
@@ -85,7 +108,8 @@ export class ClearLodeOrchestrator {
             audioEngine: this.audio,
             corruptionProgression: this.corruptionProgression,
             fragmentPositionManager: this.fragmentPositionManager,
-            fragmentSpeedController: this.fragmentSpeedController
+            fragmentSpeedController: this.fragmentSpeedController,
+            performanceOptimizer: this.fragmentPerformanceOptimizer
         };
         this.synchronizedDegradation = new SynchronizedDegradationController(syncDependencies);
 
@@ -100,6 +124,7 @@ export class ClearLodeOrchestrator {
         this.guardian.registerCleanup(() => this.synchronizedDegradation.destroy());
         this.guardian.registerCleanup(() => this.fragmentPositionManager.destroy());
         this.guardian.registerCleanup(() => this.fragmentSpeedController.destroy());
+        this.guardian.registerCleanup(() => this.fragmentPerformanceOptimizer.destroy());
     }
 
     /**
@@ -190,6 +215,33 @@ export class ClearLodeOrchestrator {
                 const activeFragments = this.fragments.activeFragments.map(f => f.element).filter(Boolean);
                 this.corruptionProgression.purifyOnRecognition(activeFragments);
             }
+        });
+        
+        // Coordinate performance optimization with fragment management
+        this.eventBridge.on('fragments:created', (detail) => {
+            const { fragments } = detail;
+            this.fragmentPerformanceOptimizer.optimizeFragmentPositioning(fragments);
+        });
+        
+        // Coordinate corruption effects with performance optimization
+        this.eventBridge.on('corruption:applied', (detail) => {
+            const { fragment, corruptionData } = detail;
+            this.fragmentPerformanceOptimizer.optimizeCorruptionEffect(fragment, corruptionData);
+        });
+        
+        // Listen for performance tier changes and adjust other systems
+        document.addEventListener('performance-tier-changed', (event) => {
+            const { tier, config } = event.detail;
+            console.log(`[Orchestrator] Performance tier changed to: ${tier}`);
+            
+            // Adjust fragment generation based on new tier
+            if (this.fragments && this.fragments.tierSettings) {
+                this.fragments.performanceTier = tier;
+                this.fragments.tierSettings = this.fragments.constructor.PERFORMANCE_TIERS?.[tier] || config;
+            }
+            
+            // Notify other systems of tier change
+            this.eventBridge.emit('performance:tierChanged', { tier, config });
         });
         
         console.log('[Orchestrator] System coordination established');

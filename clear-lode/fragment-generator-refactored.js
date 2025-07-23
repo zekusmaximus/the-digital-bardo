@@ -171,6 +171,13 @@ export class FragmentGenerator {
             this.guardian.register(this.speedController, (controller) => controller.destroy());
         }
         
+        if (externalSystems && externalSystems.performanceOptimizer) {
+            this.performanceOptimizer = externalSystems.performanceOptimizer;
+            console.log('[FragmentGenerator] Using external performance optimizer');
+        } else {
+            this.performanceOptimizer = null; // Optional system
+        }
+        
         // Initialize corruption progression system
         this.corruptionProgression = new CorruptionProgression(
             consciousness.karmicEngine,
@@ -420,18 +427,32 @@ export class FragmentGenerator {
             return;
         }
 
-        // Create fragment element in clean state
+        // Create fragment element - use performance optimizer if available
         const fragmentId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-        const fragment = manifestElement('div', {
-            attributes: {
-                class: 'consciousness-fragment',
-                'data-birth-time': Date.now(),
-                'data-fragment-id': fragmentId,
-                'data-text': thoughtText,
-                'data-corruption-level': '0'
-            },
-            textContent: thoughtText
-        });
+        let fragment;
+        
+        if (this.performanceOptimizer) {
+            // Get optimized fragment from pool
+            fragment = this.performanceOptimizer.getPooledFragment();
+            fragment.className = 'consciousness-fragment';
+            fragment.dataset.birthTime = Date.now();
+            fragment.dataset.fragmentId = fragmentId;
+            fragment.dataset.text = thoughtText;
+            fragment.dataset.corruptionLevel = '0';
+            fragment.textContent = thoughtText;
+        } else {
+            // Create fragment normally
+            fragment = manifestElement('div', {
+                attributes: {
+                    class: 'consciousness-fragment',
+                    'data-birth-time': Date.now(),
+                    'data-fragment-id': fragmentId,
+                    'data-text': thoughtText,
+                    'data-corruption-level': '0'
+                },
+                textContent: thoughtText
+            });
+        }
         
         // Initialize fragment in clean state using corruption progression system
         this.corruptionProgression.initializeCleanFragment(fragment);
@@ -667,9 +688,14 @@ export class FragmentGenerator {
         // Remove from active list
         this.activeFragments = this.activeFragments.filter(f => f !== fragment);
 
-        // Remove from DOM
-        if (fragment.parentNode) {
-            fragment.remove();
+        // Return fragment to pool if performance optimizer is available
+        if (this.performanceOptimizer) {
+            this.performanceOptimizer.returnFragmentToPool(fragment);
+        } else {
+            // Remove from DOM normally
+            if (fragment.parentNode) {
+                fragment.remove();
+            }
         }
 
         // Update metrics
