@@ -551,6 +551,114 @@ export class FragmentPositionManager {
     }
 
     /**
+     * Optimizes fragment positioning for recognition phase
+     * Called when recognition window opens to improve readability
+     */
+    optimizeForRecognition() {
+        console.log('[FragmentPositionManager] Optimizing positioning for recognition phase');
+        
+        // Temporarily increase center bias for better readability
+        const originalCenterBias = this.config.safeZone.centerBias;
+        this.config.safeZone.centerBias = Math.min(0.8, originalCenterBias + 0.3);
+        
+        // Reposition all tracked fragments to more central locations
+        for (const [fragment, trackingData] of this.trackedFragments) {
+            if (fragment.parentNode) {
+                const currentRect = fragment.getBoundingClientRect();
+                const currentPosition = { x: currentRect.left, y: currentRect.top };
+                
+                // Get a more central position
+                const optimizedPosition = this.getSafePosition();
+                
+                // Only reposition if current position is not optimal
+                const readabilityScore = this.calculateReadabilityScore(fragment, currentPosition, 
+                    parseFloat(fragment.dataset.speed) || this.config.speedLimits.minSpeed);
+                
+                if (readabilityScore < 0.8) {
+                    this.repositionFragment(fragment, optimizedPosition);
+                }
+            }
+        }
+        
+        // Record optimization event
+        consciousness.recordEvent('fragment_positioning_optimized_for_recognition', {
+            originalCenterBias: originalCenterBias,
+            newCenterBias: this.config.safeZone.centerBias,
+            fragmentsOptimized: this.trackedFragments.size,
+            timestamp: Date.now()
+        });
+        
+        // Restore original center bias after recognition phase (15 seconds)
+        setTimeout(() => {
+            this.config.safeZone.centerBias = originalCenterBias;
+            console.log('[FragmentPositionManager] Restored original center bias after recognition phase');
+        }, 15000);
+    }
+    
+    /**
+     * Updates positioning behavior based on degradation level
+     * Higher degradation makes positioning more chaotic
+     */
+    updateDegradationLevel(level) {
+        const numericLevel = typeof level === 'number' ? level : this.parseDegradationLevel(level);
+        
+        console.log(`[FragmentPositionManager] Updating degradation level: ${numericLevel}`);
+        
+        // Adjust safe zone margins based on degradation
+        const baseSafeZone = {
+            marginTop: 60,
+            marginBottom: 60,
+            marginLeft: 40,
+            marginRight: 40,
+            centerBias: 0.3
+        };
+        
+        // Higher degradation reduces safe zone and increases chaos
+        const degradationFactor = numericLevel;
+        this.config.safeZone = {
+            marginTop: baseSafeZone.marginTop * (1 + degradationFactor * 0.5),
+            marginBottom: baseSafeZone.marginBottom * (1 + degradationFactor * 0.5),
+            marginLeft: baseSafeZone.marginLeft * (1 + degradationFactor * 0.3),
+            marginRight: baseSafeZone.marginRight * (1 + degradationFactor * 0.3),
+            centerBias: Math.max(0.1, baseSafeZone.centerBias * (1 - degradationFactor * 0.6))
+        };
+        
+        // Recalculate safe zone with new margins
+        this.safeZone = this.calculateSafeZone();
+        
+        // Adjust repositioning behavior
+        this.config.repositioning.edgeThreshold = Math.max(0.05, 0.1 - degradationFactor * 0.05);
+        this.config.repositioning.repositionSpeed = Math.max(50, 200 - degradationFactor * 100);
+        
+        // Record degradation update
+        consciousness.recordEvent('fragment_positioning_degradation_updated', {
+            degradationLevel: numericLevel,
+            newSafeZone: this.config.safeZone,
+            newRepositioning: this.config.repositioning,
+            timestamp: Date.now()
+        });
+    }
+    
+    /**
+     * Parses degradation level to numeric value
+     * @private
+     */
+    parseDegradationLevel(level) {
+        if (typeof level === 'number') {
+            return Math.max(0, Math.min(1, level));
+        }
+        
+        const levelMap = {
+            'minimal': 0.2,
+            'moderate': 0.5,
+            'severe': 0.8,
+            'complete': 1.0
+        };
+        
+        return levelMap[level] || 0.2;
+    }
+
+    /**
      * Destroys the position manager and cleans up resources
      */
     destroy() {

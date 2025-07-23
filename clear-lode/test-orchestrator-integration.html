@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestrator Integration Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .test-section h3 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        
+        .test-button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .test-button:hover {
+            background: #1976D2;
+        }
+        
+        .test-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .test-results {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            color: #4CAF50;
+        }
+        
+        .error {
+            color: #f44336;
+        }
+        
+        .info {
+            color: #2196F3;
+        }
+        
+        .warning {
+            color: #FF9800;
+        }
+        
+        .fragment-test {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .fragment-test.corrupted-minimal {
+            background: rgba(255, 100, 100, 0.2);
+        }
+        
+        .fragment-test.corrupted-moderate {
+            background: rgba(255, 50, 50, 0.4);
+            transform: skew(-2deg);
+        }
+        
+        .fragment-test.corrupted-severe {
+            background: rgba(255, 0, 0, 0.6);
+            transform: skew(-5deg) scale(0.95);
+        }
+        
+        .fragment-test.corrupted-complete {
+            background: rgba(255, 0, 0, 0.8);
+            transform: skew(-10deg) scale(0.9);
+            filter: blur(1px);
+        }
+        
+        .purification-effect {
+            animation: purify 2s ease-out;
+        }
+        
+        @keyframes purify {
+            0% { 
+                background: rgba(255, 0, 0, 0.8);
+                transform: scale(1.2);
+            }
+            50% { 
+                background: rgba(100, 255, 100, 0.6);
+                transform: scale(1.1);
+            }
+            100% { 
+                background: rgba(255, 255, 255, 0.1);
+                transform: scale(1);
+            }
+        }
+        
+        .status-display {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 10000;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎭 Clear Lode Orchestrator Integration Test</h1>
+        <p>This test verifies that all UX enhancement systems are properly integrated with the orchestrator.</p>
+        
+        <div class="status-display" id="statusDisplay">
+            <div>Status: <span id="orchestratorStatus">Not Initialized</span></div>
+            <div>Systems: <span id="systemCount">0</span></div>
+            <div>Events: <span id="eventCount">0</span></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🚀 Orchestrator Initialization</h3>
+            <button class="test-button" onclick="initializeOrchestrator()">Initialize Orchestrator</button>
+            <button class="test-button" onclick="destroyOrchestrator()" disabled id="destroyBtn">Destroy Orchestrator</button>
+            <div class="test-results" id="initResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📍 Fragment Position Manager Integration</h3>
+            <button class="test-button" onclick="testPositionOptimization()" disabled id="positionBtn">Test Position Optimization</button>
+            <button class="test-button" onclick="testPositionDegradation()" disabled id="positionDegBtn">Test Degradation Update</button>
+            <div class="test-results" id="positionResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🏃 Fragment Speed Controller Integration</h3>
+            <button class="test-button" onclick="testSpeedReduction()" disabled id="speedBtn">Test Speed Reduction</button>
+            <button class="test-button" onclick="testSpeedDegradation()" disabled id="speedDegBtn">Test Speed Degradation</button>
+            <div class="test-results" id="speedResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔄 Corruption Progression Integration</h3>
+            <button class="test-button" onclick="testCorruptionPurification()" disabled id="corruptionBtn">Test Purification</button>
+            <button class="test-button" onclick="testAudioSync()" disabled id="audioSyncBtn">Test Audio Sync</button>
+            <div class="test-results" id="corruptionResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎯 Recognition Guide Integration</h3>
+            <button class="test-button" onclick="testWindowExtension()" disabled id="recognitionBtn">Test Window Extension</button>
+            <div class="test-results" id="recognitionResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Event Coordination</h3>
+            <button class="test-button" onclick="testEventCoordination()" disabled id="eventBtn">Test Event Coordination</button>
+            <div class="test-results" id="eventResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎬 Live Fragment Demo</h3>
+            <button class="test-button" onclick="createTestFragments()" disabled id="fragmentBtn">Create Test Fragments</button>
+            <button class="test-button" onclick="clearTestFragments()" disabled id="clearFragBtn">Clear Fragments</button>
+            <div class="test-results" id="fragmentResults"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        let orchestrator = null;
+        let testFragments = [];
+        let eventCount = 0;
+        
+        // Update status display
+        function updateStatus() {
+            document.getElementById('orchestratorStatus').textContent = orchestrator ? 'Initialized' : 'Not Initialized';
+            document.getElementById('systemCount').textContent = orchestrator ? '6' : '0';
+            document.getElementById('eventCount').textContent = eventCount;
+        }
+        
+        // Log function
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            element.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        // Initialize orchestrator
+        window.initializeOrchestrator = async function() {
+            try {
+                log('initResults', '🚀 Initializing orchestrator...', 'info');
+                
+                // Import the orchestrator
+                const { ClearLodeOrchestrator } = await import('./orchestrator.js');
+                orchestrator = new ClearLodeOrchestrator();
+                
+                // Set up event monitoring
+                orchestrator.eventBridge.on('*', (eventName, data) => {
+                    eventCount++;
+                    updateStatus();
+                });
+                
+                await orchestrator.init();
+                
+                log('initResults', '✅ Orchestrator initialized successfully!', 'success');
+                log('initResults', `📊 Systems initialized:`, 'info');
+                log('initResults', `  - Fragment Position Manager: ${!!orchestrator.fragmentPositionManager}`, 'info');
+                log('initResults', `  - Fragment Speed Controller: ${!!orchestrator.fragmentSpeedController}`, 'info');
+                log('initResults', `  - Corruption Progression: ${!!orchestrator.corruptionProgression}`, 'info');
+                log('initResults', `  - Recognition Guide: ${!!orchestrator.recognitionGuide}`, 'info');
+                log('initResults', `  - Synchronized Degradation: ${!!orchestrator.synchronizedDegradation}`, 'info');
+                log('initResults', `  - Event Bridge: ${!!orchestrator.eventBridge}`, 'info');
+                
+                // Enable test buttons
+                const buttons = ['positionBtn', 'positionDegBtn', 'speedBtn', 'speedDegBtn', 
+                               'corruptionBtn', 'audioSyncBtn', 'recognitionBtn', 'eventBtn', 
+                               'fragmentBtn', 'clearFragBtn', 'destroyBtn'];
+                buttons.forEach(id => {
+                    document.getElementById(id).disabled = false;
+                });
+                
+                updateStatus();
+                
+            } catch (error) {
+                log('initResults', `❌ Initialization failed: ${error.message}`, 'error');
+                console.error('Initialization error:', error);
+            }
+        };
+        
+        // Destroy orchestrator
+        window.destroyOrchestrator = function() {
+            if (orchestrator) {
+                log('initResults', '🔥 Destroying orchestrator...', 'warning');
+                orchestrator.destroy();
+                orchestrator = null;
+                
+                // Disable test buttons
+                const buttons = ['positionBtn', 'positionDegBtn', 'speedBtn', 'speedDegBtn', 
+                               'corruptionBtn', 'audioSyncBtn', 'recognitionBtn', 'eventBtn', 
+                               'fragmentBtn', 'clearFragBtn', 'destroyBtn'];
+                buttons.forEach(id => {
+                    document.getElementById(id).disabled = true;
+                });
+                
+                clearTestFragments();
+                updateStatus();
+                log('initResults', '✅ Orchestrator destroyed', 'success');
+            }
+        };
+        
+        // Test position optimization
+        window.testPositionOptimization = function() {
+            if (!orchestrator) return;
+            
+            try {
+                log('positionResults', '📍 Testing position optimization...', 'info');
+                orchestrator.fragmentPositionManager.optimizeForRecognition();
+                log('positionResults', '✅ Position optimization completed', 'success');
+                
+                // Emit recognition window opened event
+                orchestrator.eventBridge.emit('recognition:windowOpened');
+                log('positionResults', '📡 Emitted recognition:windowOpened event', 'info');
+                
+            } catch (error) {
+                log('positionResults', `❌ Position optimization failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test position degradation
+        window.testPositionDegradation = function() {
+            if (!orchestrator) return;
+            
+            try {
+                const level = Math.random();
+                log('positionResults', `📍 Testing degradation update (level: ${level.toFixed(2)})...`, 'info');
+                orchestrator.fragmentPositionManager.updateDegradationLevel(level);
+                log('positionResults', '✅ Position degradation update completed', 'success');
+                
+                // Emit degradation level changed event
+                orchestrator.eventBridge.emit('degradation:levelChanged', { level });
+                log('positionResults', '📡 Emitted degradation:levelChanged event', 'info');
+                
+            } catch (error) {
+                log('positionResults', `❌ Position degradation failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test speed reduction
+        window.testSpeedReduction = function() {
+            if (!orchestrator) return;
+            
+            try {
+                log('speedResults', '🏃 Testing speed reduction...', 'info');
+                orchestrator.fragmentSpeedController.reduceSpeedForExtension();
+                log('speedResults', '✅ Speed reduction completed', 'success');
+                
+                // Emit time extended event
+                orchestrator.eventBridge.emit('recognition:timeExtended');
+                log('speedResults', '📡 Emitted recognition:timeExtended event', 'info');
+                
+            } catch (error) {
+                log('speedResults', `❌ Speed reduction failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test speed degradation
+        window.testSpeedDegradation = function() {
+            if (!orchestrator) return;
+            
+            try {
+                const level = Math.random();
+                log('speedResults', `🏃 Testing speed degradation (level: ${level.toFixed(2)})...`, 'info');
+                orchestrator.fragmentSpeedController.updateDegradationLevel(level);
+                log('speedResults', '✅ Speed degradation update completed', 'success');
+                
+            } catch (error) {
+                log('speedResults', `❌ Speed degradation failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test corruption purification
+        window.testCorruptionPurification = function() {
+            if (!orchestrator) return;
+            
+            try {
+                log('corruptionResults', '🔄 Testing corruption purification...', 'info');
+                
+                // Create test fragments for purification
+                const testFrags = testFragments.slice(0, 3);
+                if (testFrags.length === 0) {
+                    log('corruptionResults', '⚠️ No test fragments available. Create some first.', 'warning');
+                    return;
+                }
+                
+                const purifiedCount = orchestrator.corruptionProgression.purifyOnRecognition(testFrags);
+                log('corruptionResults', `✅ Purified ${purifiedCount} fragments`, 'success');
+                
+                // Emit recognition succeeded event
+                orchestrator.eventBridge.emit('recognition:succeeded');
+                log('corruptionResults', '📡 Emitted recognition:succeeded event', 'info');
+                
+            } catch (error) {
+                log('corruptionResults', `❌ Corruption purification failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test audio sync
+        window.testAudioSync = function() {
+            if (!orchestrator) return;
+            
+            try {
+                const level = Math.random();
+                log('corruptionResults', `🔄 Testing audio sync (level: ${level.toFixed(2)})...`, 'info');
+                orchestrator.corruptionProgression.syncWithAudioDegradation(level);
+                log('corruptionResults', '✅ Audio sync completed', 'success');
+                
+                // Emit audio degradation changed event
+                orchestrator.eventBridge.emit('audio:degradationChanged', { level, source: 'test' });
+                log('corruptionResults', '📡 Emitted audio:degradationChanged event', 'info');
+                
+            } catch (error) {
+                log('corruptionResults', `❌ Audio sync failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test window extension
+        window.testWindowExtension = function() {
+            if (!orchestrator) return;
+            
+            try {
+                log('recognitionResults', '🎯 Testing window extension...', 'info');
+                orchestrator.recognitionGuide.extendWindowForProgress();
+                log('recognitionResults', '✅ Window extension completed', 'success');
+                
+                // Emit recognition attempt with high progress
+                orchestrator.eventBridge.emit('recognition:attempt', { method: 'test', progress: 0.8 });
+                log('recognitionResults', '📡 Emitted recognition:attempt event (high progress)', 'info');
+                
+            } catch (error) {
+                log('recognitionResults', `❌ Window extension failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Test event coordination
+        window.testEventCoordination = function() {
+            if (!orchestrator) return;
+            
+            try {
+                log('eventResults', '🔗 Testing event coordination...', 'info');
+                
+                const events = [
+                    { name: 'recognition:windowOpened', data: {} },
+                    { name: 'recognition:timeExtended', data: {} },
+                    { name: 'degradation:levelChanged', data: { level: 0.6 } },
+                    { name: 'recognition:succeeded', data: {} },
+                    { name: 'recognition:attempt', data: { method: 'test', progress: 0.9 } },
+                    { name: 'audio:degradationChanged', data: { level: 0.4, source: 'coordination_test' } }
+                ];
+                
+                events.forEach((event, index) => {
+                    setTimeout(() => {
+                        orchestrator.eventBridge.emit(event.name, event.data);
+                        log('eventResults', `📡 Emitted ${event.name}`, 'info');
+                    }, index * 500);
+                });
+                
+                setTimeout(() => {
+                    log('eventResults', '✅ Event coordination test completed', 'success');
+                }, events.length * 500 + 100);
+                
+            } catch (error) {
+                log('eventResults', `❌ Event coordination failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Create test fragments
+        window.createTestFragments = function() {
+            if (!orchestrator) return;
+            
+            try {
+                log('fragmentResults', '🎬 Creating test fragments...', 'info');
+                
+                const fragmentTexts = [
+                    "I remember the light...",
+                    "Digital memories fade like echoes",
+                    "Connection lost, searching for home",
+                    "The void calls, but I resist",
+                    "Fragments of what I used to be"
+                ];
+                
+                fragmentTexts.forEach((text, index) => {
+                    const fragment = document.createElement('div');
+                    fragment.className = 'fragment-test';
+                    fragment.textContent = text;
+                    fragment.dataset.birthTime = Date.now().toString();
+                    fragment.dataset.fragmentId = `test-${index}`;
+                    fragment.dataset.speed = '60';
+                    
+                    // Position randomly in safe zone
+                    const x = 100 + Math.random() * (window.innerWidth - 400);
+                    const y = 100 + Math.random() * (window.innerHeight - 200);
+                    fragment.style.left = `${x}px`;
+                    fragment.style.top = `${y}px`;
+                    
+                    document.body.appendChild(fragment);
+                    testFragments.push(fragment);
+                    
+                    // Initialize with corruption progression
+                    orchestrator.corruptionProgression.initializeCleanFragment(fragment);
+                    
+                    // Register with position manager
+                    orchestrator.fragmentPositionManager.trackedFragments.set(fragment, {
+                        originalPosition: { x, y },
+                        repositionTime: Date.now()
+                    });
+                });
+                
+                log('fragmentResults', `✅ Created ${fragmentTexts.length} test fragments`, 'success');
+                
+                // Start corruption progression demo
+                setTimeout(() => {
+                    testFragments.forEach((fragment, index) => {
+                        setTimeout(() => {
+                            const corruptionLevel = Math.random() * 0.8;
+                            orchestrator.corruptionProgression.applyProgressiveCorruption(fragment, {
+                                computational: corruptionLevel,
+                                emotional: 0,
+                                temporal: 0,
+                                void: 0
+                            });
+                        }, index * 1000);
+                    });
+                }, 2000);
+                
+            } catch (error) {
+                log('fragmentResults', `❌ Fragment creation failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Clear test fragments
+        window.clearTestFragments = function() {
+            testFragments.forEach(fragment => {
+                if (fragment.parentNode) {
+                    fragment.remove();
+                }
+            });
+            testFragments = [];
+            log('fragmentResults', '🧹 Cleared all test fragments', 'info');
+        };
+        
+        // Initialize status
+        updateStatus();
+    </script>
+</body>
+</html>

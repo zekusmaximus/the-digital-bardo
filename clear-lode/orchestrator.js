@@ -18,6 +18,8 @@ import { DegradationSystem } from './degradation-system.js';
 import { ClearLodeAudio } from './audio-engine.js';
 import { FragmentGenerator } from './fragment-generator-refactored.js';
 import { SynchronizedDegradationController } from './synchronized-degradation-controller.js';
+import { FragmentPositionManager } from './fragment-position-manager.js';
+import { FragmentSpeedController } from './fragment-speed-controller.js';
 import { dataGuardian } from '../src/security/data-flow-guardian.js';
 
 // Consciousness & Karmic Systems
@@ -57,7 +59,21 @@ export class ClearLodeOrchestrator {
         this.stateManager = new ClearLodeStateManager(dependencies);
         this.transitionController = new ClearLodeTransitionController(dependencies);
 
-        this.fragments = new FragmentGenerator(this.karmicEngine.createFragmentCallbacks());
+        // Initialize positioning and speed control systems
+        this.fragmentPositionManager = new FragmentPositionManager();
+        this.fragmentSpeedController = new FragmentSpeedController();
+
+        // Pass positioning and speed systems to fragment generator for coordination
+        this.fragments = new FragmentGenerator(
+            this.karmicEngine.createFragmentCallbacks(),
+            {
+                positionManager: this.fragmentPositionManager,
+                speedController: this.fragmentSpeedController
+            }
+        );
+        
+        // Store reference to corruption progression system for integration
+        this.corruptionProgression = this.fragments.corruptionProgression;
         this.audio = new ClearLodeAudio(dependencies); // Assuming AudioEngine can also be updated for DI
         this.recognition = new RecognitionHandler(dependencies); // Assuming RecognitionHandler is updated for DI
         this.recognitionGuide = new RecognitionGuideController(dependencies);
@@ -67,7 +83,9 @@ export class ClearLodeOrchestrator {
         const syncDependencies = {
             ...dependencies,
             audioEngine: this.audio,
-            corruptionProgression: this.fragments.corruptionProgression
+            corruptionProgression: this.corruptionProgression,
+            fragmentPositionManager: this.fragmentPositionManager,
+            fragmentSpeedController: this.fragmentSpeedController
         };
         this.synchronizedDegradation = new SynchronizedDegradationController(syncDependencies);
 
@@ -80,6 +98,8 @@ export class ClearLodeOrchestrator {
         this.guardian.registerCleanup(() => this.fragments.destroy());
         this.guardian.registerCleanup(() => this.audio.destroy());
         this.guardian.registerCleanup(() => this.synchronizedDegradation.destroy());
+        this.guardian.registerCleanup(() => this.fragmentPositionManager.destroy());
+        this.guardian.registerCleanup(() => this.fragmentSpeedController.destroy());
     }
 
     /**
@@ -102,6 +122,17 @@ export class ClearLodeOrchestrator {
             this.degradation.init();
             this.audio.init();
             this.synchronizedDegradation.init();
+            
+            // Initialize positioning and speed control systems
+            // These systems integrate with fragment generation and provide enhanced UX
+            console.log('[Orchestrator] Initializing UX enhancement systems...');
+            
+            // Position manager is already initialized via constructor
+            // Speed controller is already initialized via constructor
+            // Corruption progression is initialized via fragment generator
+            
+            // Set up cross-system coordination
+            this.setupSystemCoordination();
 
             this.setupInternalEventListeners();
             this.setupWindowLifecycleListeners();
@@ -123,6 +154,48 @@ export class ClearLodeOrchestrator {
     }
 
     /**
+     * Sets up coordination between the new UX enhancement systems
+     * @private
+     */
+    setupSystemCoordination() {
+        // Coordinate fragment positioning with recognition guidance
+        this.eventBridge.on('recognition:windowOpened', () => {
+            this.fragmentPositionManager.optimizeForRecognition();
+        });
+        
+        // Coordinate speed control with recognition timing
+        this.eventBridge.on('recognition:timeExtended', () => {
+            this.fragmentSpeedController.reduceSpeedForExtension();
+        });
+        
+        // Coordinate corruption progression with karma changes
+        this.eventBridge.on('karma:changed', (detail) => {
+            if (this.corruptionProgression) {
+                // Karma changes will be picked up by the corruption progression timer
+                console.log('[Orchestrator] Karma change detected, corruption will adjust automatically');
+            }
+        });
+        
+        // Coordinate positioning with degradation level
+        this.eventBridge.on('degradation:levelChanged', (detail) => {
+            const { level } = detail;
+            this.fragmentPositionManager.updateDegradationLevel(level);
+            this.fragmentSpeedController.updateDegradationLevel(level);
+        });
+        
+        // Coordinate purification effects with recognition success
+        this.eventBridge.on('recognition:succeeded', () => {
+            if (this.corruptionProgression) {
+                // Get all active fragments for purification
+                const activeFragments = this.fragments.activeFragments.map(f => f.element).filter(Boolean);
+                this.corruptionProgression.purifyOnRecognition(activeFragments);
+            }
+        });
+        
+        console.log('[Orchestrator] System coordination established');
+    }
+
+    /**
      * Sets up listeners for events broadcast by the subsystems.
      * This is where the orchestration happens.
      * @private
@@ -133,11 +206,17 @@ export class ClearLodeOrchestrator {
             ['animation:lightManifested', this.handleLightManifested.bind(this)],
             ['recognition:details', this.handleRecognitionDetails.bind(this)],
             ['recognition:attachment', this.handleAttachment.bind(this)],
+            ['recognition:timeout', this.handleRecognitionTimeout.bind(this)],
+            ['recognition:attempt', this.handleRecognitionAttempt.bind(this)],
+            ['recognition:attemptFailed', this.handleRecognitionAttemptFailed.bind(this)],
             ['degradation:choice', this.handleDegradationChoice.bind(this)],
+            ['degradation:audioFallbackActivated', this.handleAudioFallback.bind(this)],
+            ['degradation:audioFallbackDeactivated', this.handleAudioFallbackRestored.bind(this)],
             ['state:recognitionFailed', this.handleRecognitionFailure.bind(this)],
             ['state:recognitionWindowOpened', this.startHesitationDecay.bind(this)],
             ['state:recognitionSucceeded', this.stopHesitationDecay.bind(this)],
             ['degradation:started', this.stopHesitationDecay.bind(this)],
+            ['audio:degradationChanged', this.handleAudioDegradationChanged.bind(this)],
         ];
 
         listeners.forEach(([eventName, handler]) => {
@@ -304,6 +383,135 @@ export class ClearLodeOrchestrator {
         this.stopHesitationDecay();
    }
 
+   /**
+    * Handles recognition timeout from the enhanced recognition guide system
+    * @private
+    */
+   handleRecognitionTimeout() {
+       console.log('⏰ [Orchestrator] Recognition timeout received from guide system');
+       
+       // Record timeout event
+       consciousness.recordEvent('recognition_timeout', {
+           timestamp: Date.now(),
+           degradationLevel: this.audio.getDegradationLevel(),
+           recognitionAttempts: consciousness.getState('clearLode.recognitionAttempts') || 0
+       });
+       
+       // Trigger recognition failure if not already recognized
+       if (!consciousness.getState('clearLode.recognized')) {
+           this.handleRecognitionFailure();
+       }
+   }
+
+   /**
+    * Handles audio fallback activation from synchronized degradation system
+    * @private
+    */
+   handleAudioFallback(detail) {
+       const { reason } = detail;
+       console.log(`🔇 [Orchestrator] Audio fallback activated: ${reason}`);
+       
+       // Record fallback activation
+       consciousness.recordEvent('audio_fallback_activated', {
+           reason: reason,
+           timestamp: Date.now(),
+           degradationLevel: this.audio.getDegradationLevel()
+       });
+       
+       // Notify other systems that visual guidance should be enhanced
+       this.eventBridge.emit('guidance:enhanceVisual', { reason: 'audio_fallback' });
+   }
+
+   /**
+    * Handles audio fallback restoration
+    * @private
+    */
+   handleAudioFallbackRestored() {
+       console.log('🔊 [Orchestrator] Audio fallback deactivated - audio restored');
+       
+       // Record fallback restoration
+       consciousness.recordEvent('audio_fallback_deactivated', {
+           timestamp: Date.now(),
+           degradationLevel: this.audio.getDegradationLevel()
+       });
+       
+       // Notify other systems that visual guidance can return to normal
+       this.eventBridge.emit('guidance:normalizeVisual');
+   }
+
+   /**
+    * Handles recognition attempts with progress feedback
+    * @private
+    */
+   handleRecognitionAttempt(detail) {
+       const { method, progress } = detail;
+       console.log(`🎯 [Orchestrator] Recognition attempt: ${method} (${Math.round(progress * 100)}%)`);
+       
+       // Record recognition attempt
+       consciousness.recordEvent('recognition_attempt', {
+           method: method,
+           progress: progress,
+           timestamp: Date.now(),
+           degradationLevel: this.audio.getDegradationLevel()
+       });
+       
+       // Coordinate feedback between systems
+       this.synchronizedDegradation.handleRecognitionAttempt(method, progress);
+       
+       // Extend recognition window if user is making good progress
+       if (progress > 0.5) {
+           this.recognitionGuide.extendWindowForProgress();
+       }
+   }
+
+   /**
+    * Handles failed recognition attempts
+    * @private
+    */
+   handleRecognitionAttemptFailed(detail) {
+       const { method, reason } = detail;
+       console.log(`❌ [Orchestrator] Recognition attempt failed: ${method} (${reason})`);
+       
+       // Record failed attempt
+       consciousness.recordEvent('recognition_attempt_failed', {
+           method: method,
+           reason: reason,
+           timestamp: Date.now(),
+           degradationLevel: this.audio.getDegradationLevel()
+       });
+       
+       // Provide feedback through synchronized system
+       this.synchronizedDegradation.handleRecognitionFailure(method, reason);
+       
+       // Slightly accelerate degradation for failed attempts
+       this.audio.accelerateDegradation(0.01);
+   }
+
+   /**
+    * Handles audio degradation level changes
+    * @private
+    */
+   handleAudioDegradationChanged(detail) {
+       const { level, source } = detail;
+       console.log(`🔊 [Orchestrator] Audio degradation changed: ${level} (source: ${source})`);
+       
+       // Sync fragment corruption with audio degradation
+       this.fragments.syncCorruptionWithAudio(level);
+       
+       // Update fragment positioning based on degradation level
+       this.fragmentPositionManager.updateDegradationLevel(level);
+       
+       // Adjust fragment speeds based on degradation
+       this.fragmentSpeedController.updateDegradationLevel(level);
+       
+       // Record degradation change
+       consciousness.recordEvent('audio_degradation_changed', {
+           level: level,
+           source: source,
+           timestamp: Date.now()
+       });
+   }
+
     startHesitationDecay() {
         if (this.hesitationIntervalId) return;
         this.hesitationIntervalId = setInterval(() => {
@@ -375,9 +583,13 @@ export class ClearLodeOrchestrator {
         this.stateManager = null;
         this.transitionController = null;
         this.recognition = null;
+        this.recognitionGuide = null;
         this.degradation = null;
         this.fragments = null;
         this.audio = null;
+        this.synchronizedDegradation = null;
+        this.fragmentPositionManager = null;
+        this.fragmentSpeedController = null;
         this.karmicEngine = null;
         this.guardian = null;
 

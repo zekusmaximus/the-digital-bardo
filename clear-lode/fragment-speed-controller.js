@@ -419,6 +419,120 @@ export class FragmentSpeedController {
     }
 
     /**
+     * Reduces fragment speeds when recognition window is extended
+     * Gives users more time to read fragments during extended recognition
+     */
+    reduceSpeedForExtension() {
+        console.log('[FragmentSpeedController] Reducing speeds for recognition extension');
+        
+        const extensionSpeedFactor = 0.6; // Reduce speed to 60% of normal
+        let fragmentsAdjusted = 0;
+        
+        for (const [fragmentId, speedData] of this.fragmentSpeeds) {
+            const currentSpeed = speedData.currentSpeed;
+            const reducedSpeed = Math.max(
+                this.config.speedLimits.minSpeed,
+                currentSpeed * extensionSpeedFactor
+            );
+            
+            if (reducedSpeed !== currentSpeed) {
+                this.updateFragmentSpeed(fragmentId, reducedSpeed);
+                fragmentsAdjusted++;
+            }
+        }
+        
+        // Record extension speed reduction
+        consciousness.recordEvent('fragment_speeds_reduced_for_extension', {
+            speedFactor: extensionSpeedFactor,
+            fragmentsAdjusted: fragmentsAdjusted,
+            totalFragments: this.fragmentSpeeds.size,
+            timestamp: Date.now()
+        });
+        
+        console.log(`[FragmentSpeedController] Reduced speeds for ${fragmentsAdjusted} fragments`);
+    }
+    
+    /**
+     * Updates speed behavior based on degradation level
+     * Higher degradation makes speeds more erratic and potentially faster
+     */
+    updateDegradationLevel(level) {
+        const numericLevel = typeof level === 'number' ? level : this.parseDegradationLevel(level);
+        
+        console.log(`[FragmentSpeedController] Updating degradation level: ${numericLevel}`);
+        
+        // Adjust speed limits based on degradation
+        const baseSpeedLimits = {
+            maxSpeed: 120,
+            minSpeed: 20,
+            baseSpeedFactor: 0.8,
+            lengthSpeedRatio: 2
+        };
+        
+        // Higher degradation increases speed chaos and reduces readability consideration
+        const degradationFactor = numericLevel;
+        
+        this.config.speedLimits = {
+            maxSpeed: baseSpeedLimits.maxSpeed * (1 + degradationFactor * 0.8), // Up to 80% faster
+            minSpeed: Math.max(10, baseSpeedLimits.minSpeed * (1 - degradationFactor * 0.3)), // Up to 30% slower minimum
+            baseSpeedFactor: baseSpeedLimits.baseSpeedFactor * (1 + degradationFactor * 0.4), // Less speed control
+            lengthSpeedRatio: Math.max(0.5, baseSpeedLimits.lengthSpeedRatio * (1 - degradationFactor * 0.6)) // Less consideration for content length
+        };
+        
+        // Adjust readability settings - higher degradation cares less about reading time
+        this.config.readability.readingBuffer = Math.max(1.0, 1.5 - degradationFactor * 0.4);
+        this.config.readability.minReadingTime = Math.max(1, 3 - degradationFactor * 1.5);
+        
+        // Adjust transition smoothness - higher degradation is more jarring
+        this.config.transitions.smoothingEnabled = degradationFactor < 0.7;
+        this.config.transitions.accelerationLimit = baseSpeedLimits.maxSpeed * (1 + degradationFactor);
+        
+        // Apply degradation to existing fragments
+        for (const [fragmentId, speedData] of this.fragmentSpeeds) {
+            if (speedData.fragment && speedData.fragment.textContent) {
+                const newOptimalSpeed = this.calculateOptimalSpeed(speedData.fragment.textContent);
+                
+                // Add some chaos for higher degradation
+                if (degradationFactor > 0.5) {
+                    const chaosMultiplier = 0.8 + Math.random() * 0.4; // 80% to 120% of optimal
+                    const chaoticSpeed = newOptimalSpeed * chaosMultiplier;
+                    this.updateFragmentSpeed(fragmentId, chaoticSpeed);
+                } else {
+                    this.updateFragmentSpeed(fragmentId, newOptimalSpeed);
+                }
+            }
+        }
+        
+        // Record degradation update
+        consciousness.recordEvent('fragment_speed_degradation_updated', {
+            degradationLevel: numericLevel,
+            newSpeedLimits: this.config.speedLimits,
+            newReadabilityConfig: this.config.readability,
+            fragmentsUpdated: this.fragmentSpeeds.size,
+            timestamp: Date.now()
+        });
+    }
+    
+    /**
+     * Parses degradation level to numeric value
+     * @private
+     */
+    parseDegradationLevel(level) {
+        if (typeof level === 'number') {
+            return Math.max(0, Math.min(1, level));
+        }
+        
+        const levelMap = {
+            'minimal': 0.2,
+            'moderate': 0.5,
+            'severe': 0.8,
+            'complete': 1.0
+        };
+        
+        return levelMap[level] || 0.2;
+    }
+
+    /**
      * Destroys the speed controller and cleans up resources
      */
     destroy() {

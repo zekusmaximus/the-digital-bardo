@@ -2083,6 +2083,96 @@ export class RecognitionGuideController {
     }
 
     /**
+     * Extends recognition window when user is making progress
+     * Called by orchestrator when user shows good progress (>50%)
+     */
+    extendWindowForProgress() {
+        if (!this.isActive || this.isDestroyed) {
+            return;
+        }
+        
+        console.log('[RecognitionGuideController] Extending window for user progress');
+        
+        // Extend the current timeout by 5 seconds
+        const extensionTime = 5000;
+        this.timeoutDuration += extensionTime;
+        this.extensionsGranted++;
+        
+        // Clear existing timeout and reschedule
+        if (this.timeoutTimer) {
+            clearTimeout(this.timeoutTimer);
+            this.timeoutTimer = null;
+        }
+        
+        // Reschedule timeout with extended duration
+        this.scheduleTimeoutWarning();
+        
+        // Show progress extension feedback
+        this.showProgressExtensionFeedback(extensionTime);
+        
+        // Record extension event
+        consciousness.recordEvent('recognition_window_extended_for_progress', {
+            extensionTime: extensionTime,
+            newDuration: this.timeoutDuration,
+            extensionsGranted: this.extensionsGranted,
+            timestamp: Date.now()
+        });
+        
+        // Emit event for other systems to coordinate
+        this.eventBridge.emit('recognition:timeExtended', {
+            reason: 'progress',
+            extensionTime: extensionTime,
+            totalDuration: this.timeoutDuration
+        });
+    }
+    
+    /**
+     * Shows visual feedback for progress-based extension
+     * @private
+     */
+    showProgressExtensionFeedback(extensionTime) {
+        const feedbackElement = document.createElement('div');
+        feedbackElement.className = 'progress-extension-feedback';
+        feedbackElement.textContent = `+${extensionTime / 1000}s for progress`;
+        
+        // Style the feedback element
+        Object.assign(feedbackElement.style, {
+            position: 'fixed',
+            top: '20%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(100, 255, 100, 0.9)',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '5px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            zIndex: '10000',
+            opacity: '0',
+            transition: 'opacity 0.3s ease-in-out'
+        });
+        
+        document.body.appendChild(feedbackElement);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            feedbackElement.style.opacity = '1';
+        });
+        
+        // Remove after 2 seconds
+        setTimeout(() => {
+            if (feedbackElement.parentNode) {
+                feedbackElement.style.opacity = '0';
+                setTimeout(() => {
+                    if (feedbackElement.parentNode) {
+                        feedbackElement.remove();
+                    }
+                }, 300);
+            }
+        }, 2000);
+    }
+
+    /**
      * Destroys the guide controller and cleans up all resources
      */
     destroy() {

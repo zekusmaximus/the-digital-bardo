@@ -136,7 +136,7 @@ export function applyCorruption(text, level) {
  * Refactored FragmentGenerator using extracted components
  */
 export class FragmentGenerator {
-    constructor(karmicCallbacks = null) {
+    constructor(karmicCallbacks = null, externalSystems = null) {
         this.activeFragments = [];
         this.fragmentInterval = null;
         this.isActive = false;
@@ -154,8 +154,22 @@ export class FragmentGenerator {
         this.driftCalculator = new FragmentDriftCalculator(this.zoneManager);
         this.positioningService = new FragmentPositioningService(this.zoneManager);
         
-        // Initialize new readability-focused position manager
-        this.positionManager = new FragmentPositionManager();
+        // Use external systems if provided, otherwise create new instances
+        if (externalSystems && externalSystems.positionManager) {
+            this.positionManager = externalSystems.positionManager;
+            console.log('[FragmentGenerator] Using external position manager');
+        } else {
+            this.positionManager = new FragmentPositionManager();
+            this.guardian.register(this.positionManager, (manager) => manager.destroy());
+        }
+        
+        if (externalSystems && externalSystems.speedController) {
+            this.speedController = externalSystems.speedController;
+            console.log('[FragmentGenerator] Using external speed controller');
+        } else {
+            this.speedController = new FragmentSpeedController();
+            this.guardian.register(this.speedController, (controller) => controller.destroy());
+        }
         
         // Initialize corruption progression system
         this.corruptionProgression = new CorruptionProgression(
@@ -171,7 +185,6 @@ export class FragmentGenerator {
         this.guardian.register(this.zoneManager, (manager) => manager.destroy());
         this.guardian.register(this.animationController, (controller) => controller.destroy());
         this.guardian.register(this.positioningService, (service) => service.destroy());
-        this.guardian.register(this.positionManager, (manager) => manager.destroy());
         this.guardian.register(this.corruptionProgression, (corruption) => corruption.destroy());
 
         // Visual enhancement integration
@@ -434,8 +447,8 @@ export class FragmentGenerator {
         fragment.style.left = `${safePosition.x}px`;
         fragment.style.top = `${safePosition.y}px`;
         
-        // Calculate and store optimal speed for this fragment
-        const optimalSpeed = this.positionManager.calculateOptimalSpeed(thoughtText);
+        // Calculate and store optimal speed for this fragment using speed controller
+        const optimalSpeed = this.speedController.calculateOptimalSpeed(thoughtText);
         fragment.dataset.speed = optimalSpeed;
         fragment.dataset.zoneId = selectedZone.id;
 
@@ -454,7 +467,16 @@ export class FragmentGenerator {
 
         // Animate with readability considerations
         const drift = this.driftCalculator.calculateDrift(selectedZone);
-        const { animationDuration } = this.tierSettings;
+        
+        // Calculate movement distance for duration calculation
+        const movementDistance = Math.sqrt(drift.x * drift.x + drift.y * drift.y);
+        
+        // Use speed controller to calculate optimal animation duration
+        const animationDuration = this.speedController.calculateAnimationDuration(
+            thoughtText, 
+            movementDistance, 
+            optimalSpeed
+        );
 
         this.animationController.animateFragmentAppearance(fragment);
         
@@ -705,6 +727,12 @@ export class FragmentGenerator {
         if (this.positionManager) {
             const readabilityStats = this.positionManager.getPerformanceStats();
             baseStats.readability = readabilityStats;
+        }
+        
+        // Add speed control stats if speed controller is available
+        if (this.speedController) {
+            const speedStats = this.speedController.getPerformanceStats();
+            baseStats.speedControl = speedStats;
         }
         
         // Add corruption stats if corruption progression is available
