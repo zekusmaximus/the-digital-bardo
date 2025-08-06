@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Lode Functionality Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+        .pass { color: #00ff00; background: rgba(0, 255, 0, 0.1); }
+        .fail { color: #ff0000; background: rgba(255, 0, 0, 0.1); }
+        .pending { color: #ffff00; background: rgba(255, 255, 0, 0.1); }
+        .test-controls {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #00ff00;
+        }
+        button {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 12px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover {
+            background: rgba(0, 255, 0, 0.2);
+        }
+        #testOutput {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #333;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clear Lode Functionality Test</h1>
+    
+    <div class="test-controls">
+        <h3>Test Controls</h3>
+        <button onclick="testClearLodePage()">Test Clear Lode Main Page</button>
+        <button onclick="testVerificationPage()">Test Verification Page</button>
+        <button onclick="testRecognitionMethods()">Test Recognition Methods</button>
+        <button onclick="clearOutput()">Clear Output</button>
+    </div>
+
+    <div id="testOutput">
+        <p>Ready to run tests...</p>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('testOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'pass' ? 'pass' : type === 'fail' ? 'fail' : type === 'pending' ? 'pending' : '';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            document.getElementById('testOutput').innerHTML = '<p>Output cleared...</p>';
+        }
+
+        async function testClearLodePage() {
+            log('Testing Clear Lode main page functionality...', 'pending');
+            
+            try {
+                // Test if the main page loads
+                const response = await fetch('http://localhost:8890/clear-lode/');
+                if (response.ok) {
+                    log('✓ Clear Lode page loads successfully', 'pass');
+                    const html = await response.text();
+                    
+                    // Check for key elements
+                    const checks = [
+                        { test: html.includes('id="clear-light"'), name: 'Clear light element present' },
+                        { test: html.includes('id="fragment-field"'), name: 'Fragment field element present' },
+                        { test: html.includes('id="choice-prompt"'), name: 'Choice prompt element present' },
+                        { test: html.includes('orchestrator.js'), name: 'Orchestrator script included' },
+                        { test: html.includes('clear-lode.css'), name: 'Clear Lode CSS included' },
+                        { test: html.includes('recognition-guide.css'), name: 'Recognition guide CSS included' }
+                    ];
+                    
+                    checks.forEach(check => {
+                        log(check.test ? `✓ ${check.name}` : `✗ ${check.name}`, check.test ? 'pass' : 'fail');
+                    });
+                    
+                } else {
+                    log(`✗ Clear Lode page failed to load: ${response.status}`, 'fail');
+                }
+            } catch (error) {
+                log(`✗ Error testing Clear Lode page: ${error.message}`, 'fail');
+            }
+        }
+
+        async function testVerificationPage() {
+            log('Testing verification page functionality...', 'pending');
+            
+            try {
+                const response = await fetch('http://localhost:8890/clear-lode/verify-fixes.html');
+                if (response.ok) {
+                    log('✓ Verification page loads successfully', 'pass');
+                    const html = await response.text();
+                    
+                    // Check for verification elements
+                    const checks = [
+                        { test: html.includes('verification-panel'), name: 'Verification panel present' },
+                        { test: html.includes('css-check'), name: 'CSS check element present' },
+                        { test: html.includes('overflow-check'), name: 'Overflow check element present' },
+                        { test: html.includes('recognition-check'), name: 'Recognition check element present' },
+                        { test: html.includes('degradation-check'), name: 'Degradation check element present' },
+                        { test: html.includes('audio-check'), name: 'Audio check element present' },
+                        { test: html.includes('fragments-check'), name: 'Fragments check element present' },
+                        { test: html.includes('ClearLodeOrchestrator'), name: 'Orchestrator import present' }
+                    ];
+                    
+                    checks.forEach(check => {
+                        log(check.test ? `✓ ${check.name}` : `✗ ${check.name}`, check.test ? 'pass' : 'fail');
+                    });
+                    
+                } else {
+                    log(`✗ Verification page failed to load: ${response.status}`, 'fail');
+                }
+            } catch (error) {
+                log(`✗ Error testing verification page: ${error.message}`, 'fail');
+            }
+        }
+
+        async function testRecognitionMethods() {
+            log('Testing recognition method implementation...', 'pending');
+            
+            try {
+                // Test recognition handler file
+                const response = await fetch('http://localhost:8890/clear-lode/recognition-handler.js');
+                if (response.ok) {
+                    log('✓ Recognition handler file accessible', 'pass');
+                    const code = await response.text();
+                    
+                    const checks = [
+                        { test: code.includes('bindCenterClick'), name: 'Center click method implemented' },
+                        { test: code.includes('bindKeywordTyping'), name: 'Keyword typing method implemented' },
+                        { test: code.includes('bindSpacebarHold'), name: 'Spacebar hold method implemented' },
+                        { test: code.includes('KEYWORDS') && code.includes('RECOGNIZE'), name: 'Recognition keywords defined' },
+                        { test: code.includes('HOLD_SWEET_SPOT'), name: 'Spacebar timing configured' },
+                        { test: code.includes('CENTER_RADIUS'), name: 'Center click radius configured' },
+                        { test: code.includes('createProgressCircle'), name: 'Progress visualization implemented' },
+                        { test: code.includes('achieveRecognition'), name: 'Recognition achievement handler present' }
+                    ];
+                    
+                    checks.forEach(check => {
+                        log(check.test ? `✓ ${check.name}` : `✗ ${check.name}`, check.test ? 'pass' : 'fail');
+                    });
+                    
+                } else {
+                    log(`✗ Recognition handler file not accessible: ${response.status}`, 'fail');
+                }
+            } catch (error) {
+                log(`✗ Error testing recognition methods: ${error.message}`, 'fail');
+            }
+        }
+
+        // Auto-run basic tests on load
+        setTimeout(() => {
+            log('Starting automated functionality tests...', 'pending');
+            testClearLodePage();
+            setTimeout(() => testVerificationPage(), 1000);
+            setTimeout(() => testRecognitionMethods(), 2000);
+        }, 500);
+    </script>
+</body>
+</html>
