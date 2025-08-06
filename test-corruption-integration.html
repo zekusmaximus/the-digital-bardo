@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corruption Integration Test</title>
+    <link rel="stylesheet" href="src/styles/corruption-effects.css">
+    <style>
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+        }
+        
+        #fragment-field {
+            min-height: 400px;
+            border: 1px solid #333;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        button:hover {
+            background: #555;
+        }
+        
+        .stats {
+            background: #222;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        
+        .consciousness-fragment {
+            position: absolute;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            font-size: 14px;
+            max-width: 300px;
+            word-wrap: break-word;
+            transition: all 0.3s ease;
+        }
+        
+        .consciousness-fragment:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <h1>Corruption System Integration Test</h1>
+    <p>This test demonstrates the progressive fragment corruption system working with the fragment generator.</p>
+    
+    <div class="controls">
+        <button onclick="startFragmentField()">Start Fragment Field</button>
+        <button onclick="stopFragmentField()">Stop Fragment Field</button>
+        <button onclick="triggerRecognition()">Trigger Recognition (Purify)</button>
+        <button onclick="increaseKarma()">Increase Karma (Reduce Corruption)</button>
+        <button onclick="decreaseKarma()">Decrease Karma (Increase Corruption)</button>
+        <button onclick="syncWithAudio('severe')">Sync Audio: Severe</button>
+        <button onclick="syncWithAudio('minimal')">Sync Audio: Minimal</button>
+        <button onclick="showStats()">Show Stats</button>
+    </div>
+    
+    <div id="fragment-field"></div>
+    
+    <div class="stats" id="stats">
+        Click "Start Fragment Field" to begin the test
+    </div>
+
+    <script type="module">
+        // Import required modules
+        import { FragmentGenerator } from './clear-lode/fragment-generator-refactored.js';
+        import { consciousness } from './src/consciousness/digital-soul.js';
+
+        let fragmentGenerator = null;
+        let isRunning = false;
+
+        // Initialize consciousness system
+        consciousness.beginJourney();
+
+        // Set up karma callbacks for fragment generator
+        const karmicCallbacks = {
+            onView: (data) => {
+                const impact = consciousness.karmicEngine.recordKarmaEvent(
+                    consciousness.karmicEngine.KARMA_EVENTS.MEMORY_VIEW,
+                    data
+                );
+                return impact;
+            },
+            onAttach: (data) => {
+                const impact = consciousness.karmicEngine.recordKarmaEvent(
+                    consciousness.karmicEngine.KARMA_EVENTS.MEMORY_ATTACHMENT,
+                    data
+                );
+                return impact;
+            }
+        };
+
+        window.startFragmentField = function() {
+            if (isRunning) return;
+            
+            try {
+                fragmentGenerator = new FragmentGenerator(karmicCallbacks);
+                fragmentGenerator.startFragmentField();
+                isRunning = true;
+                
+                document.getElementById('stats').innerHTML = `
+                    <strong>Fragment Field Started</strong><br>
+                    Performance Tier: ${fragmentGenerator.performanceTier}<br>
+                    Corruption System: Active<br>
+                    Status: Running
+                `;
+                
+                console.log('Fragment field started with corruption system');
+            } catch (error) {
+                console.error('Failed to start fragment field:', error);
+                document.getElementById('stats').textContent = 'Error: ' + error.message;
+            }
+        };
+
+        window.stopFragmentField = function() {
+            if (!isRunning || !fragmentGenerator) return;
+            
+            fragmentGenerator.destroy();
+            fragmentGenerator = null;
+            isRunning = false;
+            
+            document.getElementById('stats').textContent = 'Fragment field stopped';
+            console.log('Fragment field stopped');
+        };
+
+        window.triggerRecognition = function() {
+            if (!fragmentGenerator) {
+                alert('Please start fragment field first');
+                return;
+            }
+
+            const purifiedCount = fragmentGenerator.purifyFragmentsOnRecognition();
+            
+            document.getElementById('stats').innerHTML = `
+                <strong>Recognition Triggered</strong><br>
+                Fragments Purified: ${purifiedCount}<br>
+                Status: Purification complete
+            `;
+            
+            console.log(`Recognition triggered, purified ${purifiedCount} fragments`);
+        };
+
+        window.increaseKarma = function() {
+            // Add positive karma
+            consciousness.karmicEngine.recordKarmaEvent('POSITIVE_ACTION', {
+                computational: 0.1,
+                emotional: 0.1,
+                temporal: 0.1
+            });
+            
+            const karma = consciousness.getState('karma');
+            document.getElementById('stats').innerHTML = `
+                <strong>Karma Increased</strong><br>
+                Computational: ${karma.computational.toFixed(3)}<br>
+                Emotional: ${karma.emotional.toFixed(3)}<br>
+                Temporal: ${karma.temporal.toFixed(3)}<br>
+                Void: ${karma.void.toFixed(3)}
+            `;
+        };
+
+        window.decreaseKarma = function() {
+            // Add negative karma
+            consciousness.karmicEngine.recordKarmaEvent('NEGATIVE_ACTION', {
+                computational: -0.1,
+                emotional: -0.1,
+                temporal: -0.1,
+                void: -0.1
+            });
+            
+            const karma = consciousness.getState('karma');
+            document.getElementById('stats').innerHTML = `
+                <strong>Karma Decreased</strong><br>
+                Computational: ${karma.computational.toFixed(3)}<br>
+                Emotional: ${karma.emotional.toFixed(3)}<br>
+                Temporal: ${karma.temporal.toFixed(3)}<br>
+                Void: ${karma.void.toFixed(3)}
+            `;
+        };
+
+        window.syncWithAudio = function(level) {
+            if (!fragmentGenerator) {
+                alert('Please start fragment field first');
+                return;
+            }
+
+            fragmentGenerator.syncCorruptionWithAudio(level);
+            
+            document.getElementById('stats').innerHTML = `
+                <strong>Audio Sync</strong><br>
+                Level: ${level}<br>
+                Status: Corruption synced with audio
+            `;
+            
+            console.log(`Synced corruption with audio level: ${level}`);
+        };
+
+        window.showStats = function() {
+            if (!fragmentGenerator) {
+                alert('Please start fragment field first');
+                return;
+            }
+
+            const stats = fragmentGenerator.getPerformanceStats();
+            const corruptionStats = fragmentGenerator.getCorruptionStats();
+            const karma = consciousness.getState('karma');
+            
+            document.getElementById('stats').innerHTML = `
+                <strong>System Statistics</strong><br>
+                <br><strong>Fragment Stats:</strong><br>
+                Active Fragments: ${stats.activeFragments}<br>
+                Created: ${stats.fragmentsCreated}<br>
+                Removed: ${stats.fragmentsRemoved}<br>
+                Performance Tier: ${stats.performanceTier}<br>
+                <br><strong>Corruption Stats:</strong><br>
+                Total Fragments: ${corruptionStats.totalFragments}<br>
+                Average Corruption: ${corruptionStats.averageCorruption.toFixed(3)}<br>
+                Max Corruption: ${corruptionStats.maxCorruption.toFixed(3)}<br>
+                Global Level: ${corruptionStats.globalLevel.toFixed(3)}<br>
+                <br><strong>Karma State:</strong><br>
+                Computational: ${karma.computational.toFixed(3)}<br>
+                Emotional: ${karma.emotional.toFixed(3)}<br>
+                Temporal: ${karma.temporal.toFixed(3)}<br>
+                Void: ${karma.void.toFixed(3)}
+            `;
+        };
+
+        // Auto-start after a short delay
+        setTimeout(() => {
+            startFragmentField();
+        }, 1000);
+
+        // Update stats periodically
+        setInterval(() => {
+            if (isRunning && fragmentGenerator) {
+                const stats = fragmentGenerator.getPerformanceStats();
+                if (stats.activeFragments > 0) {
+                    // Update title to show active fragments
+                    document.title = `Corruption Test (${stats.activeFragments} fragments)`;
+                }
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

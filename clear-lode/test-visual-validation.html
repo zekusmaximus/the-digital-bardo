@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Validation Tests</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 5px;
+      z-index: 10000;
+    }
+    
+    button {
+      background-color: #444;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin: 5px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #666;
+    }
+    
+    .metrics {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 5px;
+      max-width: 400px;
+      font-size: 12px;
+      z-index: 10000;
+    }
+    
+    .fragment {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: white;
+      pointer-events: none;
+    }
+    
+    .test-result {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 3px;
+    }
+    
+    .test-result.pass {
+      background-color: rgba(0, 128, 0, 0.3);
+      border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .test-result.fail {
+      background-color: rgba(128, 0, 0, 0.3);
+      border: 1px solid rgba(255, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="createFragments">Create Fragments</button>
+    <button id="toggleVisualization">Show Zones</button>
+    <button id="runTests">Run Tests</button>
+    <button id="clearFragments">Clear All</button>
+    <div>
+      <label for="fragmentCount">Fragment Count:</label>
+      <input type="number" id="fragmentCount" value="20" min="1" max="100" style="width: 50px;">
+    </div>
+  </div>
+  
+  <div class="metrics" id="metricsDisplay">
+    <h3>Distribution Metrics</h3>
+    <div id="metricsContent">No data yet</div>
+    <div id="testResults"></div>
+  </div>
+
+  <div id="fragmentContainer"></div>
+
+  <script type="module">
+    import { visualDistributionValidator } from './visual-validation-tests.js';
+    import { PositionZoneManager } from './position-zone-manager.js';
+    import { FragmentPositioningService } from './fragment-positioning-service.js';
+    import { FragmentDriftCalculator } from './fragment-drift-calculator.js';
+    import { AnimationGuardian } from '../src/utils/animation-guardian.js';
+    
+    // Initialize components
+    const zoneManager = new PositionZoneManager();
+    const positioningService = new FragmentPositioningService(zoneManager);
+    const driftCalculator = new FragmentDriftCalculator(zoneManager);
+    
+    // Initialize validator
+    visualDistributionValidator.initialize({
+      visualizationEnabled: false,
+      recordMetrics: true
+    });
+    
+    // Track fragments
+    const fragments = [];
+    
+    // DOM elements
+    const fragmentContainer = document.getElementById('fragmentContainer');
+    const createFragmentsBtn = document.getElementById('createFragments');
+    const toggleVisualizationBtn = document.getElementById('toggleVisualization');
+    const runTestsBtn = document.getElementById('runTests');
+    const clearFragmentsBtn = document.getElementById('clearFragments');
+    const fragmentCountInput = document.getElementById('fragmentCount');
+    const metricsContent = document.getElementById('metricsContent');
+    const testResults = document.getElementById('testResults');
+    
+    // Create fragments
+    function createFragments(count = 20) {
+      for (let i = 0; i < count; i++) {
+        createFragment();
+      }
+      updateMetricsDisplay();
+    }
+    
+    // Create a single fragment
+    function createFragment() {
+      const fragment = document.createElement('div');
+      fragment.className = 'fragment';
+      fragment.textContent = getRandomText();
+      fragment.dataset.birthTime = Date.now().toString();
+      
+      // Select zone and position fragment
+      const zone = zoneManager.selectZone();
+      positioningService.positionFragment(fragment, zone);
+      
+      // Record zone usage
+      zoneManager.recordZoneUsage(zone);
+      
+      // Add to DOM
+      fragmentContainer.appendChild(fragment);
+      
+      // Store fragment
+      fragments.push({
+        element: fragment,
+        zone: zone,
+        birthTime: Date.now()
+      });
+      
+      // Animate fragment
+      setTimeout(() => {
+        animateFragment(fragment);
+      }, Math.random() * 2000);
+      
+      return fragment;
+    }
+    
+    // Animate fragment
+    function animateFragment(fragment) {
+      const zoneId = fragment.dataset.zoneId;
+      const zone = zoneManager.getZone(zoneId);
+      
+      if (!zone) return;
+      
+      // Calculate drift
+      const drift = driftCalculator.calculateDrift(zone, 0.6);
+      
+      // Apply animation
+      AnimationGuardian.safeAnimate(fragment, {
+        x: `+=${drift.x}`,
+        y: `+=${drift.y}`,
+        duration: 2 + Math.random() * 3,
+        ease: 'power1.inOut',
+        onComplete: () => {
+          // Remove fragment after animation
+          setTimeout(() => {
+            removeFragment(fragment);
+          }, Math.random() * 2000);
+        }
+      });
+    }
+    
+    // Remove fragment
+    function removeFragment(fragment) {
+      const zoneId = fragment.dataset.zoneId;
+      
+      // Release zone
+      if (zoneId) {
+        zoneManager.recordZoneRelease(zoneId);
+        positioningService.recordFragmentRemoval(zoneId);
+      }
+      
+      // Remove from DOM
+      if (fragment.parentNode) {
+        fragment.parentNode.removeChild(fragment);
+      }
+      
+      // Remove from fragments array
+      const index = fragments.findIndex(f => f.element === fragment);
+      if (index !== -1) {
+        fragments.splice(index, 1);
+      }
+      
+      updateMetricsDisplay();
+    }
+    
+    // Clear all fragments
+    function clearAllFragments() {
+      // Remove all fragments
+      while (fragments.length > 0) {
+        const fragment = fragments[0].element;
+        removeFragment(fragment);
+      }
+      
+      // Clear container
+      fragmentContainer.innerHTML = '';
+      
+      updateMetricsDisplay();
+    }
+    
+    // Toggle visualization
+    function toggleVisualization() {
+      const isEnabled = visualDistributionValidator.config.visualizationEnabled;
+      visualDistributionValidator.config.visualizationEnabled = !isEnabled;
+      
+      if (visualDistributionValidator.config.visualizationEnabled) {
+        visualDistributionValidator.createVisualization();
+        toggleVisualizationBtn.textContent = 'Hide Zones';
+      } else {
+        if (visualDistributionValidator.container) {
+          document.body.removeChild(visualDistributionValidator.container);
+          visualDistributionValidator.container = null;
+        }
+        toggleVisualizationBtn.textContent = 'Show Zones';
+      }
+    }
+    
+    // Run tests
+    function runTests() {
+      const results = visualDistributionValidator.runValidationTestSuite();
+      
+      // Display test results
+      testResults.innerHTML = '';
+      
+      // Distribution balance test
+      const balanceTest = document.createElement('div');
+      balanceTest.className = `test-result ${results.distributionBalance.passed ? 'pass' : 'fail'}`;
+      balanceTest.innerHTML = `
+        <strong>Distribution Balance:</strong> ${results.distributionBalance.passed ? 'PASS' : 'FAIL'}<br>
+        Center Utilization: ${(results.centerUtilization.centerUtilization * 100).toFixed(1)}%<br>
+        Balance Score: ${results.distributionBalance.metrics.balanceScore.toFixed(2)}<br>
+      `;
+      testResults.appendChild(balanceTest);
+      
+      updateMetricsDisplay();
+    }
+    
+    // Update metrics display
+    function updateMetricsDisplay() {
+      const metrics = visualDistributionValidator.getAggregatedMetrics();
+      const distribution = visualDistributionValidator.measureDistribution();
+      
+      metricsContent.innerHTML = `
+        <strong>Active Fragments:</strong> ${fragments.length}<br>
+        <strong>Center Utilization:</strong> ${(distribution.centerUtilization * 100).toFixed(1)}%<br>
+        <strong>Balance Score:</strong> ${distribution.balanceScore.toFixed(2)}<br>
+        <strong>Zone Count:</strong> ${zoneManager.zones.size}<br>
+        <strong>Center Zones:</strong> ${Array.from(zoneManager.zones.values()).filter(z => z.type === 'center').length}<br>
+        <strong>Edge Zones:</strong> ${Array.from(zoneManager.zones.values()).filter(z => z.type === 'edge').length}<br>
+        <strong>Transition Zones:</strong> ${Array.from(zoneManager.zones.values()).filter(z => z.type === 'transition').length}<br>
+      `;
+    }
+    
+    // Get random text
+    function getRandomText() {
+      const texts = [
+        'Fragment', 'Memory', 'Thought', 'Idea', 'Concept',
+        'Dream', 'Vision', 'Echo', 'Whisper', 'Reflection',
+        'Shadow', 'Light', 'Moment', 'Glimpse', 'Trace',
+        'Essence', 'Spirit', 'Soul', 'Mind', 'Consciousness'
+      ];
+      return texts[Math.floor(Math.random() * texts.length)];
+    }
+    
+    // Event listeners
+    createFragmentsBtn.addEventListener('click', () => {
+      const count = parseInt(fragmentCountInput.value, 10) || 20;
+      createFragments(count);
+    });
+    
+    toggleVisualizationBtn.addEventListener('click', toggleVisualization);
+    
+    runTestsBtn.addEventListener('click', runTests);
+    
+    clearFragmentsBtn.addEventListener('click', clearAllFragments);
+    
+    // Auto-create some initial fragments
+    setTimeout(() => {
+      createFragments(10);
+    }, 500);
+    
+    // Update metrics periodically
+    setInterval(updateMetricsDisplay, 2000);
+    
+    // Continuous fragment creation for demo
+    setInterval(() => {
+      if (fragments.length < 30) {
+        createFragment();
+      }
+    }, 3000);
+  </script>
+</body>
+</html>

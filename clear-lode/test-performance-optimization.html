@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Optimization Test - Clear Lode UX Improvements</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        #fragment-field {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .consciousness-fragment {
+            position: absolute;
+            color: #00ff88;
+            font-size: 14px;
+            white-space: nowrap;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .consciousness-fragment.pooled {
+            border: 1px solid rgba(255, 255, 0, 0.3);
+        }
+
+        .consciousness-fragment:hover {
+            color: #88ff00;
+            text-shadow: 0 0 10px #88ff00;
+        }
+
+        /* Corruption effect classes */
+        .corrupted-text {
+            animation: textGlitch 0.5s infinite;
+        }
+
+        .chromatic-aberration {
+            text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+        }
+
+        .zalgo {
+            animation: zalgoEffect 1s infinite;
+        }
+
+        .digital-noise {
+            animation: digitalNoise 0.1s infinite;
+        }
+
+        @keyframes textGlitch {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        @keyframes zalgoEffect {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.1) skewX(2deg); }
+        }
+
+        @keyframes digitalNoise {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        #performance-stats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 1px solid #00ff88;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+        }
+
+        #controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 1px solid #00ff88;
+            z-index: 1000;
+        }
+
+        button {
+            background: #001122;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+            padding: 8px 12px;
+            margin: 2px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background: #002244;
+        }
+
+        .test-log {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ff88;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 11px;
+            z-index: 1000;
+        }
+
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+        }
+
+        .log-success { color: #00ff88; }
+        .log-warning { color: #ffaa00; }
+        .log-error { color: #ff4444; }
+        .log-info { color: #88ccff; }
+    </style>
+</head>
+<body>
+    <div id="fragment-field"></div>
+    
+    <div id="performance-stats">
+        <h3>Performance Statistics</h3>
+        <div id="stats-content">Loading...</div>
+    </div>
+
+    <div id="controls">
+        <h3>Performance Tests</h3>
+        <button onclick="testFragmentPooling()">Test Fragment Pooling</button>
+        <button onclick="testCorruptionOptimization()">Test Corruption Optimization</button>
+        <button onclick="testPerformanceMonitoring()">Test Performance Monitoring</button>
+        <button onclick="testTierAdjustment()">Test Tier Adjustment</button>
+        <button onclick="stressTest()">Stress Test</button>
+        <button onclick="clearFragments()">Clear All</button>
+    </div>
+
+    <div class="test-log" id="test-log">
+        <div class="log-entry log-info">Performance optimization test initialized</div>
+    </div>
+
+    <script type="module">
+        import { FragmentPerformanceOptimizer } from './fragment-performance-optimizer.js';
+        import { CorruptionProgression } from './corruption-progression.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+
+        // Mock consciousness system for testing
+        window.consciousness = {
+            recordEvent: (event, data) => {
+                log(`Event: ${event}`, 'info');
+            },
+            getState: (path) => ({
+                computational: Math.random() * 0.2 - 0.1,
+                emotional: Math.random() * 0.2 - 0.1,
+                temporal: Math.random() * 0.2 - 0.1,
+                void: Math.random() * 0.2 - 0.1
+            }),
+            karmicEngine: {
+                getTotalKarma: (state) => Object.values(state).reduce((sum, val) => sum + val, 0)
+            }
+        };
+
+        // Initialize performance optimizer
+        const performanceOptimizer = new FragmentPerformanceOptimizer({
+            pooling: {
+                enabled: true,
+                maxPoolSize: 20,
+                preAllocateCount: 5
+            },
+            corruption: {
+                batchSize: 3,
+                throttleMs: 16,
+                maxConcurrentEffects: 5
+            },
+            monitoring: {
+                enabled: true,
+                performanceThresholds: {
+                    fps: 30,
+                    memoryMB: 100,
+                    fragmentCount: 15
+                }
+            }
+        });
+
+        // Initialize corruption progression for testing
+        const corruptionProgression = new CorruptionProgression(window.consciousness.karmicEngine);
+
+        // Test state
+        let testFragments = [];
+        let statsInterval;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('test-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStats() {
+            const stats = performanceOptimizer.getPerformanceStats();
+            const statsContent = document.getElementById('stats-content');
+            
+            statsContent.innerHTML = `
+                <div><strong>Performance Tier:</strong> ${stats.currentTier}</div>
+                <div><strong>FPS:</strong> ${stats.fps.toFixed(1)}</div>
+                <div><strong>Memory:</strong> ${stats.memoryUsage.toFixed(1)} MB</div>
+                <div><strong>Fragment Count:</strong> ${stats.fragmentCount}</div>
+                <div><strong>Active Fragments:</strong> ${testFragments.length}</div>
+                <hr>
+                <div><strong>Fragment Pool:</strong></div>
+                <div>Available: ${stats.fragmentPool.available}</div>
+                <div>In Use: ${stats.fragmentPool.inUse}</div>
+                <div>Reuse Ratio: ${(stats.fragmentPool.reuseRatio * 100).toFixed(1)}%</div>
+                <hr>
+                <div><strong>Corruption Queue:</strong></div>
+                <div>Pending: ${stats.corruptionQueue.pending}</div>
+                <div>Active: ${stats.corruptionQueue.active}</div>
+            `;
+        }
+
+        // Test functions
+        window.testFragmentPooling = function() {
+            log('Testing fragment pooling...', 'info');
+            
+            // Create fragments
+            const fragments = [];
+            for (let i = 0; i < 10; i++) {
+                const fragment = performanceOptimizer.getPooledFragment();
+                fragment.textContent = `Pooled Fragment ${i}`;
+                fragment.style.left = `${Math.random() * 800}px`;
+                fragment.style.top = `${Math.random() * 600}px`;
+                document.getElementById('fragment-field').appendChild(fragment);
+                fragments.push(fragment);
+            }
+            
+            log(`Created ${fragments.length} pooled fragments`, 'success');
+            
+            // Return half to pool after 2 seconds
+            setTimeout(() => {
+                const toReturn = fragments.splice(0, 5);
+                toReturn.forEach(fragment => {
+                    performanceOptimizer.returnFragmentToPool(fragment);
+                });
+                log(`Returned ${toReturn.length} fragments to pool`, 'success');
+                
+                // Create new fragments (should reuse from pool)
+                setTimeout(() => {
+                    for (let i = 0; i < 3; i++) {
+                        const fragment = performanceOptimizer.getPooledFragment();
+                        fragment.textContent = `Reused Fragment ${i}`;
+                        fragment.style.left = `${Math.random() * 800}px`;
+                        fragment.style.top = `${Math.random() * 600}px`;
+                        document.getElementById('fragment-field').appendChild(fragment);
+                        fragments.push(fragment);
+                    }
+                    log('Created new fragments (should reuse from pool)', 'success');
+                    testFragments = fragments;
+                }, 1000);
+            }, 2000);
+        };
+
+        window.testCorruptionOptimization = function() {
+            log('Testing corruption optimization...', 'info');
+            
+            if (testFragments.length === 0) {
+                log('No fragments available. Run fragment pooling test first.', 'warning');
+                return;
+            }
+            
+            // Apply corruption to fragments
+            testFragments.forEach((fragment, index) => {
+                const corruptionLevel = (index + 1) / testFragments.length;
+                const corruptionData = { corruptionLevel };
+                
+                // Initialize fragment in corruption system
+                corruptionProgression.initializeCleanFragment(fragment);
+                
+                // Apply corruption through performance optimizer
+                performanceOptimizer.optimizeCorruptionEffect(fragment, corruptionData);
+                
+                log(`Applied corruption level ${corruptionLevel.toFixed(2)} to fragment ${index}`, 'info');
+            });
+            
+            log('Corruption optimization test completed', 'success');
+        };
+
+        window.testPerformanceMonitoring = function() {
+            log('Testing performance monitoring...', 'info');
+            
+            // Simulate performance changes
+            const originalFPS = performanceOptimizer.performanceMetrics.fps;
+            
+            // Simulate low FPS
+            performanceOptimizer.performanceMetrics.fps = 20;
+            performanceOptimizer.performanceMetrics.memoryUsage = 120;
+            
+            log(`Simulated poor performance: FPS=${performanceOptimizer.performanceMetrics.fps}, Memory=${performanceOptimizer.performanceMetrics.memoryUsage}MB`, 'warning');
+            
+            // Trigger performance adjustment
+            if (performanceOptimizer.currentTier !== 'low') {
+                performanceOptimizer.downgradeTier();
+                log(`Performance tier downgraded to: ${performanceOptimizer.currentTier}`, 'warning');
+            }
+            
+            // Restore good performance
+            setTimeout(() => {
+                performanceOptimizer.performanceMetrics.fps = 60;
+                performanceOptimizer.performanceMetrics.memoryUsage = 50;
+                
+                if (performanceOptimizer.canUpgradeTier()) {
+                    performanceOptimizer.upgradeTier();
+                    log(`Performance tier upgraded to: ${performanceOptimizer.currentTier}`, 'success');
+                }
+                
+                log('Performance monitoring test completed', 'success');
+            }, 3000);
+        };
+
+        window.testTierAdjustment = function() {
+            log('Testing tier adjustment...', 'info');
+            
+            const originalTier = performanceOptimizer.currentTier;
+            log(`Original tier: ${originalTier}`, 'info');
+            
+            // Test downgrade
+            performanceOptimizer.downgradeTier();
+            log(`Downgraded to: ${performanceOptimizer.currentTier}`, 'warning');
+            
+            // Test upgrade
+            setTimeout(() => {
+                performanceOptimizer.upgradeTier();
+                log(`Upgraded to: ${performanceOptimizer.currentTier}`, 'success');
+                
+                log('Tier adjustment test completed', 'success');
+            }, 2000);
+        };
+
+        window.stressTest = function() {
+            log('Starting stress test...', 'warning');
+            
+            // Create many fragments rapidly
+            const stressFragments = [];
+            const createBatch = () => {
+                for (let i = 0; i < 5; i++) {
+                    const fragment = performanceOptimizer.getPooledFragment();
+                    fragment.textContent = `Stress Fragment ${stressFragments.length}`;
+                    fragment.style.left = `${Math.random() * window.innerWidth}px`;
+                    fragment.style.top = `${Math.random() * window.innerHeight}px`;
+                    document.getElementById('fragment-field').appendChild(fragment);
+                    stressFragments.push(fragment);
+                    
+                    // Apply random corruption
+                    const corruptionData = { corruptionLevel: Math.random() };
+                    performanceOptimizer.optimizeCorruptionEffect(fragment, corruptionData);
+                }
+                
+                log(`Created batch of 5 fragments (total: ${stressFragments.length})`, 'info');
+                
+                if (stressFragments.length < 50) {
+                    setTimeout(createBatch, 100);
+                } else {
+                    log('Stress test completed - created 50 fragments', 'success');
+                    testFragments = testFragments.concat(stressFragments);
+                }
+            };
+            
+            createBatch();
+        };
+
+        window.clearFragments = function() {
+            log('Clearing all fragments...', 'info');
+            
+            testFragments.forEach(fragment => {
+                performanceOptimizer.returnFragmentToPool(fragment);
+            });
+            
+            testFragments = [];
+            document.getElementById('fragment-field').innerHTML = '';
+            
+            log('All fragments cleared', 'success');
+        };
+
+        // Start stats updates
+        statsInterval = setInterval(updateStats, 1000);
+        updateStats();
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            clearInterval(statsInterval);
+            performanceOptimizer.destroy();
+            corruptionProgression.destroy();
+        });
+
+        log('Performance optimization test environment ready', 'success');
+    </script>
+</body>
+</html>

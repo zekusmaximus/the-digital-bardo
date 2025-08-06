@@ -2,7 +2,8 @@
 // Note: Jest is not configured in this project
 
 // Import required modules for testing (must be at top level)
-import { FragmentGenerator } from '../clear-lode/fragment-generator.js';
+import { vi } from 'vitest';
+import { FragmentGenerator } from '../clear-lode/fragment-generator-refactored.js';
 
 // Check if Jest is available
 if (typeof describe === 'undefined' || typeof test === 'undefined') {
@@ -15,7 +16,7 @@ if (typeof describe === 'undefined' || typeof test === 'undefined') {
         beforeEach(() => {
             // Mock the consciousness global object
             global.consciousness = {
-                recordEvent: jest.fn()
+                recordEvent: vi.fn()
             };
 
             // Mock DOM elements that might be needed

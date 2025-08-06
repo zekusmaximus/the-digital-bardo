@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Compatibility Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #444;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+        }
+        .success {
+            color: #2e7d32;
+        }
+        .warning {
+            color: #ff8f00;
+        }
+        .error {
+            color: #c62828;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .test-card {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        .test-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+        .test-visual {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .fragment {
+            position: absolute;
+            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            margin-right: 10px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1976d2;
+        }
+        .viewport-info {
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Browser Compatibility Test</h1>
+        
+        <div class="viewport-info">
+            <div id="viewport-size"></div>
+            <div id="device-pixel-ratio"></div>
+            <div id="orientation"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="run-all-tests">Run All Tests</button>
+            <button id="toggle-extreme-aspect">Simulate Extreme Aspect Ratio</button>
+            <button id="toggle-small-viewport">Simulate Small Viewport</button>
+            <button id="reset-viewport">Reset Viewport</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Browser Detection</h2>
+            <div id="browser-info" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Viewport Capabilities</h2>
+            <div id="viewport-capabilities" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Animation Capabilities</h2>
+            <div id="animation-capabilities" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Fallback Settings</h2>
+            <div id="fallback-settings" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Visual Tests</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>Zone Positioning</h3>
+                    <div id="zone-positioning-test" class="test-visual"></div>
+                    <button id="run-zone-test">Run Test</button>
+                </div>
+                <div class="test-card">
+                    <h3>Path Generation</h3>
+                    <div id="path-generation-test" class="test-visual"></div>
+                    <button id="run-path-test">Run Test</button>
+                </div>
+                <div class="test-card">
+                    <h3>Extreme Aspect Ratio</h3>
+                    <div id="aspect-ratio-test" class="test-visual"></div>
+                    <button id="run-aspect-test">Run Test</button>
+                </div>
+                <div class="test-card">
+                    <h3>Error Handling</h3>
+                    <div id="error-handling-test" class="test-visual"></div>
+                    <button id="run-error-test">Run Test</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Log</h2>
+            <div id="test-log" class="log-container"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { BrowserCompatibilityManager } from './browser-compatibility-manager.js';
+        import { PositionZone, PositionZoneManager } from './position-zone-manager.js';
+        import { ZoneOptimizationManager } from './zone-optimization-manager.js';
+        
+        // Initialize managers
+        const compatibilityManager = new BrowserCompatibilityManager();
+        const zoneManager = new PositionZoneManager();
+        const optimizationManager = new ZoneOptimizationManager(zoneManager);
+        
+        // Display browser information
+        function displayBrowserInfo() {
+            const browserInfo = compatibilityManager.browserInfo;
+            document.getElementById('browser-info').innerHTML = `
+                <p><strong>Browser:</strong> ${browserInfo.name} ${browserInfo.version}</p>
+                <p><strong>Operating System:</strong> ${browserInfo.os}</p>
+            `;
+        }
+        
+        // Display viewport capabilities
+        function displayViewportCapabilities() {
+            const capabilities = compatibilityManager.viewportCapabilities;
+            document.getElementById('viewport-capabilities').innerHTML = `
+                <p><strong>Width:</strong> ${capabilities.width}px</p>
+                <p><strong>Height:</strong> ${capabilities.height}px</p>
+                <p><strong>Aspect Ratio:</strong> ${capabilities.aspectRatio.toFixed(2)}</p>
+                <p><strong>Pixel Ratio:</strong> ${capabilities.pixelRatio}</p>
+                <p><strong>Extreme Aspect Ratio:</strong> ${capabilities.isExtremeAspectRatio ? 'Yes' : 'No'}</p>
+                <p><strong>Very Small Viewport:</strong> ${capabilities.isVerySmall ? 'Yes' : 'No'}</p>
+                <p><strong>Very Large Viewport:</strong> ${capabilities.isVeryLarge ? 'Yes' : 'No'}</p>
+                <p><strong>High Density Display:</strong> ${capabilities.isHighDensity ? 'Yes' : 'No'}</p>
+                <p><strong>ResizeObserver Support:</strong> ${capabilities.hasResizeObserver ? 'Yes' : 'No'}</p>
+                <p><strong>IntersectionObserver Support:</strong> ${capabilities.hasIntersectionObserver ? 'Yes' : 'No'}</p>
+            `;
+            
+            // Update viewport info
+            document.getElementById('viewport-size').textContent = `Viewport: ${window.innerWidth}px × ${window.innerHeight}px`;
+            document.getElementById('device-pixel-ratio').textContent = `Device Pixel Ratio: ${window.devicePixelRatio || 1}`;
+            document.getElementById('orientation').textContent = `Orientation: ${window.innerWidth > window.innerHeight ? 'Landscape' : 'Portrait'}`;
+        }
+        
+        // Display animation capabilities
+        function displayAnimationCapabilities() {
+            const capabilities = compatibilityManager.animationCapabilities;
+            document.getElementById('animation-capabilities').innerHTML = `
+                <p><strong>requestAnimationFrame:</strong> ${capabilities.hasRAF ? 'Supported' : 'Not Supported'}</p>
+                <p><strong>Web Animations API:</strong> ${capabilities.hasWebAnimations ? 'Supported' : 'Not Supported'}</p>
+                <p><strong>CSS Transforms:</strong> ${capabilities.hasTransform ? 'Supported' : 'Not Supported'}</p>
+                <p><strong>CSS Transitions:</strong> ${capabilities.hasTransitions ? 'Supported' : 'Not Supported'}</p>
+                <p><strong>GPU Acceleration:</strong> ${capabilities.hasGPUAcceleration ? 'Supported' : 'Not Supported'}</p>
+                <p><strong>Passive Event Listeners:</strong> ${capabilities.hasPassiveEvents ? 'Supported' : 'Not Supported'}</p>
+            `;
+        }
+        
+        // Display fallback settings
+        function displayFallbackSettings() {
+            const settings = compatibilityManager.fallbackSettings;
+            document.getElementById('fallback-settings').innerHTML = `
+                <p><strong>Simple Positioning:</strong> ${settings.useSimplePositioning ? 'Enabled' : 'Disabled'}</p>
+                <p><strong>Basic Animations:</strong> ${settings.useBasicAnimations ? 'Enabled' : 'Disabled'}</p>
+                <p><strong>Center Traversal:</strong> ${settings.disableCenterTraversal ? 'Disabled' : 'Enabled'}</p>
+                <p><strong>Edge-Only Mode:</strong> ${settings.forceEdgeOnly ? 'Enabled' : 'Disabled'}</p>
+                <p><strong>Polyfills:</strong> ${settings.usePolyfills ? 'Enabled' : 'Disabled'}</p>
+            `;
+        }
+        
+        // Log to test log
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('test-log');
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // Run zone positioning test
+        function runZoneTest() {
+            const container = document.getElementById('zone-positioning-test');
+            container.innerHTML = '';
+            
+            log('Running zone positioning test...');
+            
+            // Create test zones
+            const zones = [
+                new PositionZone('test-center', 'center', {
+                    x: { min: container.offsetWidth * 0.3, max: container.offsetWidth * 0.7 },
+                    y: { min: container.offsetHeight * 0.3, max: container.offsetHeight * 0.7 }
+                }),
+                new PositionZone('test-edge-top', 'edge', {
+                    x: { min: 0, max: container.offsetWidth },
+                    y: { min: 0, max: container.offsetHeight * 0.1 }
+                }),
+                new PositionZone('test-edge-right', 'edge', {
+                    x: { min: container.offsetWidth * 0.9, max: container.offsetWidth },
+                    y: { min: 0, max: container.offsetHeight }
+                })
+            ];
+            
+            // Test positioning in each zone
+            zones.forEach(zone => {
+                try {
+                    // Get position using optimization manager
+                    const position = optimizationManager.calculateZonePosition(zone);
+                    
+                    // Create fragment element
+                    const fragment = document.createElement('div');
+                    fragment.className = 'fragment';
+                    fragment.textContent = zone.id;
+                    fragment.style.left = `${position.x}px`;
+                    fragment.style.top = `${position.y}px`;
+                    container.appendChild(fragment);
+                    
+                    log(`Positioned fragment in ${zone.id} at (${Math.round(position.x)}, ${Math.round(position.y)})`);
+                } catch (error) {
+                    log(`Error positioning in ${zone.id}: ${error.message}`, 'error');
+                }
+            });
+        }
+        
+        // Run path generation test
+        function runPathTest() {
+            const container = document.getElementById('path-generation-test');
+            container.innerHTML = '';
+            
+            log('Running path generation test...');
+            
+            // Define start and end points
+            const startPoint = { x: 20, y: 20 };
+            const endPoint = { x: container.offsetWidth - 20, y: container.offsetHeight - 20 };
+            
+            // Test different path types
+            const pathTypes = ['linear', 'curved', 'orbital'];
+            
+            pathTypes.forEach((pathType, index) => {
+                try {
+                    // Generate waypoints
+                    const waypoints = optimizationManager.generatePathWaypoints(
+                        pathType, 
+                        startPoint, 
+                        { 
+                            x: endPoint.x, 
+                            y: endPoint.y - index * 50 
+                        }
+                    );
+                    
+                    // Draw path
+                    waypoints.forEach((point, i) => {
+                        const dot = document.createElement('div');
+                        dot.className = 'fragment';
+                        dot.textContent = i === 0 ? `${pathType} start` : 
+                                         i === waypoints.length - 1 ? `${pathType} end` : 
+                                         `${pathType} ${i}`;
+                        dot.style.left = `${point.x}px`;
+                        dot.style.top = `${point.y}px`;
+                        container.appendChild(dot);
+                    });
+                    
+                    log(`Generated ${pathType} path with ${waypoints.length} waypoints`);
+                } catch (error) {
+                    log(`Error generating ${pathType} path: ${error.message}`, 'error');
+                }
+            });
+        }
+        
+        // Run extreme aspect ratio test
+        function runAspectRatioTest() {
+            const container = document.getElementById('aspect-ratio-test');
+            container.innerHTML = '';
+            
+            log('Running extreme aspect ratio test...');
+            
+            // Get fallback configuration for extreme aspect ratios
+            const viewport = { width: container.offsetWidth, height: container.offsetHeight };
+            
+            // Test with normal aspect ratio
+            let config = compatibilityManager.getExtremeAspectRatioFallback(viewport);
+            displayAspectRatioConfig(container, config, 'Normal');
+            
+            // Test with wide aspect ratio
+            const wideViewport = { width: viewport.width, height: viewport.height / 3, aspectRatio: 3.0 };
+            config = compatibilityManager.getExtremeAspectRatioFallback(wideViewport);
+            displayAspectRatioConfig(container, config, 'Wide', 70);
+            
+            // Test with tall aspect ratio
+            const tallViewport = { width: viewport.width / 3, height: viewport.height, aspectRatio: 0.33 };
+            config = compatibilityManager.getExtremeAspectRatioFallback(tallViewport);
+            displayAspectRatioConfig(container, config, 'Tall', 140);
+            
+            log('Completed aspect ratio tests');
+        }
+        
+        // Display aspect ratio configuration
+        function displayAspectRatioConfig(container, config, label, yOffset = 0) {
+            const fragment = document.createElement('div');
+            fragment.className = 'fragment';
+            fragment.textContent = `${label}: Edge=${config.edgeMargin}, Center=${config.centerZoneSize}, Transition=${config.transitionZoneWidth}`;
+            fragment.style.left = '10px';
+            fragment.style.top = `${10 + yOffset}px`;
+            container.appendChild(fragment);
+        }
+        
+        // Run error handling test
+        function runErrorTest() {
+            const container = document.getElementById('error-handling-test');
+            container.innerHTML = '';
+            
+            log('Running error handling test...');
+            
+            // Test position validation
+            try {
+                const validPosition = compatibilityManager.validatePosition(
+                    { x: 100, y: 100 },
+                    { width: container.offsetWidth, height: container.offsetHeight }
+                );
+                
+                const fragment = document.createElement('div');
+                fragment.className = 'fragment';
+                fragment.textContent = 'Valid Position';
+                fragment.style.left = `${validPosition.x}px`;
+                fragment.style.top = `${validPosition.y}px`;
+                container.appendChild(fragment);
+                
+                log(`Validated position: (${Math.round(validPosition.x)}, ${Math.round(validPosition.y)})`);
+            } catch (error) {
+                log(`Error validating position: ${error.message}`, 'error');
+            }
+            
+            // Test position fallback
+            try {
+                const invalidPosition = compatibilityManager.validatePosition(
+                    { x: -100, y: 2000 },
+                    { width: container.offsetWidth, height: container.offsetHeight }
+                );
+                
+                const fragment = document.createElement('div');
+                fragment.className = 'fragment';
+                fragment.textContent = 'Corrected Position';
+                fragment.style.left = `${invalidPosition.x}px`;
+                fragment.style.top = `${invalidPosition.y}px`;
+                container.appendChild(fragment);
+                
+                log(`Corrected invalid position to: (${Math.round(invalidPosition.x)}, ${Math.round(invalidPosition.y)})`);
+            } catch (error) {
+                log(`Error correcting position: ${error.message}`, 'error');
+            }
+            
+            // Test positioning fallback
+            try {
+                const fallbackPosition = compatibilityManager.getPositioningFallback(
+                    new Error('Test error'),
+                    { width: container.offsetWidth, height: container.offsetHeight }
+                );
+                
+                const fragment = document.createElement('div');
+                fragment.className = 'fragment';
+                fragment.textContent = 'Fallback Position';
+                fragment.style.left = `${fallbackPosition.x}px`;
+                fragment.style.top = `${fallbackPosition.y}px`;
+                container.appendChild(fragment);
+                
+                log(`Generated fallback position: (${Math.round(fallbackPosition.x)}, ${Math.round(fallbackPosition.y)})`);
+            } catch (error) {
+                log(`Error generating fallback position: ${error.message}`, 'error');
+            }
+            
+            // Test path calculation fallback
+            try {
+                const fallbackPath = compatibilityManager.getPathCalculationFallback(
+                    new Error('Test error'),
+                    { x: 20, y: 20 },
+                    { x: container.offsetWidth - 20, y: container.offsetHeight - 20 }
+                );
+                
+                fallbackPath.forEach((point, i) => {
+                    const dot = document.createElement('div');
+                    dot.className = 'fragment';
+                    dot.textContent = i === 0 ? 'Path Start' : 
+                                     i === fallbackPath.length - 1 ? 'Path End' : 
+                                     `Waypoint ${i}`;
+                    dot.style.left = `${point.x}px`;
+                    dot.style.top = `${point.y}px`;
+                    container.appendChild(dot);
+                });
+                
+                log(`Generated fallback path with ${fallbackPath.length} waypoints`);
+            } catch (error) {
+                log(`Error generating fallback path: ${error.message}`, 'error');
+            }
+        }
+        
+        // Simulate extreme aspect ratio
+        function toggleExtremeAspect() {
+            const container = document.querySelector('.container');
+            if (container.style.width === '300px') {
+                container.style.width = '';
+                container.style.height = '';
+                log('Reset container to normal aspect ratio');
+            } else {
+                container.style.width = '300px';
+                container.style.height = '800px';
+                log('Set container to extreme aspect ratio (tall)');
+            }
+            
+            // Update displays
+            displayViewportCapabilities();
+            displayFallbackSettings();
+        }
+        
+        // Simulate small viewport
+        function toggleSmallViewport() {
+            const container = document.querySelector('.container');
+            if (container.style.width === '280px') {
+                container.style.width = '';
+                container.style.height = '';
+                log('Reset container to normal size');
+            } else {
+                container.style.width = '280px';
+                container.style.height = '280px';
+                log('Set container to small viewport');
+            }
+            
+            // Update displays
+            displayViewportCapabilities();
+            displayFallbackSettings();
+        }
+        
+        // Reset viewport
+        function resetViewport() {
+            const container = document.querySelector('.container');
+            container.style.width = '';
+            container.style.height = '';
+            log('Reset container to normal size and aspect ratio');
+            
+            // Update displays
+            displayViewportCapabilities();
+            displayFallbackSettings();
+        }
+        
+        // Run all tests
+        function runAllTests() {
+            log('Running all compatibility tests...');
+            runZoneTest();
+            runPathTest();
+            runAspectRatioTest();
+            runErrorTest();
+            log('All tests completed');
+        }
+        
+        // Initialize tests
+        function init() {
+            displayBrowserInfo();
+            displayViewportCapabilities();
+            displayAnimationCapabilities();
+            displayFallbackSettings();
+            
+            // Set up event listeners
+            document.getElementById('run-zone-test').addEventListener('click', runZoneTest);
+            document.getElementById('run-path-test').addEventListener('click', runPathTest);
+            document.getElementById('run-aspect-test').addEventListener('click', runAspectRatioTest);
+            document.getElementById('run-error-test').addEventListener('click', runErrorTest);
+            document.getElementById('run-all-tests').addEventListener('click', runAllTests);
+            document.getElementById('toggle-extreme-aspect').addEventListener('click', toggleExtremeAspect);
+            document.getElementById('toggle-small-viewport').addEventListener('click', toggleSmallViewport);
+            document.getElementById('reset-viewport').addEventListener('click', resetViewport);
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                displayViewportCapabilities();
+            });
+            
+            log('Browser compatibility test initialized');
+        }
+        
+        // Run initialization
+        init();
+    </script>
+</body>
+</html>

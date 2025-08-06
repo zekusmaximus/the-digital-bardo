@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragment Position Manager Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        #fragment-field {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .consciousness-fragment {
+            position: absolute;
+            padding: 8px 12px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 4px;
+            font-size: 14px;
+            white-space: nowrap;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .consciousness-fragment:hover {
+            background: rgba(0, 255, 0, 0.2);
+            border-color: rgba(0, 255, 0, 0.6);
+        }
+
+        .safe-zone-overlay {
+            position: absolute;
+            border: 2px dashed rgba(255, 255, 0, 0.3);
+            background: rgba(255, 255, 0, 0.05);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .controls button {
+            margin: 5px;
+            padding: 5px 10px;
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .controls button:hover {
+            background: rgba(0, 255, 0, 0.3);
+        }
+
+        .stats {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div id="fragment-field"></div>
+    
+    <div class="controls">
+        <button onclick="createTestFragment()">Create Fragment</button>
+        <button onclick="toggleSafeZone()">Toggle Safe Zone</button>
+        <button onclick="clearFragments()">Clear All</button>
+        <button onclick="testRepositioning()">Test Repositioning</button>
+    </div>
+
+    <div class="stats" id="stats">
+        <div>Fragments: <span id="fragment-count">0</span></div>
+        <div>Avg Readability: <span id="avg-readability">0</span></div>
+        <div>Repositions: <span id="reposition-count">0</span></div>
+        <div>Safe Zone Ratio: <span id="safe-zone-ratio">0</span></div>
+    </div>
+
+    <script type="module">
+        import { FragmentPositionManager } from './fragment-position-manager.js';
+
+        // Mock consciousness for testing
+        window.consciousness = {
+            recordEvent: (event, data) => {
+                console.log(`Event: ${event}`, data);
+            }
+        };
+
+        let positionManager;
+        let fragments = [];
+        let safeZoneOverlay = null;
+        let fragmentCounter = 0;
+
+        // Initialize position manager
+        function initializePositionManager() {
+            positionManager = new FragmentPositionManager();
+            updateStats();
+            
+            // Show safe zone initially
+            showSafeZone();
+        }
+
+        // Create a test fragment
+        window.createTestFragment = function() {
+            const fragmentField = document.getElementById('fragment-field');
+            
+            const testTexts = [
+                "Digital memory fragment",
+                "I remember the light...",
+                "Connection lost",
+                "Error 404: Soul not found",
+                "Last search: 'meaning of existence'",
+                "Draft message never sent",
+                "Temporary solution, permanent problem",
+                "The screen flickers with forgotten dreams"
+            ];
+            
+            const fragment = document.createElement('div');
+            fragment.className = 'consciousness-fragment';
+            fragment.textContent = testTexts[Math.floor(Math.random() * testTexts.length)];
+            fragment.dataset.birthTime = Date.now();
+            fragment.dataset.fragmentId = ++fragmentCounter;
+            
+            // Get safe position from position manager
+            const safePosition = positionManager.getSafePosition();
+            fragment.style.left = `${safePosition.x}px`;
+            fragment.style.top = `${safePosition.y}px`;
+            
+            // Calculate optimal speed
+            const optimalSpeed = positionManager.calculateOptimalSpeed(fragment.textContent);
+            fragment.dataset.speed = optimalSpeed;
+            
+            // Add to DOM
+            fragmentField.appendChild(fragment);
+            fragments.push(fragment);
+            
+            // Add click handler for repositioning test
+            fragment.addEventListener('click', () => {
+                const validation = positionManager.validateFragmentPlacement(fragment);
+                console.log('Fragment validation:', validation);
+                
+                if (!validation.isValid) {
+                    positionManager.repositionIfNeeded(fragment);
+                }
+            });
+            
+            // Start readability monitoring
+            startReadabilityMonitoring(fragment);
+            
+            updateStats();
+        };
+
+        // Start readability monitoring for a fragment
+        function startReadabilityMonitoring(fragment) {
+            const monitoringInterval = setInterval(() => {
+                if (!fragment.parentNode) {
+                    clearInterval(monitoringInterval);
+                    return;
+                }
+                
+                const validation = positionManager.validateFragmentPlacement(fragment);
+                positionManager.updateReadabilityMetrics(validation.score);
+                
+                // Visual feedback based on readability
+                if (validation.score < 0.6) {
+                    fragment.style.borderColor = 'rgba(255, 0, 0, 0.6)';
+                    fragment.style.background = 'rgba(255, 0, 0, 0.1)';
+                } else if (validation.score < 0.8) {
+                    fragment.style.borderColor = 'rgba(255, 255, 0, 0.6)';
+                    fragment.style.background = 'rgba(255, 255, 0, 0.1)';
+                } else {
+                    fragment.style.borderColor = 'rgba(0, 255, 0, 0.6)';
+                    fragment.style.background = 'rgba(0, 255, 0, 0.1)';
+                }
+                
+                updateStats();
+            }, 1000);
+            
+            fragment.dataset.monitoringInterval = monitoringInterval;
+        }
+
+        // Toggle safe zone visualization
+        window.toggleSafeZone = function() {
+            if (safeZoneOverlay) {
+                hideSafeZone();
+            } else {
+                showSafeZone();
+            }
+        };
+
+        function showSafeZone() {
+            if (safeZoneOverlay) return;
+            
+            const safeZone = positionManager.safeZone;
+            safeZoneOverlay = document.createElement('div');
+            safeZoneOverlay.className = 'safe-zone-overlay';
+            safeZoneOverlay.style.left = `${safeZone.bounds.x.min}px`;
+            safeZoneOverlay.style.top = `${safeZone.bounds.y.min}px`;
+            safeZoneOverlay.style.width = `${safeZone.width}px`;
+            safeZoneOverlay.style.height = `${safeZone.height}px`;
+            
+            document.getElementById('fragment-field').appendChild(safeZoneOverlay);
+        }
+
+        function hideSafeZone() {
+            if (safeZoneOverlay) {
+                safeZoneOverlay.remove();
+                safeZoneOverlay = null;
+            }
+        }
+
+        // Clear all fragments
+        window.clearFragments = function() {
+            fragments.forEach(fragment => {
+                if (fragment.dataset.monitoringInterval) {
+                    clearInterval(parseInt(fragment.dataset.monitoringInterval));
+                }
+                fragment.remove();
+            });
+            fragments = [];
+            updateStats();
+        };
+
+        // Test repositioning by creating fragments outside safe zone
+        window.testRepositioning = function() {
+            const fragmentField = document.getElementById('fragment-field');
+            
+            // Create fragments in problematic positions
+            const problematicPositions = [
+                { x: 10, y: 10 },      // Top-left corner
+                { x: window.innerWidth - 50, y: 10 }, // Top-right corner
+                { x: 10, y: window.innerHeight - 50 }, // Bottom-left corner
+                { x: window.innerWidth - 50, y: window.innerHeight - 50 } // Bottom-right corner
+            ];
+            
+            problematicPositions.forEach((pos, index) => {
+                const fragment = document.createElement('div');
+                fragment.className = 'consciousness-fragment';
+                fragment.textContent = `Problematic fragment ${index + 1}`;
+                fragment.dataset.birthTime = Date.now();
+                fragment.dataset.fragmentId = ++fragmentCounter;
+                fragment.dataset.speed = '60';
+                
+                // Position outside safe zone
+                fragment.style.left = `${pos.x}px`;
+                fragment.style.top = `${pos.y}px`;
+                
+                fragmentField.appendChild(fragment);
+                fragments.push(fragment);
+                
+                // Test repositioning after a short delay
+                setTimeout(() => {
+                    const repositioned = positionManager.repositionIfNeeded(fragment);
+                    console.log(`Fragment ${index + 1} repositioned:`, repositioned);
+                }, 500 + index * 200);
+                
+                startReadabilityMonitoring(fragment);
+            });
+            
+            updateStats();
+        };
+
+        // Update statistics display
+        function updateStats() {
+            const stats = positionManager.getPerformanceStats();
+            
+            document.getElementById('fragment-count').textContent = fragments.length;
+            document.getElementById('avg-readability').textContent = stats.averageReadability.toFixed(3);
+            document.getElementById('reposition-count').textContent = stats.repositionCount;
+            document.getElementById('safe-zone-ratio').textContent = stats.safeZoneRatio.toFixed(3);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                if (safeZoneOverlay) {
+                    hideSafeZone();
+                    showSafeZone();
+                }
+                updateStats();
+            }, 100);
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializePositionManager);
+    </script>
+</body>
+</html>

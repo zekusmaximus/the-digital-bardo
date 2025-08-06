@@ -1,0 +1,345 @@
+/**
+ * Recognition Guide Controller Styles
+ * Visual styling for the progressive hint and guidance system
+ */
+
+/* Main guide container */
+.recognition-guide-container {
+    font-family: 'Courier New', monospace;
+    user-select: none;
+}
+
+/* Method indicators */
+.method-indicators {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.method-indicator {
+    transition: all 0.3s ease;
+    cursor: default;
+    backdrop-filter: blur(5px);
+}
+
+.method-indicator:hover {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.method-icon {
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.method-instruction {
+    font-weight: normal;
+    letter-spacing: 0.5px;
+}
+
+/* Progress indicator */
+.recognition-progress {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.progress-bar {
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Hint styling */
+.recognition-hint {
+    font-weight: bold;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    max-width: 90%;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.hint-introduction {
+    font-style: italic;
+}
+
+.hint-awareness {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.hint-guidance {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 5px;
+}
+
+.hint-instruction {
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hint-warning {
+    animation: urgentPulse 1s infinite;
+}
+
+/* Timeout warning */
+.timeout-warning {
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+}
+
+/* Extension notification */
+.extension-notification {
+    font-weight: bold;
+    text-shadow: 0 0 15px rgba(200, 255, 200, 0.8);
+}
+
+/* Success feedback */
+.recognition-success {
+    font-weight: bold;
+    animation: successGlow 2s ease-out;
+}
+
+/* Progress feedback */
+.progress-feedback {
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px 15px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Enhanced spacebar progress feedback */
+.spacebar-progress-container {
+    backdrop-filter: blur(5px);
+}
+
+.spacebar-progress-bg {
+    position: relative;
+    overflow: hidden;
+}
+
+.spacebar-progress-fill {
+    position: relative;
+    transition: width 0.1s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.spacebar-progress-text {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.spacebar-hold-instruction {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+/* Keyword progress feedback */
+.keyword-progress-feedback {
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Center click progress feedback */
+.center-click-progress-feedback {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Success feedback enhancements */
+.recognition-success-container {
+    backdrop-filter: blur(10px);
+}
+
+.success-icon {
+    filter: drop-shadow(0 0 20px rgba(100, 255, 100, 0.6));
+}
+
+.success-message {
+    filter: drop-shadow(0 0 15px rgba(200, 255, 200, 0.5));
+}
+
+.method-confirmation {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.karma-bonus {
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.success-particles {
+    pointer-events: none;
+}
+
+.success-particle {
+    box-shadow: 0 0 6px rgba(200, 255, 200, 0.8);
+}
+
+/* Failure feedback styles */
+.recognition-failure-container {
+    backdrop-filter: blur(10px);
+}
+
+.failure-icon {
+    filter: drop-shadow(0 0 15px rgba(255, 150, 150, 0.4));
+}
+
+.failure-message {
+    text-shadow: 0 0 10px rgba(255, 200, 200, 0.5);
+}
+
+.explanation-message {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.karma-message {
+    text-shadow: 0 0 8px rgba(255, 180, 100, 0.4);
+}
+
+.failure-fade-overlay {
+    backdrop-filter: blur(2px);
+}
+
+/* Attempt failure feedback styles */
+.attempt-failure-feedback {
+    backdrop-filter: blur(5px);
+    animation: attemptFailureShake 0.5s ease-out;
+}
+
+@keyframes attemptFailureShake {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    25% { transform: translateX(-50%) translateY(-3px) translateX(-2px); }
+    75% { transform: translateX(-50%) translateY(-3px) translateX(2px); }
+}
+
+/* Attachment warning */
+.attachment-warning {
+    font-style: italic;
+    animation: gentleWarning 2s ease-out;
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes urgentPulse {
+    0%, 100% { 
+        opacity: 1; 
+        transform: translateX(-50%) scale(1);
+    }
+    50% { 
+        opacity: 0.8; 
+        transform: translateX(-50%) scale(1.02);
+    }
+}
+
+@keyframes successGlow {
+    0% { 
+        text-shadow: 0 0 20px rgba(200, 255, 200, 0.8);
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    50% { 
+        text-shadow: 0 0 30px rgba(200, 255, 200, 1);
+        transform: translate(-50%, -50%) scale(1.3);
+    }
+    100% { 
+        text-shadow: 0 0 20px rgba(200, 255, 200, 0.8);
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+}
+
+@keyframes gentleWarning {
+    0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .method-indicators {
+        gap: 20px;
+        padding: 0 20px;
+    }
+    
+    .method-indicator {
+        min-width: 100px;
+        padding: 12px;
+    }
+    
+    .method-icon {
+        font-size: 20px;
+    }
+    
+    .method-instruction {
+        font-size: 11px;
+    }
+    
+    .recognition-hint {
+        font-size: 14px !important;
+        max-width: 95%;
+    }
+    
+    .recognition-progress {
+        width: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    .method-indicators {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .method-indicator {
+        width: 200px;
+    }
+    
+    .recognition-progress {
+        width: 200px;
+    }
+    
+    .recognition-hint {
+        font-size: 12px !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .method-indicator {
+        border-width: 2px;
+        background-color: rgba(0, 0, 0, 0.8) !important;
+    }
+    
+    .recognition-hint {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    }
+    
+    .progress-bar {
+        background: linear-gradient(90deg, #00FF00, #FFFF00, #FF0000);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .method-indicator,
+    .recognition-hint,
+    .progress-feedback,
+    .extension-notification {
+        transition: none;
+        animation: none;
+    }
+    
+    .timeout-warning {
+        animation: none;
+    }
+    
+    .recognition-success {
+        animation: none;
+    }
+    
+    .attachment-warning {
+        animation: none;
+    }
+}

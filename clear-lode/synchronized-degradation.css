@@ -1,0 +1,385 @@
+/**
+ * Synchronized Audio-Visual Degradation CSS
+ * 
+ * Styles for synchronized degradation effects that coordinate audio and visual corruption.
+ * Supports karma-responsive visual updates and audio fallback modes.
+ */
+
+/* CSS Variables for synchronized effects */
+:root {
+  --visual-jitter: 0;
+  --visual-complexity: 0;
+  --corruption-intensity: 0;
+  --animation-speed: 1;
+  --chromatic-aberration: 0px;
+  --visual-grain: 0;
+  --visual-feedback-intensity: 1;
+  --fallback-intensity: 1;
+  --pulse-intensity: 0.5;
+  --fragment-jitter: 0;
+  --fragment-grain: 0;
+}
+
+/* Karma-specific visual classes */
+body.karma-computational {
+  --primary-karma-color: #00ff88;
+  --karma-effect: computational;
+}
+
+body.karma-emotional {
+  --primary-karma-color: #ff6b6b;
+  --karma-effect: emotional;
+}
+
+body.karma-void {
+  --primary-karma-color: #9b59b6;
+  --karma-effect: void;
+}
+
+body.karma-temporal {
+  --primary-karma-color: #f39c12;
+  --karma-effect: temporal;
+}
+
+/* Karma intensity effects */
+body[data-karma-intensity] {
+  filter: hue-rotate(calc(var(--karma-intensity, 0) * 45deg));
+}
+
+/* Fragment karma effects */
+.consciousness-fragment.karma-jitter {
+  animation: karma-jitter 0.1s infinite;
+  transform: translate(
+    calc(var(--fragment-jitter) * 2px * sin(var(--time) * 10)),
+    calc(var(--fragment-jitter) * 2px * cos(var(--time) * 8))
+  );
+}
+
+.consciousness-fragment.karma-complex {
+  text-shadow: 
+    0 0 2px var(--primary-karma-color, #00ff88),
+    0 0 4px var(--primary-karma-color, #00ff88),
+    0 0 8px var(--primary-karma-color, #00ff88);
+  filter: blur(calc(var(--visual-complexity) * 0.5px));
+}
+
+.consciousness-fragment.karma-grain {
+  background-image: 
+    radial-gradient(circle at 25% 25%, transparent 2px, rgba(255,255,255,0.1) 2px),
+    radial-gradient(circle at 75% 75%, transparent 2px, rgba(255,255,255,0.1) 2px);
+  background-size: calc(var(--fragment-grain) * 2px) calc(var(--fragment-grain) * 2px);
+  background-position: 0 0, calc(var(--fragment-grain) * 1px) calc(var(--fragment-grain) * 1px);
+}
+
+/* Recognition feedback effects */
+.consciousness-fragment.recognition-highlight {
+  background: linear-gradient(45deg, 
+    rgba(0, 255, 136, 0.2), 
+    rgba(0, 255, 136, 0.4), 
+    rgba(0, 255, 136, 0.2)
+  );
+  border: 1px solid rgba(0, 255, 136, 0.6);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+@keyframes recognition-pulse {
+  0% { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: scale(calc(1 + var(--pulse-intensity) * 0.1)); 
+    opacity: calc(1 - var(--pulse-intensity) * 0.2); 
+  }
+  100% { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+}
+
+/* Success celebration effects */
+body.purification-active {
+  animation: purification-wave 3s ease-out;
+}
+
+body.light-burst-active {
+  animation: light-burst 3s ease-out;
+}
+
+body.restoration-active {
+  animation: restoration-glow 3s ease-out;
+}
+
+@keyframes purification-wave {
+  0% { 
+    filter: brightness(1) contrast(1); 
+  }
+  30% { 
+    filter: brightness(1.5) contrast(1.2) saturate(0.8); 
+  }
+  100% { 
+    filter: brightness(1) contrast(1); 
+  }
+}
+
+@keyframes light-burst {
+  0% { 
+    box-shadow: inset 0 0 0 rgba(255, 255, 255, 0); 
+  }
+  50% { 
+    box-shadow: inset 0 0 100px rgba(255, 255, 255, 0.3); 
+  }
+  100% { 
+    box-shadow: inset 0 0 0 rgba(255, 255, 255, 0); 
+  }
+}
+
+@keyframes restoration-glow {
+  0% { 
+    background: radial-gradient(circle at center, transparent 0%, transparent 100%); 
+  }
+  50% { 
+    background: radial-gradient(circle at center, rgba(0, 255, 136, 0.1) 0%, transparent 70%); 
+  }
+  100% { 
+    background: radial-gradient(circle at center, transparent 0%, transparent 100%); 
+  }
+}
+
+/* Failure feedback effects */
+body.corruption-surge {
+  animation: corruption-surge 2s ease-out;
+}
+
+body.recognition-fade {
+  animation: recognition-fade 2s ease-out;
+}
+
+body.distortion-active {
+  animation: distortion-wave 2s ease-out;
+}
+
+@keyframes corruption-surge {
+  0% { 
+    filter: contrast(1) saturate(1); 
+  }
+  50% { 
+    filter: contrast(1.5) saturate(0.5) hue-rotate(30deg); 
+  }
+  100% { 
+    filter: contrast(1) saturate(1); 
+  }
+}
+
+@keyframes recognition-fade {
+  0% { 
+    opacity: 1; 
+  }
+  50% { 
+    opacity: 0.7; 
+  }
+  100% { 
+    opacity: 1; 
+  }
+}
+
+@keyframes distortion-wave {
+  0% { 
+    transform: skew(0deg); 
+  }
+  25% { 
+    transform: skew(1deg); 
+  }
+  75% { 
+    transform: skew(-1deg); 
+  }
+  100% { 
+    transform: skew(0deg); 
+  }
+}
+
+/* Audio fallback mode */
+body.audio-fallback-mode {
+  --visual-feedback-intensity: 1.5;
+}
+
+body.audio-fallback-mode .consciousness-fragment {
+  animation-duration: calc(1s / var(--visual-feedback-intensity));
+  filter: brightness(var(--visual-feedback-intensity));
+}
+
+/* Visual audio indicator */
+.visual-audio-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-size: 12px;
+  z-index: 1000;
+  border: 1px solid #666;
+}
+
+.visual-audio-indicator .audio-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.visual-audio-indicator .audio-message {
+  opacity: 0.9;
+}
+
+/* Visual rhythm indicator */
+.visual-rhythm-indicator {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
+  z-index: 999;
+}
+
+.visual-rhythm-indicator.pulse {
+  animation: visual-rhythm-pulse 0.2s ease-out;
+}
+
+@keyframes visual-rhythm-pulse {
+  0% { 
+    transform: translateX(-50%) scale(1); 
+    opacity: 0.7; 
+  }
+  50% { 
+    transform: translateX(-50%) scale(1.2); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateX(-50%) scale(1); 
+    opacity: 0.7; 
+  }
+}
+
+/* Karma jitter animation */
+@keyframes karma-jitter {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(calc(var(--fragment-jitter) * 1px), calc(var(--fragment-jitter) * -1px)); }
+  50% { transform: translate(calc(var(--fragment-jitter) * -1px), calc(var(--fragment-jitter) * 1px)); }
+  75% { transform: translate(calc(var(--fragment-jitter) * 1px), calc(var(--fragment-jitter) * 1px)); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Purification effect for fragments */
+.consciousness-fragment.purification-effect {
+  animation: fragment-purification 2s ease-out;
+}
+
+@keyframes fragment-purification {
+  0% { 
+    filter: brightness(1) contrast(1); 
+    text-shadow: none; 
+  }
+  50% { 
+    filter: brightness(1.3) contrast(1.1); 
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8); 
+  }
+  100% { 
+    filter: brightness(1) contrast(1); 
+    text-shadow: none; 
+  }
+}
+
+/* Enhanced visual effects for different degradation levels */
+body[data-degradation="minimal"] {
+  --corruption-base-intensity: 0.2;
+}
+
+body[data-degradation="moderate"] {
+  --corruption-base-intensity: 0.5;
+}
+
+body[data-degradation="severe"] {
+  --corruption-base-intensity: 0.8;
+}
+
+body[data-degradation="complete"] {
+  --corruption-base-intensity: 1.0;
+}
+
+/* Synchronized corruption effects */
+.consciousness-fragment.corrupted-minimal {
+  filter: contrast(calc(1 + var(--corruption-base-intensity) * 0.2));
+}
+
+.consciousness-fragment.corrupted-moderate {
+  filter: contrast(calc(1 + var(--corruption-base-intensity) * 0.4)) 
+          saturate(calc(1 - var(--corruption-base-intensity) * 0.3));
+}
+
+.consciousness-fragment.corrupted-severe {
+  filter: contrast(calc(1 + var(--corruption-base-intensity) * 0.6)) 
+          saturate(calc(1 - var(--corruption-base-intensity) * 0.5))
+          hue-rotate(calc(var(--corruption-base-intensity) * 30deg));
+}
+
+.consciousness-fragment.corrupted-complete {
+  filter: contrast(calc(1 + var(--corruption-base-intensity) * 0.8)) 
+          saturate(calc(1 - var(--corruption-base-intensity) * 0.7))
+          hue-rotate(calc(var(--corruption-base-intensity) * 60deg))
+          blur(calc(var(--corruption-base-intensity) * 1px));
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  .visual-audio-indicator {
+    top: 10px;
+    right: 10px;
+    font-size: 11px;
+    padding: 8px 12px;
+  }
+  
+  .visual-rhythm-indicator {
+    width: 40px;
+    height: 40px;
+    bottom: 15px;
+  }
+  
+  .consciousness-fragment.karma-jitter {
+    animation-duration: 0.15s; /* Slightly slower on mobile */
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .visual-audio-indicator {
+    background: #000;
+    border: 2px solid #fff;
+  }
+  
+  .consciousness-fragment.recognition-highlight {
+    border: 2px solid #00ff88;
+    background: rgba(0, 255, 136, 0.3);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .consciousness-fragment.karma-jitter,
+  .visual-rhythm-indicator.pulse,
+  body.purification-active,
+  body.light-burst-active,
+  body.restoration-active,
+  body.corruption-surge,
+  body.recognition-fade,
+  body.distortion-active {
+    animation: none;
+  }
+  
+  .consciousness-fragment.karma-jitter {
+    transform: none;
+  }
+}
