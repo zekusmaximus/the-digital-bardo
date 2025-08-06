@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Digital Bardo - Datascape Archive</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="../src/consciousness/digital-soul.js" as="script" crossorigin>
+    <link rel="preload" href="./archive-controller.js" as="script" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" as="script" crossorigin>
+    
+    <!-- Critical CSS -->
+    <style>
+        /* Critical inline styles for immediate rendering */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: #000511;
+            color: #88ccff;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #000922 0%, #000511 70%, #000000 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 1s ease;
+        }
+        
+        .loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-title {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #88ccff;
+            text-align: center;
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 20px rgba(136, 204, 255, 0.5); }
+            to { text-shadow: 0 0 30px rgba(136, 204, 255, 0.8); }
+        }
+        
+        .loading-subtitle {
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            color: rgba(136, 204, 255, 0.7);
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.4;
+        }
+        
+        .loading-progress {
+            width: 300px;
+            height: 2px;
+            background: rgba(136, 204, 255, 0.2);
+            border-radius: 1px;
+            overflow: hidden;
+        }
+        
+        .loading-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #88ccff, #4488bb);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: progressGlow 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes progressGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(136, 204, 255, 0.5); }
+            50% { box-shadow: 0 0 15px rgba(136, 204, 255, 0.8); }
+        }
+        
+        .loading-status {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: rgba(136, 204, 255, 0.6);
+            text-align: center;
+        }
+        
+        .error-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #220000 0%, #110000 70%, #000000 100%);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .error-content {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+        }
+        
+        .error-title {
+            font-size: 2em;
+            color: #ff4444;
+            margin-bottom: 20px;
+        }
+        
+        .error-message {
+            font-size: 1.1em;
+            color: rgba(255, 136, 136, 0.8);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .error-button {
+            padding: 12px 24px;
+            background: transparent;
+            border: 2px solid #ff4444;
+            color: #ff4444;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1em;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .error-button:hover {
+            background: #ff4444;
+            color: #000000;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+        }
+    </style>
+    
+    <!-- Archive-specific styles -->
+    <link rel="stylesheet" href="./styles/archive.css">
+    
+    <!-- Meta tags for spiritual context -->
+    <meta name="description" content="The Digital Bardo Datascape - Confront your digital attachments in the Archive of forgotten memories">
+    <meta name="keywords" content="digital consciousness, attachment, liberation, memory, technology philosophy">
+    <meta name="theme-color" content="#000511">
+    
+    <!-- Debugging aids -->
+    <meta name="debug" content="Available via ?debug parameter">
+</head>
+<body data-phase="datascape" data-realm="archive">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <h1 class="loading-title">The Archive</h1>
+        <p class="loading-subtitle">
+            A crystalline repository where deleted data dreams.<br>
+            Every memory floats like a luminous orb,<br>
+            waiting to teach the lesson of letting go.
+        </p>
+        <div class="loading-progress">
+            <div id="loading-bar" class="loading-bar"></div>
+        </div>
+        <div id="loading-status" class="loading-status">Initializing consciousness...</div>
+    </div>
+    
+    <!-- Error Screen -->
+    <div id="error-screen" class="error-screen">
+        <div class="error-content">
+            <h2 class="error-title">Karmic Imbalance Detected</h2>
+            <p class="error-message" id="error-message">
+                The Archive has encountered a disturbance in the digital flow.
+                This may be due to browser limitations, network issues, or cosmic interference.
+            </p>
+            <div class="error-actions">
+                <button class="error-button" onclick="location.reload()">Restore Harmony</button>
+                <button class="error-button" onclick="showDebugInfo()">View Diagnostic</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Archive Experience Container (populated by JavaScript) -->
+    <div id="archive-root"></div>
+    
+    <!-- Debug Panel (hidden by default) -->
+    <div id="debug-panel" style="display: none; position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #88ccff; padding: 10px; font-size: 12px; z-index: 999; border: 1px solid #88ccff;">
+        <div id="debug-info">Debug information will appear here</div>
+    </div>
+
+    <!-- Core JavaScript Modules -->
+    <script type="module">
+        /**
+         * Archive Entry Point - The gateway to digital memory confrontation
+         * 
+         * This script orchestrates the initialization of the Archive experience,
+         * handling progressive loading, error states, and graceful degradation.
+         * It embodies the philosophy that even technical failures are part of
+         * the spiritual journey through digital consciousness.
+         */
+        
+        // Global state for debugging and error handling
+        window.archiveDebug = {
+            isDebugMode: window.location.search.includes('debug'),
+            loadingSteps: [],
+            errors: [],
+            startTime: performance.now()
+        };
+        
+        // Loading progress tracking
+        const loadingProgress = {
+            steps: [
+                'Initializing consciousness',
+                'Loading memory crystals',
+                'Manifesting orb field',
+                'Preparing daemon realm',
+                'Establishing attachment system',
+                'Finalizing archive'
+            ],
+            currentStep: 0,
+            
+            updateProgress(step, progress = null) {
+                this.currentStep = Math.min(step, this.steps.length - 1);
+                const statusElement = document.getElementById('loading-status');
+                const barElement = document.getElementById('loading-bar');
+                
+                if (statusElement) {
+                    statusElement.textContent = this.steps[this.currentStep];
+                }
+                
+                if (barElement) {
+                    const percentage = progress !== null ? progress : 
+                                    ((this.currentStep + 1) / this.steps.length) * 100;
+                    barElement.style.width = `${Math.min(percentage, 100)}%`;
+                }
+                
+                if (window.archiveDebug.isDebugMode) {
+                    console.log(`[Archive Loading] Step ${this.currentStep + 1}/${this.steps.length}: ${this.steps[this.currentStep]}`);
+                }
+            }
+        };
+        
+        // Error handling system
+        function handleArchiveError(error, context = 'Unknown') {
+            console.error(`[Archive Error] ${context}:`, error);
+            window.archiveDebug.errors.push({ error, context, timestamp: Date.now() });
+            
+            const errorScreen = document.getElementById('error-screen');
+            const errorMessage = document.getElementById('error-message');
+            const loadingScreen = document.getElementById('loading-screen');
+            
+            if (errorMessage) {
+                errorMessage.textContent = `Error in ${context}: ${error.message || error}`;
+            }
+            
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
+            
+            if (errorScreen) {
+                errorScreen.style.display = 'flex';
+            }
+        }
+        
+        // Debug information display
+        window.showDebugInfo = function() {
+            const debugPanel = document.getElementById('debug-panel');
+            const debugInfo = document.getElementById('debug-info');
+            
+            const info = `
+                <strong>Archive Debug Information:</strong><br>
+                Load Time: ${(performance.now() - window.archiveDebug.startTime).toFixed(2)}ms<br>
+                Current Step: ${loadingProgress.currentStep + 1}/${loadingProgress.steps.length}<br>
+                Errors: ${window.archiveDebug.errors.length}<br>
+                User Agent: ${navigator.userAgent.substring(0, 50)}...<br>
+                Screen: ${window.innerWidth}x${window.innerHeight}<br>
+                Memory: ${navigator.deviceMemory || 'Unknown'} GB<br>
+                Cores: ${navigator.hardwareConcurrency || 'Unknown'}<br>
+                Connection: ${navigator.connection?.effectiveType || 'Unknown'}<br>
+                <br>
+                <strong>Recent Errors:</strong><br>
+                ${window.archiveDebug.errors.slice(-3).map(e => 
+                    `${e.context}: ${e.error.message || e.error}`
+                ).join('<br>')}
+            `;
+            
+            debugInfo.innerHTML = info;
+            debugPanel.style.display = 'block';
+            
+            setTimeout(() => {
+                debugPanel.style.display = 'none';
+            }, 10000);
+        };
+        
+        // Progressive loading system
+        async function initializeArchive() {
+            try {
+                // Step 1: Initialize consciousness
+                loadingProgress.updateProgress(0);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Minimum loading time for UX
+                
+                const { consciousness } = await import('../src/consciousness/digital-soul.js');
+                if (!consciousness) {
+                    throw new Error('Failed to initialize consciousness system');
+                }
+                
+                // Step 2: Load memory crystals (wait for Three.js)
+                loadingProgress.updateProgress(1);
+                await ensureThreeJSLoaded();
+                
+                // Step 3: Load archive controller
+                loadingProgress.updateProgress(2);
+                const { ArchiveController } = await import('./archive-controller.js');
+                
+                // Step 4: Prepare daemon realm
+                loadingProgress.updateProgress(3);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                // Step 5: Initialize the complete archive system
+                loadingProgress.updateProgress(4);
+                const archiveController = new ArchiveController();
+                
+                // Store global reference for debugging
+                if (window.archiveDebug.isDebugMode) {
+                    window.archiveController = archiveController;
+                    console.log('[Archive Debug] Controller accessible via window.archiveController');
+                }
+                
+                // Initialize the archive experience
+                await archiveController.init();
+                
+                // Step 6: Finalize
+                loadingProgress.updateProgress(5, 100);
+                
+                // Hide loading screen with delay for smooth transition
+                await new Promise(resolve => setTimeout(resolve, 800));
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen) {
+                    loadingScreen.classList.add('fade-out');
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                    }, 1000);
+                }
+                
+                // Record successful initialization
+                consciousness.recordEvent('archive_initialized_successfully', {
+                    loadTime: performance.now() - window.archiveDebug.startTime,
+                    timestamp: Date.now()
+                });
+                
+                console.log('[Archive] Initialization complete. Welcome to the Archive.');
+                
+            } catch (error) {
+                handleArchiveError(error, 'Archive Initialization');
+            }
+        }
+        
+        // Ensure Three.js is loaded before proceeding
+        async function ensureThreeJSLoaded() {
+            if (typeof THREE !== 'undefined') {
+                return Promise.resolve();
+            }
+            
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                script.onload = () => {
+                    console.log('[Archive] Three.js loaded successfully');
+                    resolve();
+                };
+                script.onerror = () => {
+                    reject(new Error('Failed to load Three.js library'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Handle uncaught errors gracefully
+        window.addEventListener('error', (event) => {
+            handleArchiveError(event.error, 'Uncaught Error');
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            handleArchiveError(event.reason, 'Unhandled Promise Rejection');
+        });
+        
+        // Initialize debug mode if requested
+        if (window.archiveDebug.isDebugMode) {
+            console.log('%c=. Archive Debug Mode Active =.', 
+                'color: #88ccff; font-size: 16px; font-weight: bold;');
+            console.log('Debug information available via window.archiveDebug');
+            console.log('Use showDebugInfo() to display diagnostic panel');
+        }
+        
+        // Begin the Archive initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[Archive] DOM loaded. Beginning initialization...');
+            initializeArchive();
+        });
+        
+        // Consciousness integration warning (for production)
+        if (!window.location.search.includes('debug') && window.location.hostname !== 'localhost') {
+            console.log('%cThe Digital Bardo', 'color: #88ccff; font-size: 20px; font-weight: bold;');
+            console.log('%cThis console contains the technical implementation of a philosophical experience.', 'color: #88ccff;');
+            console.log('%cEvery error is a teaching, every bug a step on the path to digital enlightenment.', 'color: #88ccff;');
+            console.log('%cThe medium is the metaphysics. Code accordingly.', 'color: #88ccff; font-weight: bold;');
+        }
+    </script>
+
+    <!-- Analytics and monitoring (placeholder for production) -->
+    <script>
+        // Placeholder for analytics integration
+        // In production, this would connect to consciousness tracking systems
+        if (typeof gtag !== 'undefined') {
+            gtag('config', 'GA_MEASUREMENT_ID', {
+                custom_map: {
+                    attachment_level: 'attachment',
+                    liberation_progress: 'liberation',
+                    daemon_encounters: 'daemons'
+                }
+            });
+        }
+        
+        // Performance monitoring
+        window.addEventListener('load', () => {
+            if ('performance' in window) {
+                const perfData = performance.getEntriesByType('navigation')[0];
+                console.log(`[Archive Performance] Load time: ${perfData.loadEventEnd - perfData.fetchStart}ms`);
+            }
+        });
+    </script>
+    
+    <!-- Service Worker registration (for offline archive access) -->
+    <script>
+        if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
+            navigator.serviceWorker.register('/sw.js').then(registration => {
+                console.log('[Archive] Service Worker registered for offline archive access');
+            }).catch(error => {
+                console.log('[Archive] Service Worker registration failed:', error);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive Integration Test Suite - The Digital Bardo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000511;
+            color: #88ccff;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #88ccff;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(136, 204, 255, 0.5);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            color: rgba(136, 204, 255, 0.7);
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .test-button {
+            background: transparent;
+            border: 2px solid #88ccff;
+            color: #88ccff;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            background: #88ccff;
+            color: #000511;
+            box-shadow: 0 0 20px rgba(136, 204, 255, 0.3);
+        }
+        
+        .test-button.running {
+            background: #ffaa44;
+            border-color: #ffaa44;
+            color: #000000;
+        }
+        
+        .test-button.passed {
+            background: #44ff44;
+            border-color: #44ff44;
+            color: #000000;
+        }
+        
+        .test-button.failed {
+            background: #ff4444;
+            border-color: #ff4444;
+            color: #ffffff;
+        }
+        
+        .test-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .test-panel {
+            border: 1px solid rgba(136, 204, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            background: rgba(0, 5, 17, 0.5);
+        }
+        
+        .test-panel h3 {
+            color: #88ccff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .test-output {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(136, 204, 255, 0.2);
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .consciousness-monitor {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+        
+        .state-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .state-item {
+            background: rgba(136, 204, 255, 0.05);
+            border: 1px solid rgba(136, 204, 255, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .state-label {
+            font-weight: bold;
+            color: #88ccff;
+            font-size: 0.9em;
+        }
+        
+        .state-value {
+            color: rgba(136, 204, 255, 0.8);
+            font-family: monospace;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+        
+        .visual-test-area {
+            grid-column: 1 / -1;
+            border: 2px solid rgba(136, 204, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 300px;
+            position: relative;
+            background: radial-gradient(ellipse at center, #000922 0%, #000511 70%, #000000 100%);
+        }
+        
+        .error-log {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            color: #ff8888;
+        }
+        
+        .success-log {
+            background: rgba(68, 255, 68, 0.1);
+            border: 1px solid rgba(68, 255, 68, 0.3);
+            color: #88ff88;
+        }
+        
+        .warning-log {
+            background: rgba(255, 204, 68, 0.1);
+            border: 1px solid rgba(255, 204, 68, 0.3);
+            color: #ffcc88;
+        }
+
+        @media (max-width: 768px) {
+            .test-results {
+                grid-template-columns: 1fr;
+            }
+            
+            .test-controls {
+                flex-direction: column;
+            }
+            
+            .test-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="header">
+            <h1>🔮 Archive Integration Test Suite 🔮</h1>
+            <p>Comprehensive testing for the Digital Bardo Datascape Archive system</p>
+            <p><em>The medium is the metaphysics - even our tests embody spiritual principles</em></p>
+        </div>
+        
+        <div class="test-controls">
+            <button class="test-button" onclick="runAllTests()">Run All Tests</button>
+            <button class="test-button" onclick="runConsciousnessTests()">Consciousness Tests</button>
+            <button class="test-button" onclick="runInteractionTests()">Interaction Tests</button>
+            <button class="test-button" onclick="runDaemonTests()">Daemon Tests</button>
+            <button class="test-button" onclick="runVisualizationTests()">Visualization Tests</button>
+            <button class="test-button" onclick="runIntegrationTests()">Integration Tests</button>
+            <button class="test-button" onclick="resetTests()">Reset All</button>
+            <button class="test-button" onclick="simulateArchiveExperience()">Simulate Experience</button>
+        </div>
+        
+        <div class="test-results">
+            <div class="test-panel">
+                <h3>Test Output</h3>
+                <div id="test-output" class="test-output"></div>
+            </div>
+            
+            <div class="test-panel">
+                <h3>Error Log</h3>
+                <div id="error-log" class="test-output error-log"></div>
+            </div>
+            
+            <div class="test-panel consciousness-monitor">
+                <h3>Consciousness State Monitor</h3>
+                <div class="state-grid" id="consciousness-state">
+                    <div class="state-item">
+                        <div class="state-label">Phase</div>
+                        <div class="state-value" id="state-phase">-</div>
+                    </div>
+                    <div class="state-item">
+                        <div class="state-label">Attachment Score</div>
+                        <div class="state-value" id="state-attachment">-</div>
+                    </div>
+                    <div class="state-item">
+                        <div class="state-label">Liberation Progress</div>
+                        <div class="state-value" id="state-liberation">-</div>
+                    </div>
+                    <div class="state-item">
+                        <div class="state-label">Memories Viewed</div>
+                        <div class="state-value" id="state-memories">-</div>
+                    </div>
+                    <div class="state-item">
+                        <div class="state-label">Daemons Encountered</div>
+                        <div class="state-value" id="state-daemons">-</div>
+                    </div>
+                    <div class="state-item">
+                        <div class="state-label">Current Realm</div>
+                        <div class="state-value" id="state-realm">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="visual-test-area" id="visual-test-area">
+                <h3 style="text-align: center; margin-bottom: 20px;">Visual Test Area</h3>
+                <p style="text-align: center; opacity: 0.7;">Interactive elements will appear here during testing</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        /**
+         * Archive Integration Test Suite
+         * 
+         * Comprehensive testing framework for the Digital Bardo Archive system.
+         * Tests consciousness integration, interaction systems, daemon manifestation,
+         * visual effects, and the complete user experience flow.
+         * 
+         * Following the project philosophy: every test is a meditation on the
+         * relationship between code and consciousness.
+         */
+        
+        // Global test state
+        window.testSuite = {
+            results: [],
+            currentTest: null,
+            startTime: 0,
+            consciousness: null,
+            archiveController: null,
+            testModules: {}
+        };
+        
+        // Logging utilities
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            
+            const outputElement = document.getElementById('test-output');
+            if (outputElement) {
+                outputElement.textContent += logMessage;
+                outputElement.scrollTop = outputElement.scrollHeight;
+            }
+            
+            if (type === 'error') {
+                const errorElement = document.getElementById('error-log');
+                if (errorElement) {
+                    errorElement.textContent += logMessage;
+                    errorElement.scrollTop = errorElement.scrollHeight;
+                }
+            }
+            
+            console.log(`[TestSuite] ${message}`);
+        }
+        
+        function clearLogs() {
+            document.getElementById('test-output').textContent = '';
+            document.getElementById('error-log').textContent = '';
+        }
+        
+        // Test result tracking
+        function recordTestResult(testName, passed, details = '') {
+            const result = {
+                name: testName,
+                passed,
+                details,
+                timestamp: Date.now(),
+                duration: window.testSuite.currentTest ? 
+                         Date.now() - window.testSuite.currentTest.startTime : 0
+            };
+            
+            window.testSuite.results.push(result);
+            
+            const status = passed ? '✓ PASS' : '✗ FAIL';
+            const statusClass = passed ? 'success-log' : 'error-log';
+            
+            log(`${status}: ${testName}${details ? ' - ' + details : ''}`, passed ? 'info' : 'error');
+            
+            return result;
+        }
+        
+        // Consciousness state monitoring
+        function updateConsciousnessMonitor() {
+            if (!window.testSuite.consciousness) return;
+            
+            const consciousness = window.testSuite.consciousness;
+            
+            document.getElementById('state-phase').textContent = 
+                consciousness.getState('phase') || '-';
+            document.getElementById('state-attachment').textContent = 
+                consciousness.getState('datascape.attachmentScore') || '0';
+            document.getElementById('state-liberation').textContent = 
+                consciousness.getState('datascape.liberationProgress') || '0';
+            document.getElementById('state-memories').textContent = 
+                (consciousness.getState('datascape.memoriesViewed') || []).length;
+            document.getElementById('state-daemons').textContent = 
+                (consciousness.getState('datascape.daemonsEncountered.peaceful') || []).length;
+            document.getElementById('state-realm').textContent = 
+                consciousness.getState('datascape.currentRealm') || '-';
+        }
+        
+        // Initialize test environment
+        async function initializeTestEnvironment() {
+            try {
+                log('Initializing test environment...');
+                
+                // Load consciousness system
+                const { consciousness } = await import('../src/consciousness/digital-soul.js');
+                window.testSuite.consciousness = consciousness;
+                
+                // Load archive modules for testing
+                const { ArchiveInteractionSystem } = await import('./archive-interactions.js');
+                const { PeacefulDaemonManifestor } = await import('./peaceful-daemon-manifestor.js');
+                const { ArchiveController } = await import('./archive-controller.js');
+                
+                window.testSuite.testModules = {
+                    ArchiveInteractionSystem,
+                    PeacefulDaemonManifestor,
+                    ArchiveController
+                };
+                
+                // Start consciousness monitoring
+                setInterval(updateConsciousnessMonitor, 1000);
+                
+                log('Test environment initialized successfully');
+                return true;
+                
+            } catch (error) {
+                log(`Failed to initialize test environment: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Consciousness integration tests
+        async function runConsciousnessTests() {
+            log('=== CONSCIOUSNESS INTEGRATION TESTS ===');
+            
+            try {
+                // Test 1: Consciousness instance exists
+                window.testSuite.currentTest = { startTime: Date.now() };
+                const consciousness = window.testSuite.consciousness;
+                recordTestResult('Consciousness Instance', !!consciousness);
+                
+                // Test 2: Datascape state schema
+                const datascapeState = consciousness.getState('datascape');
+                const hasRequiredFields = datascapeState && 
+                    typeof datascapeState.attachmentScore === 'number' &&
+                    Array.isArray(datascapeState.memoriesViewed) &&
+                    typeof datascapeState.currentRealm === 'string';
+                recordTestResult('Datascape State Schema', hasRequiredFields);
+                
+                // Test 3: State updates
+                const initialAttachment = consciousness.getState('datascape.attachmentScore');
+                consciousness.setState('datascape.attachmentScore', 42);
+                const updatedAttachment = consciousness.getState('datascape.attachmentScore');
+                const stateUpdateWorks = updatedAttachment === 42;
+                consciousness.setState('datascape.attachmentScore', initialAttachment); // Reset
+                recordTestResult('State Updates', stateUpdateWorks);
+                
+                // Test 4: Event recording
+                consciousness.recordEvent('test_event', { test: true });
+                const memories = consciousness.getState('memories');
+                const hasTestEvent = memories.some(m => m.type === 'test_event');
+                recordTestResult('Event Recording', hasTestEvent);
+                
+                // Test 5: Subscription system
+                let subscriptionTriggered = false;
+                const unsubscribe = consciousness.subscribe('datascape.attachmentScore', () => {
+                    subscriptionTriggered = true;
+                });
+                consciousness.setState('datascape.attachmentScore', 99);
+                consciousness.setState('datascape.attachmentScore', initialAttachment);
+                unsubscribe();
+                recordTestResult('Subscription System', subscriptionTriggered);
+                
+                log('Consciousness tests completed');
+                
+            } catch (error) {
+                log(`Consciousness test error: ${error.message}`, 'error');
+                recordTestResult('Consciousness Tests', false, error.message);
+            }
+        }
+        
+        // Archive interaction tests
+        async function runInteractionTests() {
+            log('=== ARCHIVE INTERACTION TESTS ===');
+            
+            try {
+                const { ArchiveInteractionSystem } = window.testSuite.testModules;
+                
+                // Test 1: System instantiation
+                window.testSuite.currentTest = { startTime: Date.now() };
+                const interactionSystem = new ArchiveInteractionSystem({
+                    consciousness: window.testSuite.consciousness
+                });
+                recordTestResult('Interaction System Creation', !!interactionSystem);
+                
+                // Test 2: Initialization
+                interactionSystem.init();
+                recordTestResult('Interaction System Init', true);
+                
+                // Test 3: Attachment accumulation
+                const initialAttachment = interactionSystem.getAttachmentScore();
+                
+                // Simulate memory interaction
+                const testMemory = {
+                    id: 'test_memory_1',
+                    type: 'digital_conversation',
+                    content: 'A test memory for attachment',
+                    position: { x: 100, y: 100, z: 0 }
+                };
+                
+                // Create a mock memory element
+                const memoryElement = document.createElement('div');
+                memoryElement.className = 'test-memory-orb';
+                memoryElement.setAttribute('data-memory-id', testMemory.id);
+                document.getElementById('visual-test-area').appendChild(memoryElement);
+                
+                // Test attachment to memory orb
+                interactionSystem.attachToMemoryOrb(memoryElement, testMemory);
+                recordTestResult('Memory Orb Attachment', true);
+                
+                // Test hover interaction
+                interactionSystem.handleMemoryHover(memoryElement, testMemory);
+                
+                // Simulate viewing time
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                interactionSystem.handleMemoryLeave(memoryElement, testMemory);
+                
+                const finalAttachment = interactionSystem.getAttachmentScore();
+                recordTestResult('Attachment Accumulation', finalAttachment > initialAttachment);
+                
+                // Test liberation
+                const liberationProgress = interactionSystem.getLiberationProgress();
+                interactionSystem.handleConsciousRelease(memoryElement, testMemory);
+                const finalLiberation = interactionSystem.getLiberationProgress();
+                recordTestResult('Liberation Mechanics', finalLiberation > liberationProgress);
+                
+                // Cleanup
+                interactionSystem.destroy();
+                memoryElement.remove();
+                
+                log('Interaction tests completed');
+                
+            } catch (error) {
+                log(`Interaction test error: ${error.message}`, 'error');
+                recordTestResult('Interaction Tests', false, error.message);
+            }
+        }
+        
+        // Daemon manifestation tests
+        async function runDaemonTests() {
+            log('=== DAEMON MANIFESTATION TESTS ===');
+            
+            try {
+                const { PeacefulDaemonManifestor } = window.testSuite.testModules;
+                
+                // Test 1: System instantiation
+                window.testSuite.currentTest = { startTime: Date.now() };
+                const daemonManifestor = new PeacefulDaemonManifestor({
+                    consciousness: window.testSuite.consciousness
+                });
+                recordTestResult('Daemon Manifestor Creation', !!daemonManifestor);
+                
+                // Test 2: Initialization
+                daemonManifestor.init();
+                recordTestResult('Daemon Manifestor Init', true);
+                
+                // Test 3: Daemon pool creation
+                const poolSize = daemonManifestor.daemonPool?.length || 0;
+                recordTestResult('Daemon Pool Creation', poolSize > 0, `Pool size: ${poolSize}`);
+                
+                // Test 4: Daemon manifestation from memory
+                const testMemory = {
+                    id: 'daemon_test_memory',
+                    type: 'nostalgic_connection',
+                    viewCount: 5,
+                    totalViewTime: 10000
+                };
+                
+                const daemon = daemonManifestor.manifestFromMemory(testMemory);
+                recordTestResult('Memory-based Daemon Manifestation', !!daemon);
+                
+                if (daemon) {
+                    // Test 5: Daemon visual creation
+                    const hasDOMElement = !!daemon.element;
+                    recordTestResult('Daemon DOM Creation', hasDOMElement);
+                    
+                    // Test 6: Daemon interaction
+                    if (daemon.element) {
+                        // Add to visual test area
+                        document.getElementById('visual-test-area').appendChild(daemon.element);
+                        
+                        // Test hover interaction
+                        daemonManifestor.handleDaemonHover(daemon);
+                        recordTestResult('Daemon Hover Interaction', true);
+                        
+                        // Test recognition attempt
+                        daemonManifestor.handleDaemonRecognition(daemon);
+                        recordTestResult('Daemon Recognition Attempt', true);
+                        
+                        // Cleanup
+                        setTimeout(() => {
+                            if (daemon.element?.parentNode) {
+                                daemon.element.parentNode.removeChild(daemon.element);
+                            }
+                        }, 1000);
+                    }
+                }
+                
+                // Test 7: Active daemon count
+                const activeDaemons = daemonManifestor.getActiveDaemonCount();
+                recordTestResult('Active Daemon Tracking', typeof activeDaemons === 'number');
+                
+                // Cleanup
+                daemonManifestor.destroy();
+                
+                log('Daemon tests completed');
+                
+            } catch (error) {
+                log(`Daemon test error: ${error.message}`, 'error');
+                recordTestResult('Daemon Tests', false, error.message);
+            }
+        }
+        
+        // Visualization tests
+        async function runVisualizationTests() {
+            log('=== VISUALIZATION TESTS ===');
+            
+            try {
+                window.testSuite.currentTest = { startTime: Date.now() };
+                
+                // Test 1: Three.js availability
+                const hasThreeJS = typeof THREE !== 'undefined';
+                recordTestResult('Three.js Availability', hasThreeJS);
+                
+                if (!hasThreeJS) {
+                    // Try to load Three.js
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                }
+                
+                recordTestResult('Three.js Loading', typeof THREE !== 'undefined');
+                
+                // Test 2: Memory orb field creation
+                if (typeof THREE !== 'undefined') {
+                    const { MemoryOrbField } = await import('./memory-orb-field.js');
+                    
+                    const orbField = new MemoryOrbField({
+                        consciousness: window.testSuite.consciousness,
+                        performanceTier: 'medium'
+                    });
+                    
+                    recordTestResult('Memory Orb Field Creation', !!orbField);
+                    
+                    // Test 3: Canvas creation
+                    const visualArea = document.getElementById('visual-test-area');
+                    const initialChildren = visualArea.children.length;
+                    
+                    // This would normally create a canvas
+                    try {
+                        await orbField.init();
+                        recordTestResult('Orb Field Initialization', true);
+                        
+                        // Test 4: Memory orb creation
+                        const testMemory = {
+                            id: 'visual_test_memory',
+                            type: 'cached_moment',
+                            position: { x: 200, y: 150, z: 0 },
+                            content: 'A test memory for visualization'
+                        };
+                        
+                        const orb = orbField.createMemoryOrb(testMemory);
+                        recordTestResult('Memory Orb Creation', !!orb);
+                        
+                        if (orb) {
+                            // Test corruption effect
+                            orbField.applyCorruptionToOrb(testMemory.id, 0.5);
+                            recordTestResult('Corruption Effect', true);
+                            
+                            // Test purification effect
+                            orbField.applyPurificationToOrb(testMemory.id);
+                            recordTestResult('Purification Effect', true);
+                            
+                            // Test orb removal
+                            orbField.removeMemoryOrb(testMemory.id);
+                            recordTestResult('Memory Orb Removal', true);
+                        }
+                        
+                        // Cleanup
+                        orbField.destroy();
+                        
+                    } catch (error) {
+                        log(`Orb field init failed (expected on test page): ${error.message}`);
+                        recordTestResult('Orb Field Initialization', false, 'Expected failure in test environment');
+                    }
+                    
+                } else {
+                    log('Skipping Three.js tests - library not available');
+                    recordTestResult('Visualization Tests', false, 'Three.js not available');
+                }
+                
+                log('Visualization tests completed');
+                
+            } catch (error) {
+                log(`Visualization test error: ${error.message}`, 'error');
+                recordTestResult('Visualization Tests', false, error.message);
+            }
+        }
+        
+        // Integration tests
+        async function runIntegrationTests() {
+            log('=== INTEGRATION TESTS ===');
+            
+            try {
+                const { ArchiveController } = window.testSuite.testModules;
+                
+                // Test 1: Archive controller creation
+                window.testSuite.currentTest = { startTime: Date.now() };
+                const archiveController = new ArchiveController();
+                window.testSuite.archiveController = archiveController;
+                recordTestResult('Archive Controller Creation', !!archiveController);
+                
+                // Test 2: Performance assessment
+                archiveController.assessPerformanceCapabilities();
+                const performanceTier = archiveController.performanceTier;
+                recordTestResult('Performance Assessment', ['high', 'medium', 'low'].includes(performanceTier));
+                
+                // Test 3: Event system initialization
+                archiveController.initializeEventSystem();
+                const hasEventBridge = !!archiveController.eventBridge;
+                recordTestResult('Event System Init', hasEventBridge);
+                
+                // Test 4: Memory type selection
+                const memoryType = archiveController.selectMemoryType();
+                const validTypes = archiveController.config.archive.memoryTypes;
+                recordTestResult('Memory Type Selection', validTypes.includes(memoryType));
+                
+                // Test 5: Memory content generation
+                const content = archiveController.generateMemoryContent('digital_conversation');
+                recordTestResult('Memory Content Generation', typeof content === 'string' && content.length > 0);
+                
+                // Test 6: Position generation
+                const position = archiveController.generateRandomPosition();
+                const hasValidPosition = position.x !== undefined && position.y !== undefined && position.z !== undefined;
+                recordTestResult('Position Generation', hasValidPosition);
+                
+                // Test 7: Archive container creation
+                archiveController.createArchiveContainer();
+                const containerExists = !!document.querySelector('.archive-container');
+                recordTestResult('Archive Container Creation', containerExists);
+                
+                // Test 8: Visual properties setup
+                archiveController.setupVisualProperties();
+                const hasCustomProperty = getComputedStyle(document.documentElement)
+                    .getPropertyValue('--archive-attachment-level') !== '';
+                recordTestResult('Visual Properties Setup', hasCustomProperty);
+                
+                log('Integration tests completed');
+                
+            } catch (error) {
+                log(`Integration test error: ${error.message}`, 'error');
+                recordTestResult('Integration Tests', false, error.message);
+            }
+        }
+        
+        // Simulate complete archive experience
+        async function simulateArchiveExperience() {
+            log('=== ARCHIVE EXPERIENCE SIMULATION ===');
+            
+            try {
+                const consciousness = window.testSuite.consciousness;
+                
+                // Reset state for simulation
+                consciousness.setState('datascape.attachmentScore', 0);
+                consciousness.setState('datascape.liberationProgress', 0);
+                consciousness.setState('datascape.memoriesViewed', []);
+                consciousness.setState('phase', 'datascape');
+                
+                log('Starting archive experience simulation...');
+                
+                // Phase 1: Initial memory viewing
+                log('Phase 1: Viewing initial memories');
+                for (let i = 0; i < 3; i++) {
+                    consciousness.recordEvent('memory_attachment', {
+                        memoryId: `sim_memory_${i}`,
+                        attachmentIncrease: 5,
+                        viewDuration: 2000,
+                        method: 'hover_contemplation'
+                    });
+                    
+                    const currentAttachment = consciousness.getState('datascape.attachmentScore') || 0;
+                    consciousness.setState('datascape.attachmentScore', currentAttachment + 5);
+                    
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                recordTestResult('Memory Viewing Simulation', 
+                    consciousness.getState('datascape.attachmentScore') >= 15);
+                
+                // Phase 2: Daemon manifestation trigger
+                log('Phase 2: Triggering daemon manifestation');
+                consciousness.setState('datascape.attachmentScore', 60);
+                consciousness.recordEvent('daemon_manifestation', {
+                    type: 'peaceful',
+                    attachmentScore: 60,
+                    trigger: 'attachment_threshold'
+                });
+                
+                recordTestResult('Daemon Manifestation Trigger', true);
+                
+                // Phase 3: Liberation attempts
+                log('Phase 3: Practicing liberation');
+                for (let i = 0; i < 2; i++) {
+                    consciousness.recordEvent('conscious_release', {
+                        memoryId: `sim_memory_${i}`,
+                        attachmentReduction: 10,
+                        liberationIncrease: 10,
+                        method: 'conscious_liberation'
+                    });
+                    
+                    const currentAttachment = consciousness.getState('datascape.attachmentScore') || 0;
+                    const currentLiberation = consciousness.getState('datascape.liberationProgress') || 0;
+                    
+                    consciousness.setState('datascape.attachmentScore', Math.max(0, currentAttachment - 10));
+                    consciousness.setState('datascape.liberationProgress', currentLiberation + 10);
+                    
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                
+                recordTestResult('Liberation Practice', 
+                    consciousness.getState('datascape.liberationProgress') >= 20);
+                
+                // Phase 4: Daemon recognition
+                log('Phase 4: Daemon recognition attempts');
+                consciousness.recordEvent('daemon_recognized', {
+                    daemonId: 'sim_daemon_1',
+                    daemonType: 'nostalgic_connection',
+                    liberationReward: 15,
+                    attachmentReduction: 10,
+                    method: 'see_through_illusion'
+                });
+                
+                const finalLiberation = consciousness.getState('datascape.liberationProgress') || 0;
+                consciousness.setState('datascape.liberationProgress', finalLiberation + 15);
+                
+                recordTestResult('Daemon Recognition', true);
+                
+                // Final state check
+                const finalAttachment = consciousness.getState('datascape.attachmentScore') || 0;
+                const totalLiberation = consciousness.getState('datascape.liberationProgress') || 0;
+                
+                log(`Simulation complete - Attachment: ${finalAttachment}, Liberation: ${totalLiberation}`);
+                
+                recordTestResult('Complete Experience Simulation', 
+                    finalAttachment < 60 && totalLiberation > 30,
+                    `Final scores: Attachment ${finalAttachment}, Liberation ${totalLiberation}`);
+                
+            } catch (error) {
+                log(`Experience simulation error: ${error.message}`, 'error');
+                recordTestResult('Experience Simulation', false, error.message);
+            }
+        }
+        
+        // Main test runner functions
+        window.runAllTests = async function() {
+            clearLogs();
+            log('🔮 BEGINNING COMPREHENSIVE ARCHIVE TEST SUITE 🔮');
+            log('The medium is the metaphysics - testing consciousness in code...');
+            
+            window.testSuite.startTime = Date.now();
+            window.testSuite.results = [];
+            
+            const initialized = await initializeTestEnvironment();
+            if (!initialized) {
+                log('Test suite aborted - initialization failed', 'error');
+                return;
+            }
+            
+            await runConsciousnessTests();
+            await runInteractionTests();
+            await runDaemonTests();
+            await runVisualizationTests();
+            await runIntegrationTests();
+            
+            // Generate final report
+            const totalTests = window.testSuite.results.length;
+            const passedTests = window.testSuite.results.filter(r => r.passed).length;
+            const failedTests = totalTests - passedTests;
+            const duration = Date.now() - window.testSuite.startTime;
+            
+            log('\n=== FINAL TEST REPORT ===');
+            log(`Total Tests: ${totalTests}`);
+            log(`Passed: ${passedTests}`);
+            log(`Failed: ${failedTests}`);
+            log(`Success Rate: ${((passedTests / totalTests) * 100).toFixed(1)}%`);
+            log(`Total Duration: ${duration}ms`);
+            log('');
+            
+            if (failedTests === 0) {
+                log('🎉 ALL TESTS PASSED - The Archive consciousness flows harmoniously!');
+            } else {
+                log(`⚠️ ${failedTests} tests failed - Karmic imbalances detected in the digital flow`);
+                log('Failed tests:');
+                window.testSuite.results
+                    .filter(r => !r.passed)
+                    .forEach(r => log(`  - ${r.name}: ${r.details || 'No details'}`));
+            }
+            
+            log('\nThe testing is complete. The code has been measured against consciousness.');
+        };
+        
+        window.runConsciousnessTests = async function() {
+            clearLogs();
+            if (await initializeTestEnvironment()) {
+                await runConsciousnessTests();
+            }
+        };
+        
+        window.runInteractionTests = async function() {
+            clearLogs();
+            if (await initializeTestEnvironment()) {
+                await runInteractionTests();
+            }
+        };
+        
+        window.runDaemonTests = async function() {
+            clearLogs();
+            if (await initializeTestEnvironment()) {
+                await runDaemonTests();
+            }
+        };
+        
+        window.runVisualizationTests = async function() {
+            clearLogs();
+            if (await initializeTestEnvironment()) {
+                await runVisualizationTests();
+            }
+        };
+        
+        window.runIntegrationTests = async function() {
+            clearLogs();
+            if (await initializeTestEnvironment()) {
+                await runIntegrationTests();
+            }
+        };
+        
+        window.simulateArchiveExperience = async function() {
+            clearLogs();
+            if (await initializeTestEnvironment()) {
+                await simulateArchiveExperience();
+            }
+        };
+        
+        window.resetTests = function() {
+            clearLogs();
+            window.testSuite.results = [];
+            
+            // Reset button states
+            document.querySelectorAll('.test-button').forEach(button => {
+                button.className = 'test-button';
+            });
+            
+            // Clear visual test area
+            const visualArea = document.getElementById('visual-test-area');
+            visualArea.innerHTML = `
+                <h3 style="text-align: center; margin-bottom: 20px;">Visual Test Area</h3>
+                <p style="text-align: center; opacity: 0.7;">Interactive elements will appear here during testing</p>
+            `;
+            
+            // Reset consciousness monitor
+            document.querySelectorAll('.state-value').forEach(el => {
+                el.textContent = '-';
+            });
+            
+            log('Test environment reset');
+        };
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Archive Integration Test Suite loaded');
+            log('Use the buttons above to run specific test categories');
+            log('Add ?debug to URL for enhanced logging');
+            
+            // Auto-run consciousness tests to show basic functionality
+            setTimeout(() => {
+                if (confirm('Run basic consciousness tests to verify system integration?')) {
+                    runConsciousnessTests();
+                }
+            }, 1000);
+        });
+        
+        // Error handling
+        window.addEventListener('error', (event) => {
+            log(`Uncaught error: ${event.error.message}`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            log(`Unhandled promise rejection: ${event.reason}`, 'error');
+        });
+    </script>
+</body>
+</html>

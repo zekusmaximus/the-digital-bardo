@@ -16,7 +16,16 @@ const STATE_SCHEMA = {
         degradationLevel: 0,
     },
     datascape: {
-        // ... state for the datascape bardo
+        currentRealm: 'archive', // 'archive' or 'firewall'
+        attachmentScore: 0,
+        memoriesViewed: [],
+        daemonsEncountered: {
+            peaceful: [],
+            wrathful: []
+        },
+        liberationProgress: 0,
+        reputationScore: 0,
+        deprecatedFunctionsAttempted: []
     },
     incarnation: {
         // ... state for the incarnation bardo
@@ -70,7 +79,18 @@ export class DigitalConsciousness {
                 recognized: false,
                 degradationLevel: 0,
             },
-            datascape: {},
+            datascape: {
+                currentRealm: 'archive',
+                attachmentScore: 0,
+                memoriesViewed: [],
+                daemonsEncountered: {
+                    peaceful: [],
+                    wrathful: []
+                },
+                liberationProgress: 0,
+                reputationScore: 0,
+                deprecatedFunctionsAttempted: []
+            },
             incarnation: {},
             // Navigation state
             status: 'pre-death',
