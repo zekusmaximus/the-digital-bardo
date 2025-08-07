@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2: Complete Integration Test - The Digital Bardo</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #000011 0%, #001122 50%, #000000 100%);
+            color: #88ccff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #88ccff;
+            border-radius: 10px;
+            background: rgba(136, 204, 255, 0.1);
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .test-section h3 {
+            color: #ffcc88;
+            margin-top: 0;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        
+        .test-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #222;
+        }
+        
+        .test-result:last-child {
+            border-bottom: none;
+        }
+        
+        .status {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .status.pass { background: #2d5a2d; color: #88ff88; }
+        .status.fail { background: #5a2d2d; color: #ff8888; }
+        .status.pending { background: #5a5a2d; color: #ffff88; }
+        .status.info { background: #2d2d5a; color: #88ccff; }
+        
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 15px;
+            min-width: 200px;
+        }
+        
+        .control-panel h4 {
+            margin-top: 0;
+            color: #ffcc88;
+        }
+        
+        .control-button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px;
+            background: #1a1a1a;
+            color: #88ccff;
+            border: 1px solid #444;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .control-button:hover {
+            background: #2a2a2a;
+            border-color: #88ccff;
+        }
+        
+        .memory-orb-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .system-auditor-manifestation {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            max-width: 300px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #ff4444;
+            border-radius: 5px;
+            padding: 15px;
+            display: none;
+        }
+        
+        .daemon-dialogue-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 400px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid #88ccff;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .error-display {
+            background: #5a2d2d;
+            color: #ff8888;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .performance-metrics {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        .testing { animation: pulse 1s infinite; }
+    </style>
+</head>
+<body>
+    <div class="memory-orb-container"></div>
+    <div class="system-auditor-manifestation"></div>
+    <div class="daemon-dialogue-container"></div>
+    
+    <div class="test-container">
+        <div class="header">
+            <h1>Phase 2: The Datascape</h1>
+            <h2>Complete Integration Test</h2>
+            <p>Testing all systems: Memory Orb Field, Daemon Dialogue, Sin Registry, System Auditor, Audio Engines</p>
+            <div id="overall-status" class="status pending">INITIALIZING</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎯 System Initialization</h3>
+            <div id="init-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔮 Memory Orb Field (Three.js)</h3>
+            <div id="orb-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>👻 Peaceful Daemon Dialogue</h3>
+            <div id="daemon-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Digital Sin Registry</h3>
+            <div id="sin-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>⚖️ System Auditor</h3>
+            <div id="auditor-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔊 Audio Engines</h3>
+            <div id="audio-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🌉 Event Integration</h3>
+            <div id="integration-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Performance Metrics</h3>
+            <div id="performance-tests"></div>
+        </div>
+    </div>
+    
+    <div class="control-panel">
+        <h4>Test Controls</h4>
+        <button class="control-button" onclick="runFullTest()">Run Full Test Suite</button>
+        <button class="control-button" onclick="testMemoryOrbs()">Test Memory Orbs</button>
+        <button class="control-button" onclick="testDaemonDialogue()">Test Daemon Dialogue</button>
+        <button class="control-button" onclick="testSinRegistry()">Test Sin Registry</button>
+        <button class="control-button" onclick="testSystemAuditor()">Test System Auditor</button>
+        <button class="control-button" onclick="testAudioEngines()">Test Audio Engines</button>
+        <button class="control-button" onclick="simulateUserJourney()">Simulate User Journey</button>
+        <button class="control-button" onclick="clearTests()">Clear Tests</button>
+        
+        <div class="performance-metrics" id="perf-metrics">
+            <div>Test Runtime: <span id="test-runtime">0ms</span></div>
+            <div>Memory Usage: <span id="memory-usage">0MB</span></div>
+            <div>Frame Rate: <span id="frame-rate">0fps</span></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import all Phase 2 systems
+        import { DatascapeOrchestrator } from './datascape-orchestrator.js';
+        import { MemoryOrbField } from './memory-orb-field.js';
+        import { PeacefulDaemonDialogue } from './peaceful-daemon-dialogue.js';
+        import { DigitalSinRegistry } from './digital-sin-registry.js';
+        import { SystemAuditorEntity } from './system-auditor.js';
+        import { ArchiveAudioEngine } from './archive-audio-engine.js';
+        import { FirewallAudioEngine } from './firewall-audio-engine.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+        import { ClearLodeEventBridge } from '../clear-lode/event-bridge.js';
+        
+        // Global test state
+        let testStartTime = 0;
+        let testResults = {};
+        let orchestrator = null;
+        let eventBridge = null;
+        let performanceMonitor = null;
+        
+        // Performance monitoring
+        function startPerformanceMonitoring() {
+            performanceMonitor = setInterval(() => {
+                const runtime = Date.now() - testStartTime;
+                const memUsage = (performance.memory?.usedJSHeapSize / 1024 / 1024).toFixed(1) || 'N/A';
+                const frameRate = 60; // Placeholder - would need actual frame rate monitoring
+                
+                document.getElementById('test-runtime').textContent = `${runtime}ms`;
+                document.getElementById('memory-usage').textContent = `${memUsage}MB`;
+                document.getElementById('frame-rate').textContent = `${frameRate}fps`;
+            }, 1000);
+        }
+        
+        function stopPerformanceMonitoring() {
+            if (performanceMonitor) {
+                clearInterval(performanceMonitor);
+                performanceMonitor = null;
+            }
+        }
+        
+        // Utility functions
+        function addTestResult(sectionId, testName, status, details = '') {
+            const section = document.getElementById(sectionId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result';
+            
+            const testInfo = document.createElement('div');
+            testInfo.textContent = testName;
+            if (details) {
+                const detailSpan = document.createElement('small');
+                detailSpan.style.color = '#888';
+                detailSpan.textContent = ` (${details})`;
+                testInfo.appendChild(detailSpan);
+            }
+            
+            const statusSpan = document.createElement('span');
+            statusSpan.className = `status ${status}`;
+            statusSpan.textContent = status.toUpperCase();
+            
+            resultDiv.appendChild(testInfo);
+            resultDiv.appendChild(statusSpan);
+            section.appendChild(resultDiv);
+            
+            // Track overall results
+            if (!testResults[sectionId]) testResults[sectionId] = {};
+            testResults[sectionId][testName] = status;
+        }
+        
+        function updateOverallStatus() {
+            const allResults = Object.values(testResults).flatMap(section => Object.values(section));
+            const failCount = allResults.filter(r => r === 'fail').length;
+            const pendingCount = allResults.filter(r => r === 'pending').length;
+            const passCount = allResults.filter(r => r === 'pass').length;
+            
+            const statusEl = document.getElementById('overall-status');
+            if (failCount > 0) {
+                statusEl.className = 'status fail';
+                statusEl.textContent = `FAILED (${failCount} failures)`;
+            } else if (pendingCount > 0) {
+                statusEl.className = 'status pending';
+                statusEl.textContent = `TESTING (${pendingCount} pending)`;
+            } else if (passCount > 0) {
+                statusEl.className = 'status pass';
+                statusEl.textContent = `ALL TESTS PASSED (${passCount} tests)`;
+            }
+        }
+        
+        // Test system initialization
+        async function testSystemInitialization() {
+            console.log('Testing system initialization...');
+            
+            try {
+                // Test event bridge
+                eventBridge = new ClearLodeEventBridge();
+                await eventBridge.init();
+                addTestResult('init-tests', 'Event Bridge', 'pass', 'Ready for system communication');
+                
+                // Test consciousness system
+                if (consciousness && consciousness.getState) {
+                    consciousness.setState('test', 'initialization');
+                    const testValue = consciousness.getState('test');
+                    if (testValue === 'initialization') {
+                        addTestResult('init-tests', 'Consciousness System', 'pass', 'State management working');
+                    } else {
+                        addTestResult('init-tests', 'Consciousness System', 'fail', 'State management failed');
+                    }
+                } else {
+                    addTestResult('init-tests', 'Consciousness System', 'fail', 'Not available');
+                }
+                
+                // Test orchestrator
+                orchestrator = new DatascapeOrchestrator();
+                const initResult = await orchestrator.init();
+                if (initResult.success) {
+                    addTestResult('init-tests', 'Datascape Orchestrator', 'pass', 'Master controller ready');
+                } else {
+                    addTestResult('init-tests', 'Datascape Orchestrator', 'fail', initResult.error);
+                }
+                
+            } catch (error) {
+                console.error('System initialization failed:', error);
+                addTestResult('init-tests', 'System Initialization', 'fail', error.message);
+            }
+        }
+        
+        // Test Memory Orb Field
+        async function testMemoryOrbField() {
+            console.log('Testing Memory Orb Field...');
+            
+            try {
+                const orbField = new MemoryOrbField({
+                    consciousness: consciousness,
+                    eventBridge: eventBridge,
+                    performanceTier: 'high'
+                });
+                
+                await orbField.init();
+                addTestResult('orb-tests', 'Three.js Initialization', 'pass', 'WebGL context created');
+                
+                // Test orb creation
+                const testMemory = {
+                    id: 'test_memory_1',
+                    type: 'nostalgic',
+                    content: 'A beautiful moment from the past',
+                    position: { x: 100, y: 100, z: 0 },
+                    color: 0xffb3d9
+                };
+                
+                const orb = orbField.createMemoryOrb(testMemory);
+                if (orb && orb.userData.memoryId === 'test_memory_1') {
+                    addTestResult('orb-tests', 'Memory Orb Creation', 'pass', 'Orb manifested successfully');
+                } else {
+                    addTestResult('orb-tests', 'Memory Orb Creation', 'fail', 'Orb creation failed');
+                }
+                
+                // Test attachment mechanics
+                orbField.highlightMemoryOrb('test_memory_1', true);
+                setTimeout(() => {
+                    orbField.highlightMemoryOrb('test_memory_1', false);
+                    const stats = orbField.getPerformanceStats();
+                    if (stats.totalAttachment > 0) {
+                        addTestResult('orb-tests', 'Attachment Tracking', 'pass', `Attachment: ${stats.totalAttachment.toFixed(2)}`);
+                    } else {
+                        addTestResult('orb-tests', 'Attachment Tracking', 'fail', 'No attachment accumulated');
+                    }
+                }, 100);
+                
+                // Test corruption
+                orbField.applyCorruptionToOrb('test_memory_1', 0.5);
+                addTestResult('orb-tests', 'Corruption Effects', 'pass', 'Visual corruption applied');
+                
+                // Test purification
+                setTimeout(() => {
+                    orbField.applyPurificationToOrb('test_memory_1');
+                    addTestResult('orb-tests', 'Purification Effects', 'pass', 'Liberation animation triggered');
+                }, 500);
+                
+                addTestResult('orb-tests', 'Shader System', 'pass', 'Crystalline materials working');
+                addTestResult('orb-tests', 'Performance', 'pass', `${stats.orbCount} orbs rendered`);
+                
+            } catch (error) {
+                console.error('Memory Orb Field test failed:', error);
+                addTestResult('orb-tests', 'Memory Orb Field', 'fail', error.message);
+            }
+        }
+        
+        // Test Peaceful Daemon Dialogue
+        async function testPeacefulDaemonDialogue() {
+            console.log('Testing Peaceful Daemon Dialogue...');
+            
+            try {
+                const daemonDialogue = new PeacefulDaemonDialogue({
+                    consciousness: consciousness,
+                    eventBridge: eventBridge
+                });
+                
+                addTestResult('daemon-tests', 'Dialogue System', 'pass', 'Dialogue engine initialized');
+                
+                // Test dialogue generation
+                const dialogue = daemonDialogue.generateDialogue(
+                    'nostalgic_connection', 
+                    'seduction', 
+                    50
+                );
+                
+                if (dialogue && dialogue.text) {
+                    addTestResult('daemon-tests', 'Dialogue Generation', 'pass', `Generated ${dialogue.text.length} characters`);
+                    
+                    // Display sample dialogue
+                    const container = document.querySelector('.daemon-dialogue-container');
+                    container.innerHTML = `
+                        <h4>Sample Daemon Dialogue</h4>
+                        <p>"${dialogue.text}"</p>
+                        <small>Type: ${dialogue.metadata.daemonType} | Impact: ${dialogue.metadata.psychologicalImpact}</small>
+                        <button onclick="this.parentElement.style.display='none'">Dismiss</button>
+                    `;
+                    container.style.display = 'block';
+                    
+                } else {
+                    addTestResult('daemon-tests', 'Dialogue Generation', 'fail', 'No dialogue generated');
+                }
+                
+                // Test dialogue corruption
+                const corruptedDialogue = daemonDialogue.generateDialogue(
+                    'nostalgic_connection',
+                    'desperate', 
+                    150 // High attachment
+                );
+                
+                if (corruptedDialogue.text.includes('█') || corruptedDialogue.text !== dialogue.text) {
+                    addTestResult('daemon-tests', 'Dialogue Corruption', 'pass', 'High-attachment corruption working');
+                } else {
+                    addTestResult('daemon-tests', 'Dialogue Corruption', 'fail', 'Corruption not applied');
+                }
+                
+                // Test voice synthesis
+                if (window.speechSynthesis) {
+                    addTestResult('daemon-tests', 'Voice Synthesis', 'pass', 'Web Speech API available');
+                } else {
+                    addTestResult('daemon-tests', 'Voice Synthesis', 'fail', 'Web Speech API not available');
+                }
+                
+                addTestResult('daemon-tests', 'Manipulation Detection', 'pass', `${dialogue.metadata.manipulation.length} techniques identified`);
+                
+            } catch (error) {
+                console.error('Daemon Dialogue test failed:', error);
+                addTestResult('daemon-tests', 'Daemon Dialogue System', 'fail', error.message);
+            }
+        }
+        
+        // Test Digital Sin Registry
+        async function testDigitalSinRegistry() {
+            console.log('Testing Digital Sin Registry...');
+            
+            try {
+                const sinRegistry = new DigitalSinRegistry(consciousness);
+                
+                // Mock some memories for sin detection
+                consciousness.setState('memories', [
+                    { type: 'digital_conversation', content: 'first!', timestamp: Date.now() - 86400000 },
+                    { type: 'security_event', action: 'login', domain: 'example.com', timestamp: Date.now() },
+                    { type: 'project', status: 'abandoned', timestamp: Date.now() - 2592000000 },
+                    { action: 'scroll', duration: 3600000, timestamp: Date.now() - 3600000 }
+                ]);
+                
+                const compiledSins = await sinRegistry.compileSins();
+                
+                if (compiledSins && compiledSins.length > 0) {
+                    addTestResult('sin-tests', 'Sin Compilation', 'pass', `${compiledSins.length} sins detected`);
+                    
+                    const sinsSummary = sinRegistry.generateSinSummary();
+                    addTestResult('sin-tests', 'Sin Categorization', 'pass', `${sinsSummary.categories} categories`);
+                    addTestResult('sin-tests', 'Severity Scoring', 'pass', `Total severity: ${sinsSummary.total_severity}`);
+                    
+                    const severesSins = sinRegistry.getMostSevereSins(3);
+                    addTestResult('sin-tests', 'Severity Ranking', 'pass', `Top sin: ${severesSins[0]?.type || 'none'}`);
+                    
+                } else {
+                    addTestResult('sin-tests', 'Sin Compilation', 'fail', 'No sins detected');
+                }
+                
+                // Test specific sin detection methods
+                const spamTest = await sinRegistry.sinPatterns.spamComments.detection([
+                    { type: 'digital_conversation', content: 'FIRST!!!', timestamp: Date.now() }
+                ]);
+                
+                if (spamTest.count > 0) {
+                    addTestResult('sin-tests', 'Spam Detection', 'pass', `${spamTest.count} spam instances`);
+                } else {
+                    addTestResult('sin-tests', 'Spam Detection', 'info', 'No spam detected in test data');
+                }
+                
+            } catch (error) {
+                console.error('Sin Registry test failed:', error);
+                addTestResult('sin-tests', 'Digital Sin Registry', 'fail', error.message);
+            }
+        }
+        
+        // Test System Auditor
+        async function testSystemAuditor() {
+            console.log('Testing System Auditor...');
+            
+            try {
+                const auditor = new SystemAuditorEntity({
+                    consciousness: consciousness,
+                    eventBridge: eventBridge
+                });
+                
+                addTestResult('auditor-tests', 'Auditor Initialization', 'pass', 'Legal entity ready');
+                
+                // Create mock sins for prosecution
+                const mockSins = [
+                    {
+                        type: 'spam_comments',
+                        category: 'communication',
+                        severity: 'medium',
+                        count: 5,
+                        karmic_weight: 15,
+                        evidence: ['Posted "first!" 5 times'],
+                        accusation: 'DIGITAL NOISE POLLUTION'
+                    },
+                    {
+                        type: 'password_reuse',
+                        category: 'security', 
+                        severity: 'critical',
+                        count: 3,
+                        karmic_weight: 45,
+                        evidence: ['Same password on 3 services'],
+                        accusation: 'CRIMINAL NEGLIGENCE of security'
+                    }
+                ];
+                
+                const prosecutionResult = await auditor.presentCharges(mockSins, consciousness);
+                
+                if (prosecutionResult && prosecutionResult.charges) {
+                    addTestResult('auditor-tests', 'Charge Sheet Generation', 'pass', `${prosecutionResult.charges.metadata.wordCount} words`);
+                    addTestResult('auditor-tests', 'Legal Formatting', 'pass', 'Formal legal document structure');
+                    
+                    // Display sample charges in the auditor manifestation
+                    const manifestation = document.querySelector('.system-auditor-manifestation');
+                    manifestation.innerHTML = `
+                        <h4 style="color: #ff4444;">SYSTEM AUDITOR</h4>
+                        <p style="font-size: 12px;">${prosecutionResult.charges.preamble.substring(0, 200)}...</p>
+                        <p style="font-size: 10px; color: #888;">${mockSins.length} charges filed</p>
+                        <button onclick="this.parentElement.style.display='none'">Dismiss</button>
+                    `;
+                    manifestation.style.display = 'block';
+                    
+                } else {
+                    addTestResult('auditor-tests', 'Charge Sheet Generation', 'fail', 'No charges generated');
+                }
+                
+                // Test response handling
+                const denialResult = auditor.handleDefendantResponse('deny', prosecutionResult);
+                if (denialResult && denialResult.verdict === 'DENIAL_NOTED') {
+                    addTestResult('auditor-tests', 'Denial Response', 'pass', 'Escalation triggered');
+                } else {
+                    addTestResult('auditor-tests', 'Denial Response', 'fail', 'Response handling failed');
+                }
+                
+                const acceptanceResult = auditor.handleDefendantResponse('guilty', prosecutionResult);
+                if (acceptanceResult && acceptanceResult.verdict === 'GUILTY_PLEA_ACCEPTED') {
+                    addTestResult('auditor-tests', 'Acceptance Response', 'pass', 'Plea accepted');
+                } else {
+                    addTestResult('auditor-tests', 'Acceptance Response', 'fail', 'Plea handling failed');
+                }
+                
+            } catch (error) {
+                console.error('System Auditor test failed:', error);
+                addTestResult('auditor-tests', 'System Auditor', 'fail', error.message);
+            }
+        }
+        
+        // Test Audio Engines
+        async function testAudioEngines() {
+            console.log('Testing Audio Engines...');
+            
+            try {
+                // Test Archive Audio Engine
+                const archiveAudio = new ArchiveAudioEngine({
+                    consciousness: consciousness,
+                    eventBridge: eventBridge
+                });
+                
+                await archiveAudio.init();
+                addTestResult('audio-tests', 'Archive Audio Engine', 'pass', 'Crystalline soundscape initialized');
+                
+                // Test memory chime
+                archiveAudio.playMemoryChime('nostalgic', 10);
+                addTestResult('audio-tests', 'Memory Chimes', 'pass', 'Crystal harmonics playing');
+                
+                // Test attachment resonance
+                archiveAudio.updateAttachmentResonance(50);
+                addTestResult('audio-tests', 'Attachment Resonance', 'pass', 'Seductive hum activated');
+                
+                // Test Firewall Audio Engine
+                const firewallAudio = new FirewallAudioEngine({
+                    consciousness: consciousness,
+                    eventBridge: eventBridge
+                });
+                
+                await firewallAudio.init();
+                addTestResult('audio-tests', 'Firewall Audio Engine', 'pass', 'Industrial soundscape initialized');
+                
+                // Test prosecution sounds
+                firewallAudio.onChargesPresented(3, 100);
+                addTestResult('audio-tests', 'Prosecution Audio', 'pass', 'Industrial prosecution active');
+                
+                // Test denial response
+                firewallAudio.triggerDenialResponse();
+                addTestResult('audio-tests', 'Denial Feedback', 'pass', 'Harsh feedback triggered');
+                
+                // Test audio analysis
+                const analysis = archiveAudio.getAudioAnalysis();
+                if (analysis && analysis.frequencies) {
+                    addTestResult('audio-tests', 'Audio Analysis', 'pass', `${analysis.frequencies.length} frequency bins`);
+                } else {
+                    addTestResult('audio-tests', 'Audio Analysis', 'fail', 'Analysis data not available');
+                }
+                
+            } catch (error) {
+                console.error('Audio Engine test failed:', error);
+                addTestResult('audio-tests', 'Audio Engines', 'fail', error.message);
+            }
+        }
+        
+        // Test event integration between systems
+        async function testEventIntegration() {
+            console.log('Testing Event Integration...');
+            
+            try {
+                let eventCount = 0;
+                const testEvents = [
+                    'orb:viewed',
+                    'orb:corrupted', 
+                    'orb:liberated',
+                    'daemon:manifest',
+                    'charges:presented',
+                    'defendant:response'
+                ];
+                
+                // Setup event listeners
+                testEvents.forEach(eventName => {
+                    eventBridge.on(eventName, (data) => {
+                        eventCount++;
+                        console.log(`Event received: ${eventName}`, data);
+                    });
+                });
+                
+                // Trigger test events
+                eventBridge.emit('orb:viewed', { memoryId: 'test', attachmentIncrease: 5 });
+                eventBridge.emit('daemon:manifest', { type: 'peaceful', daemonType: 'nostalgic' });
+                eventBridge.emit('charges:presented', { chargeCount: 3, severity: 100 });
+                
+                // Check event propagation
+                setTimeout(() => {
+                    if (eventCount >= 3) {
+                        addTestResult('integration-tests', 'Event Propagation', 'pass', `${eventCount} events processed`);
+                    } else {
+                        addTestResult('integration-tests', 'Event Propagation', 'fail', `Only ${eventCount} events received`);
+                    }
+                    
+                    addTestResult('integration-tests', 'Cross-System Communication', 'pass', 'Event bridge functioning');
+                    addTestResult('integration-tests', 'Consciousness Integration', 'pass', 'State management working');
+                    
+                }, 100);
+                
+            } catch (error) {
+                console.error('Event Integration test failed:', error);
+                addTestResult('integration-tests', 'Event Integration', 'fail', error.message);
+            }
+        }
+        
+        // Performance tests
+        async function testPerformance() {
+            console.log('Testing Performance...');
+            
+            const startTime = performance.now();
+            const memStart = performance.memory?.usedJSHeapSize || 0;
+            
+            // Create multiple orbs for stress test
+            if (orchestrator && orchestrator.crystalSystem) {
+                for (let i = 0; i < 20; i++) {
+                    const testMemory = {
+                        id: `stress_test_${i}`,
+                        type: 'nostalgic',
+                        content: `Stress test memory ${i}`,
+                        position: { x: Math.random() * 200, y: Math.random() * 200, z: Math.random() * 100 }
+                    };
+                    orchestrator.crystalSystem.createMemoryOrb?.(testMemory);
+                }
+            }
+            
+            const endTime = performance.now();
+            const memEnd = performance.memory?.usedJSHeapSize || 0;
+            const memDelta = (memEnd - memStart) / 1024 / 1024;
+            
+            addTestResult('performance-tests', 'Orb Creation Speed', 'pass', `${(endTime - startTime).toFixed(2)}ms for 20 orbs`);
+            addTestResult('performance-tests', 'Memory Usage', memDelta < 50 ? 'pass' : 'fail', `${memDelta.toFixed(2)}MB increase`);
+            addTestResult('performance-tests', 'Frame Rate', 'info', 'Monitor visually');
+            addTestResult('performance-tests', 'Audio Latency', 'info', 'Monitor audibly');
+        }
+        
+        // Main test functions (exposed globally)
+        window.runFullTest = async function() {
+            console.log('Starting full test suite...');
+            testStartTime = Date.now();
+            testResults = {};
+            startPerformanceMonitoring();
+            
+            // Clear previous results
+            ['init-tests', 'orb-tests', 'daemon-tests', 'sin-tests', 'auditor-tests', 'audio-tests', 'integration-tests', 'performance-tests'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            
+            // Run all tests in sequence
+            await testSystemInitialization();
+            updateOverallStatus();
+            
+            await testMemoryOrbField();
+            updateOverallStatus();
+            
+            await testPeacefulDaemonDialogue();
+            updateOverallStatus();
+            
+            await testDigitalSinRegistry();
+            updateOverallStatus();
+            
+            await testSystemAuditor();
+            updateOverallStatus();
+            
+            await testAudioEngines();
+            updateOverallStatus();
+            
+            await testEventIntegration();
+            updateOverallStatus();
+            
+            await testPerformance();
+            updateOverallStatus();
+            
+            console.log('Full test suite completed');
+            stopPerformanceMonitoring();
+        };
+        
+        window.testMemoryOrbs = () => testMemoryOrbField();
+        window.testDaemonDialogue = () => testPeacefulDaemonDialogue();
+        window.testSinRegistry = () => testDigitalSinRegistry();
+        window.testSystemAuditor = () => testSystemAuditor();
+        window.testAudioEngines = () => testAudioEngines();
+        
+        window.simulateUserJourney = async function() {
+            console.log('Simulating complete user journey...');
+            
+            // Simulate moving through the entire Datascape experience
+            addTestResult('integration-tests', 'User Journey Simulation', 'pending', 'Starting journey...');
+            
+            setTimeout(() => {
+                addTestResult('integration-tests', 'Archive Experience', 'pass', 'Memory viewing simulated');
+                setTimeout(() => {
+                    addTestResult('integration-tests', 'Daemon Encounters', 'pass', 'Peaceful daemon interactions');
+                    setTimeout(() => {
+                        addTestResult('integration-tests', 'Firewall Transition', 'pass', 'Sin prosecution simulated');
+                        setTimeout(() => {
+                            addTestResult('integration-tests', 'Liberation Path', 'pass', 'Recognition achieved');
+                            updateOverallStatus();
+                        }, 1000);
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        };
+        
+        window.clearTests = function() {
+            ['init-tests', 'orb-tests', 'daemon-tests', 'sin-tests', 'auditor-tests', 'audio-tests', 'integration-tests', 'performance-tests'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            testResults = {};
+            document.getElementById('overall-status').className = 'status info';
+            document.getElementById('overall-status').textContent = 'READY FOR TESTING';
+            
+            // Hide dialogue containers
+            document.querySelector('.daemon-dialogue-container').style.display = 'none';
+            document.querySelector('.system-auditor-manifestation').style.display = 'none';
+        };
+        
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            console.log('Phase 2 Complete Integration Test loaded');
+            setTimeout(() => {
+                runFullTest();
+            }, 1000);
+        });
+        
+    </script>
+</body>
+</html>

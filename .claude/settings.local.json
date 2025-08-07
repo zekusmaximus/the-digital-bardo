@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm run dev:*)",
       "WebFetch(domain:localhost)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

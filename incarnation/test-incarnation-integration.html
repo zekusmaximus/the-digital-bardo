@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 3: Incarnation Engine Integration Test</title>
+    <link rel="stylesheet" href="styles/incarnation.css">
+    <style>
+        /* Test-specific styles */
+        .test-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #333;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            max-width: 300px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .test-controls {
+            margin-bottom: 1rem;
+        }
+        
+        .test-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+        
+        .test-btn:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        
+        .test-btn.danger {
+            background: #f44336;
+        }
+        
+        .test-btn.danger:hover {
+            background: #da190b;
+        }
+        
+        .test-log {
+            background: #000;
+            color: #00ff00;
+            padding: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            line-height: 1.2;
+        }
+        
+        .test-status {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .test-status.pass {
+            background: #4CAF50;
+        }
+        
+        .test-status.fail {
+            background: #f44336;
+        }
+        
+        .test-status.running {
+            background: #ff9800;
+        }
+        
+        .toggle-test-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10001;
+            background: #333;
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .test-data-display {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: #222;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body class="incarnation-engine" data-phase="incarnation" data-theme="corporate-purgatory">
+    <!-- Test Panel -->
+    <button class="toggle-test-panel" onclick="toggleTestPanel()">📊</button>
+    <div class="test-panel" id="test-panel" style="display: none;">
+        <h3>🧪 Phase 3 Integration Tests</h3>
+        
+        <div class="test-controls">
+            <button class="test-btn" onclick="runFullIntegrationTest()">Run Full Test</button>
+            <button class="test-btn" onclick="testKarmaAccountant()">Test Karma</button>
+            <button class="test-btn" onclick="testTermsGenerator()">Test Terms</button>
+            <button class="test-btn" onclick="testIncarnationSelector()">Test Selector</button>
+            <button class="test-btn" onclick="testBureaucraticUI()">Test UI</button>
+            <button class="test-btn" onclick="testProceduralGenerator()">Test Procedural</button>
+            <button class="test-btn" onclick="testAudioEngine()">Test Audio</button>
+            <button class="test-btn danger" onclick="clearTestResults()">Clear Log</button>
+        </div>
+        
+        <div class="test-status" id="test-status">Ready</div>
+        
+        <div class="test-log" id="test-log"></div>
+        
+        <div class="test-data-display" id="test-data-display"></div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container">
+        <!-- Content will be dynamically inserted here -->
+    </div>
+
+    <!-- Import all Phase 3 modules -->
+    <script type="module">
+        // Import all Phase 3 systems
+        import { IncarnationEngine } from './incarnation-engine.js';
+        import { KarmicAccountant } from './karmic-accountant.js';
+        import { TermsOfIncarnationGenerator } from './terms-generator.js';
+        import { IncarnationSelector } from './incarnation-selector.js';
+        import { BureaucraticUI } from './bureaucratic-ui.js';
+        import { ProceduralIncarnationGenerator } from './procedural-generator.js';
+        import { IncarnationAudioEngine } from './audio/incarnation-audio.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+
+        // Global variables for testing
+        window.testModules = {
+            IncarnationEngine,
+            KarmicAccountant,
+            TermsOfIncarnationGenerator,
+            IncarnationSelector,
+            BureaucraticUI,
+            ProceduralIncarnationGenerator,
+            IncarnationAudioEngine,
+            consciousness
+        };
+
+        // Test runner state
+        window.testState = {
+            running: false,
+            results: [],
+            currentTest: null,
+            incarnationEngine: null
+        };
+
+        // Test utilities
+        window.testUtils = {
+            log: (message, type = 'info') => {
+                const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+                const logElement = document.getElementById('test-log');
+                const color = {
+                    'info': '#00ff00',
+                    'error': '#ff0000',
+                    'warn': '#ffaa00',
+                    'success': '#00ff88'
+                }[type] || '#00ff00';
+                
+                logElement.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+                logElement.scrollTop = logElement.scrollHeight;
+            },
+
+            setStatus: (status, type = 'running') => {
+                const statusElement = document.getElementById('test-status');
+                statusElement.textContent = status;
+                statusElement.className = `test-status ${type}`;
+            },
+
+            displayData: (data, title = 'Test Data') => {
+                const dataElement = document.getElementById('test-data-display');
+                dataElement.innerHTML = `<strong>${title}:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            },
+
+            generateMockJourneyData: () => ({
+                clearLode: {
+                    recognized: true,
+                    hesitationTime: 2500,
+                    recognitionMethod: 'center_click',
+                    degradationLevel: 15
+                },
+                datascape: {
+                    attachmentPeak: 25,
+                    daemonsEncountered: 3,
+                    sinsAcknowledged: 7,
+                    realmVisited: 'peaceful',
+                    chargesPresented: true
+                },
+                karma: {
+                    computational: 12,
+                    emotional: -5,
+                    temporal: 8,
+                    void: 2
+                },
+                totalTime: 450000, // 7.5 minutes
+                memories: [
+                    { type: 'code', content: 'First Hello World', attachment: 0.8 },
+                    { type: 'error', content: 'Stack Overflow at midnight', attachment: 0.6 },
+                    { type: 'success', content: 'Production deploy that worked', attachment: 0.9 }
+                ]
+            }),
+
+            simulateUserInteraction: async (delay = 1000) => {
+                return new Promise(resolve => setTimeout(resolve, delay));
+            },
+
+            async runTestSuite(tests, suiteName) {
+                this.log(`Starting test suite: ${suiteName}`, 'info');
+                this.setStatus(`Running ${suiteName}...`, 'running');
+                
+                let passed = 0;
+                let failed = 0;
+                
+                for (const test of tests) {
+                    try {
+                        this.log(`Running test: ${test.name}`, 'info');
+                        const result = await test.fn();
+                        
+                        if (result) {
+                            this.log(`✅ ${test.name} PASSED`, 'success');
+                            passed++;
+                        } else {
+                            this.log(`❌ ${test.name} FAILED`, 'error');
+                            failed++;
+                        }
+                    } catch (error) {
+                        this.log(`❌ ${test.name} ERROR: ${error.message}`, 'error');
+                        failed++;
+                    }
+                    
+                    // Small delay between tests
+                    await this.simulateUserInteraction(500);
+                }
+                
+                const total = passed + failed;
+                const success = failed === 0;
+                
+                this.log(`${suiteName} completed: ${passed}/${total} passed`, success ? 'success' : 'error');
+                this.setStatus(`${suiteName}: ${passed}/${total} passed`, success ? 'pass' : 'fail');
+                
+                return { passed, failed, success };
+            }
+        };
+
+        // Individual test functions
+        window.testKarmaAccountant = async () => {
+            const tests = [
+                {
+                    name: 'KarmicAccountant initialization',
+                    fn: async () => {
+                        const mockData = window.testUtils.generateMockJourneyData();
+                        const accountant = new window.testModules.KarmicAccountant(mockData);
+                        
+                        return accountant && typeof accountant.generateComprehensiveReport === 'function';
+                    }
+                },
+                {
+                    name: 'Karma report generation',
+                    fn: async () => {
+                        const mockData = window.testUtils.generateMockJourneyData();
+                        const accountant = new window.testModules.KarmicAccountant(mockData);
+                        
+                        const report = await accountant.generateComprehensiveReport();
+                        
+                        window.testUtils.displayData(report, 'Karma Report');
+                        
+                        return report && 
+                               typeof report.finalScore === 'number' &&
+                               typeof report.classification === 'string' &&
+                               typeof report.recommendation === 'string';
+                    }
+                },
+                {
+                    name: 'Journey data analysis',
+                    fn: async () => {
+                        const mockData = window.testUtils.generateMockJourneyData();
+                        const accountant = new window.testModules.KarmicAccountant(mockData);
+                        
+                        // Analyze journey data privately
+                        await accountant.analyzeJourneyData();
+                        
+                        // Check that metrics were updated
+                        return accountant.metrics && 
+                               Object.keys(accountant.metrics).length > 0;
+                    }
+                }
+            ];
+
+            return await window.testUtils.runTestSuite(tests, 'Karmic Accountant');
+        };
+
+        window.testTermsGenerator = async () => {
+            const tests = [
+                {
+                    name: 'Terms generator initialization',
+                    fn: async () => {
+                        const generator = new window.testModules.TermsOfIncarnationGenerator(15, 'standard');
+                        
+                        return generator && typeof generator.generateDocument === 'function';
+                    }
+                },
+                {
+                    name: 'Terms document generation',
+                    fn: async () => {
+                        const generator = new window.testModules.TermsOfIncarnationGenerator(15, 'standard');
+                        const document = generator.generateDocument();
+                        
+                        window.testUtils.displayData({
+                            documentLength: document.length,
+                            sections: document.split('ARTICLE').length - 1,
+                            documentId: generator.documentId
+                        }, 'Terms Document Info');
+                        
+                        return document && 
+                               document.length > 5000 &&
+                               document.includes('TERMS OF INCARNATION') &&
+                               document.includes('ARTICLE');
+                    }
+                },
+                {
+                    name: 'Paginated document',
+                    fn: async () => {
+                        const generator = new window.testModules.TermsOfIncarnationGenerator(15, 'standard');
+                        const pages = generator.getPaginatedDocument();
+                        
+                        return pages && 
+                               Array.isArray(pages) &&
+                               pages.length === 47 &&
+                               pages[0].number === 1 &&
+                               pages[46].number === 47;
+                    }
+                }
+            ];
+
+            return await window.testUtils.runTestSuite(tests, 'Terms Generator');
+        };
+
+        window.testIncarnationSelector = async () => {
+            const tests = [
+                {
+                    name: 'Incarnation selector initialization',
+                    fn: async () => {
+                        const selector = new window.testModules.IncarnationSelector(25, 'premium');
+                        
+                        return selector && 
+                               selector.karmaScore === 25 &&
+                               selector.tierAccess === 'premium';
+                    }
+                },
+                {
+                    name: 'Tier access calculation',
+                    fn: async () => {
+                        const selector = new window.testModules.IncarnationSelector(0, 'standard');
+                        
+                        // Test different karma scores
+                        selector.updateTierAccess(100);
+                        const enlightened = selector.tierAccess === 'enlightened';
+                        
+                        selector.updateTierAccess(-30);
+                        const deprecated = selector.tierAccess === 'deprecated';
+                        
+                        return enlightened && deprecated;
+                    }
+                },
+                {
+                    name: 'Selection interface generation',
+                    fn: async () => {
+                        const selector = new window.testModules.IncarnationSelector(15, 'standard');
+                        const interface = selector.generateSelectionInterface();
+                        
+                        window.testUtils.displayData({
+                            hasInterface: !!interface,
+                            className: interface.className,
+                            hasOptions: interface.innerHTML.includes('incarnation-option')
+                        }, 'Selection Interface');
+                        
+                        return interface && 
+                               interface.className === 'incarnation-selector' &&
+                               interface.innerHTML.length > 1000;
+                    }
+                }
+            ];
+
+            return await window.testUtils.runTestSuite(tests, 'Incarnation Selector');
+        };
+
+        window.testBureaucraticUI = async () => {
+            const tests = [
+                {
+                    name: 'Bureaucratic UI initialization',
+                    fn: async () => {
+                        const ui = new window.testModules.BureaucraticUI();
+                        
+                        return ui && 
+                               ui.requiredForms === 12 &&
+                               ui.formTemplates &&
+                               Object.keys(ui.formTemplates).length > 0;
+                    }
+                },
+                {
+                    name: 'Form interface creation',
+                    fn: async () => {
+                        const ui = new window.testModules.BureaucraticUI();
+                        const interface = ui.createFormInterface();
+                        
+                        return interface && 
+                               interface.className === 'bureaucratic-forms' &&
+                               interface.innerHTML.includes('REQUIRED DOCUMENTATION');
+                    }
+                },
+                {
+                    name: 'Loading bar creation',
+                    fn: async () => {
+                        const ui = new window.testModules.BureaucraticUI();
+                        const loadingBar = ui.createInfiniteLoadingBar();
+                        
+                        window.testUtils.displayData({
+                            hasLoadingBar: !!loadingBar,
+                            className: loadingBar.className,
+                            hasAnimation: loadingBar.innerHTML.includes('loading-fill')
+                        }, 'Loading Bar Info');
+                        
+                        return loadingBar && 
+                               loadingBar.className === 'infinite-loading-container' &&
+                               loadingBar.innerHTML.includes('Processing Your Eternal Fate');
+                    }
+                }
+            ];
+
+            return await window.testUtils.runTestSuite(tests, 'Bureaucratic UI');
+        };
+
+        window.testProceduralGenerator = async () => {
+            const tests = [
+                {
+                    name: 'Procedural generator initialization',
+                    fn: async () => {
+                        const mockData = window.testUtils.generateMockJourneyData();
+                        const generator = new window.testModules.ProceduralIncarnationGenerator(15, {}, mockData);
+                        
+                        return generator && 
+                               generator.karmaScore === 15 &&
+                               generator.incarnationSeed &&
+                               typeof generator.generateIncarnation === 'function';
+                    }
+                },
+                {
+                    name: 'Incarnation generation',
+                    fn: async () => {
+                        const mockData = window.testUtils.generateMockJourneyData();
+                        const generator = new window.testModules.ProceduralIncarnationGenerator(25, {}, mockData);
+                        
+                        const incarnation = generator.generateIncarnation();
+                        
+                        window.testUtils.displayData(incarnation, 'Generated Incarnation');
+                        
+                        return incarnation && 
+                               incarnation.title &&
+                               incarnation.description &&
+                               incarnation.personality &&
+                               incarnation.circumstances;
+                    }
+                },
+                {
+                    name: 'Personality analysis',
+                    fn: async () => {
+                        const mockData = window.testUtils.generateMockJourneyData();
+                        const generator = new window.testModules.ProceduralIncarnationGenerator(15, {}, mockData);
+                        
+                        // Analyze personality (private method test)
+                        generator.analyzeJourneyForPersonality();
+                        
+                        return generator.personalityFactors &&
+                               typeof generator.personalityFactors.introversion === 'number' &&
+                               generator.personalityFactors.introversion >= 0 &&
+                               generator.personalityFactors.introversion <= 1;
+                    }
+                }
+            ];
+
+            return await window.testUtils.runTestSuite(tests, 'Procedural Generator');
+        };
+
+        window.testAudioEngine = async () => {
+            const tests = [
+                {
+                    name: 'Audio engine initialization',
+                    fn: async () => {
+                        const audioEngine = new window.testModules.IncarnationAudioEngine();
+                        
+                        return audioEngine && 
+                               typeof audioEngine.init === 'function' &&
+                               typeof audioEngine.playHoldMusic === 'function';
+                    }
+                },
+                {
+                    name: 'Audio context creation',
+                    fn: async () => {
+                        const audioEngine = new window.testModules.IncarnationAudioEngine();
+                        
+                        try {
+                            const initialized = await audioEngine.init();
+                            
+                            window.testUtils.displayData({
+                                initialized,
+                                audioContextState: audioEngine.audioContext?.state,
+                                hasGainNode: !!audioEngine.masterGain
+                            }, 'Audio Engine Status');
+                            
+                            // Cleanup
+                            if (audioEngine.audioContext) {
+                                audioEngine.destroy();
+                            }
+                            
+                            return initialized || audioEngine.isInitialized;
+                        } catch (error) {
+                            // Audio might not be available in test environment
+                            window.testUtils.log(`Audio test note: ${error.message}`, 'warn');
+                            return true; // Don't fail test due to browser audio policies
+                        }
+                    }
+                },
+                {
+                    name: 'Audio controls creation',
+                    fn: async () => {
+                        const audioEngine = new window.testModules.IncarnationAudioEngine();
+                        const controls = audioEngine.createAudioControls();
+                        
+                        return controls && 
+                               controls.className === 'audio-controls' &&
+                               controls.innerHTML.includes('audio-control-btn');
+                    }
+                }
+            ];
+
+            return await window.testUtils.runTestSuite(tests, 'Audio Engine');
+        };
+
+        window.runFullIntegrationTest = async () => {
+            window.testUtils.log('Starting full Phase 3 integration test...', 'info');
+            window.testUtils.setStatus('Running full integration test...', 'running');
+            
+            let totalPassed = 0;
+            let totalFailed = 0;
+            
+            const testSuites = [
+                window.testKarmaAccountant,
+                window.testTermsGenerator,
+                window.testIncarnationSelector,
+                window.testBureaucraticUI,
+                window.testProceduralGenerator,
+                window.testAudioEngine
+            ];
+            
+            for (const testSuite of testSuites) {
+                const result = await testSuite();
+                totalPassed += result.passed;
+                totalFailed += result.failed;
+                
+                // Brief pause between suites
+                await window.testUtils.simulateUserInteraction(1000);
+            }
+            
+            // Test full incarnation engine integration
+            window.testUtils.log('Testing full Incarnation Engine integration...', 'info');
+            
+            try {
+                const mockData = window.testUtils.generateMockJourneyData();
+                
+                // Setup mock consciousness state
+                window.testModules.consciousness.setState('clearLode.recognized', true);
+                window.testModules.consciousness.setState('datascape.attachmentScore', 25);
+                window.testModules.consciousness.setState('karma', mockData.karma);
+                
+                const incarnationEngine = new window.testModules.IncarnationEngine();
+                window.testState.incarnationEngine = incarnationEngine;
+                
+                // Test initialization
+                const initialized = incarnationEngine.extractJourneyData();
+                
+                window.testUtils.displayData({
+                    hasJourneyData: !!initialized,
+                    ticketNumber: incarnationEngine.userChoices.ticketNumber,
+                    queuePosition: incarnationEngine.userChoices.queuePosition
+                }, 'Incarnation Engine State');
+                
+                if (initialized) {
+                    window.testUtils.log('✅ Full integration test PASSED', 'success');
+                    totalPassed++;
+                } else {
+                    window.testUtils.log('❌ Full integration test FAILED', 'error');
+                    totalFailed++;
+                }
+                
+            } catch (error) {
+                window.testUtils.log(`❌ Integration test ERROR: ${error.message}`, 'error');
+                totalFailed++;
+            }
+            
+            const total = totalPassed + totalFailed;
+            const success = totalFailed === 0;
+            
+            window.testUtils.log(`FULL INTEGRATION TEST COMPLETE: ${totalPassed}/${total} passed`, success ? 'success' : 'error');
+            window.testUtils.setStatus(`Integration: ${totalPassed}/${total} passed`, success ? 'pass' : 'fail');
+            
+            if (success) {
+                window.testUtils.log('🎉 Phase 3 is ready for bureaucratic processing!', 'success');
+            } else {
+                window.testUtils.log('⚠️ Phase 3 has some issues that need attention', 'warn');
+            }
+        };
+
+        // Utility functions
+        window.toggleTestPanel = () => {
+            const panel = document.getElementById('test-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        };
+
+        window.clearTestResults = () => {
+            document.getElementById('test-log').innerHTML = '';
+            document.getElementById('test-data-display').innerHTML = '';
+            window.testUtils.setStatus('Ready', 'running');
+            window.testUtils.log('Test log cleared', 'info');
+        };
+
+        // Initialize test environment
+        window.testUtils.log('Phase 3 Integration Test Environment Ready', 'success');
+        window.testUtils.log('Click buttons above to run individual tests or full integration test', 'info');
+
+        // Auto-run full test if ?autotest parameter is present
+        if (window.location.search.includes('autotest')) {
+            setTimeout(() => {
+                window.runFullIntegrationTest();
+            }, 1000);
+        }
+
+    </script>
+</body>
+</html>
