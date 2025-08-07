@@ -202,6 +202,8 @@
     <!-- Debug Panel (hidden by default) -->
     <div id="debug-panel" style="display: none; position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #88ccff; padding: 10px; font-size: 12px; z-index: 999; border: 1px solid #88ccff;">
         <div id="debug-info">Debug information will appear here</div>
+        <button onclick="runIntegrationVerification()" style="margin-top: 10px; background: #88ccff; color: #000; border: none; padding: 5px; cursor: pointer; font-size: 11px;">Verify Integration</button>
+        <button onclick="runSystemsPolish()" style="margin-top: 5px; background: #ffcc88; color: #000; border: none; padding: 5px; cursor: pointer; font-size: 11px;">Polish Systems</button>
     </div>
 
     <!-- Core JavaScript Modules -->
@@ -400,12 +402,48 @@
             handleArchiveError(event.reason, 'Unhandled Promise Rejection');
         });
         
+        // Integration verification function
+        window.runIntegrationVerification = async function() {
+            console.log('🧪 Starting Phase 2 Integration Verification...');
+            try {
+                const { IntegrationVerifier } = await import('./integration-verification.js');
+                const verifier = new IntegrationVerifier();
+                const result = await verifier.runCompleteVerification();
+                
+                alert(`Integration Verification Complete!\nSuccess Rate: ${result.successRate.toFixed(1)}%\nCheck console for detailed results.`);
+                
+                window.datascapeVerifier = verifier;
+            } catch (error) {
+                console.error('Integration verification failed:', error);
+                alert('Integration verification failed. Check console for details.');
+            }
+        };
+        
+        // Systems polish function  
+        window.runSystemsPolish = async function() {
+            console.log('✨ Starting Phase 2 Systems Polish...');
+            try {
+                const { SystemsPolisher } = await import('./polish-systems.js');
+                const polisher = new SystemsPolisher();
+                const result = await polisher.runCompletePolish();
+                
+                alert(`Systems Polish Complete!\nSuccess Rate: ${result.successRate.toFixed(1)}%\nCheck console for detailed results.`);
+                
+                window.datascapePolisher = polisher;
+            } catch (error) {
+                console.error('Systems polish failed:', error);
+                alert('Systems polish failed. Check console for details.');
+            }
+        };
+
         // Initialize debug mode if requested
         if (window.archiveDebug.isDebugMode) {
             console.log('%c=. Archive Debug Mode Active =.', 
                 'color: #88ccff; font-size: 16px; font-weight: bold;');
             console.log('Debug information available via window.archiveDebug');
             console.log('Use showDebugInfo() to display diagnostic panel');
+            console.log('Use runIntegrationVerification() to verify all systems');
+            console.log('Use runSystemsPolish() to polish rough edges');
         }
         
         // Begin the Archive initialization

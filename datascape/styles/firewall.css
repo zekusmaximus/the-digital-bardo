@@ -1,0 +1,934 @@
+/**
+ * FIREWALL VISUAL CORRUPTION EFFECTS
+ * 
+ * "When digital sins accumulate beyond redemption, reality itself begins to fray.
+ * The Firewall's visual corruption system manifests the weight of technological
+ * transgressions as literal tears in the fabric of the digital world.
+ * 
+ * Each denial creates glitches. Each justification fragments the interface.
+ * Each attempt at deletion corrupts the very pixels that display the accusations.
+ * The medium becomes the message, the corruption becomes the truth."
+ */
+
+/* === CORE FIREWALL REALM STYLING === */
+
+[data-realm="firewall"] {
+    /* Core color palette for digital judgment */
+    --firewall-primary: #ff0000;
+    --firewall-secondary: #cc0000;
+    --firewall-accent: #990000;
+    --firewall-background: #0a0000;
+    --firewall-text: #ff6666;
+    --firewall-error: #ff9999;
+    
+    /* Dynamic corruption variables (updated by JavaScript) */
+    --firewall-corruption-level: 0;
+    --firewall-prosecution-intensity: 0;
+    --firewall-reality-stability: 1;
+    --firewall-denial-level: 0;
+    --firewall-glitch-frequency: 0;
+    
+    /* Calculated effects based on corruption */
+    --corruption-opacity: calc(var(--firewall-corruption-level) * 0.8);
+    --glitch-intensity: calc(var(--firewall-prosecution-intensity) * var(--firewall-denial-level));
+    --reality-distortion: calc((1 - var(--firewall-reality-stability)) * 100%);
+    --error-frequency: calc(var(--firewall-corruption-level) * 10);
+    
+    /* Base environment styling */
+    background: 
+        radial-gradient(circle at 30% 40%, rgba(255, 0, 0, var(--corruption-opacity)) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(153, 0, 0, calc(var(--corruption-opacity) * 0.7)) 0%, transparent 40%),
+        linear-gradient(135deg, var(--firewall-background) 0%, #1a0000 50%, var(--firewall-background) 100%);
+    
+    color: var(--firewall-text);
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    
+    /* Corruption animation base */
+    animation: 
+        reality-instability calc(2s / max(var(--firewall-reality-stability), 0.1)) infinite linear,
+        prosecution-pulse calc(3s / max(var(--firewall-prosecution-intensity), 0.1)) infinite ease-in-out;
+}
+
+/* Reality instability animation - gets more violent with lower stability */
+@keyframes reality-instability {
+    0%, 100% { 
+        transform: translateX(0) translateY(0) skew(0deg); 
+        filter: hue-rotate(0deg);
+    }
+    25% { 
+        transform: 
+            translateX(calc(var(--reality-distortion) * 0.02px)) 
+            translateY(calc(var(--reality-distortion) * 0.01px)) 
+            skew(calc(var(--reality-distortion) * 0.01deg)); 
+        filter: hue-rotate(calc(var(--reality-distortion) * 0.5deg));
+    }
+    50% { 
+        transform: 
+            translateX(calc(var(--reality-distortion) * -0.01px)) 
+            translateY(calc(var(--reality-distortion) * 0.02px)) 
+            skew(calc(var(--reality-distortion) * -0.01deg)); 
+        filter: hue-rotate(calc(var(--reality-distortion) * -0.3deg));
+    }
+    75% { 
+        transform: 
+            translateX(calc(var(--reality-distortion) * 0.015px)) 
+            translateY(calc(var(--reality-distortion) * -0.01px)) 
+            skew(calc(var(--reality-distortion) * 0.005deg)); 
+        filter: hue-rotate(calc(var(--reality-distortion) * 0.2deg));
+    }
+}
+
+/* Prosecution intensity pulse */
+@keyframes prosecution-pulse {
+    0%, 100% { 
+        box-shadow: 
+            inset 0 0 50px rgba(255, 0, 0, calc(var(--firewall-prosecution-intensity) * 0.3)),
+            0 0 20px rgba(255, 0, 0, calc(var(--firewall-prosecution-intensity) * 0.2));
+    }
+    50% { 
+        box-shadow: 
+            inset 0 0 80px rgba(255, 0, 0, calc(var(--firewall-prosecution-intensity) * 0.5)),
+            0 0 40px rgba(255, 0, 0, calc(var(--firewall-prosecution-intensity) * 0.4));
+    }
+}
+
+/* === PROSECUTION PHASE STYLING === */
+
+[data-prosecution-phase="charges_filed"] {
+    --phase-color: #ff3333;
+    background-blend-mode: multiply;
+}
+
+[data-prosecution-phase="trial_active"] {
+    --phase-color: #ff0000;
+    animation: trial-intensity 0.5s infinite alternate;
+}
+
+[data-prosecution-phase="maximum_intensity"] {
+    --phase-color: #ff0000;
+    --reality-distortion: 50%;
+    animation: 
+        maximum-prosecution 0.1s infinite,
+        reality-tear 0.05s infinite,
+        color-corruption 0.2s infinite;
+}
+
+[data-prosecution-phase="completed"] {
+    --phase-color: #ffaaaa;
+    animation: prosecution-fade 2s ease-out forwards;
+}
+
+/* Trial intensity animation */
+@keyframes trial-intensity {
+    from { 
+        filter: 
+            brightness(1) 
+            contrast(100%) 
+            saturate(100%);
+    }
+    to { 
+        filter: 
+            brightness(1.1) 
+            contrast(120%) 
+            saturate(150%);
+    }
+}
+
+/* Maximum prosecution chaos */
+@keyframes maximum-prosecution {
+    0% { transform: translateX(0px); }
+    10% { transform: translateX(-2px) translateY(1px); }
+    20% { transform: translateX(2px) translateY(-1px); }
+    30% { transform: translateX(-1px) translateY(2px); }
+    40% { transform: translateX(1px) translateY(-2px); }
+    50% { transform: translateX(-2px) translateY(-1px); }
+    60% { transform: translateX(2px) translateY(1px); }
+    70% { transform: translateX(-1px) translateY(-2px); }
+    80% { transform: translateX(1px) translateY(2px); }
+    90% { transform: translateX(-2px) translateY(1px); }
+    100% { transform: translateX(0px); }
+}
+
+/* Reality tear effect */
+@keyframes reality-tear {
+    0%, 90%, 100% { 
+        clip-path: inset(0); 
+        filter: none;
+    }
+    5% { 
+        clip-path: polygon(0 0, 100% 0, 100% 45%, 0 55%); 
+        filter: invert(1) hue-rotate(180deg);
+    }
+    10% { 
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); 
+        filter: none;
+    }
+}
+
+/* Color corruption effect */
+@keyframes color-corruption {
+    0% { filter: hue-rotate(0deg); }
+    33% { filter: hue-rotate(120deg) saturate(200%); }
+    66% { filter: hue-rotate(240deg) saturate(150%); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+/* Prosecution fade out */
+@keyframes prosecution-fade {
+    from { 
+        opacity: 1; 
+        filter: brightness(1); 
+    }
+    to { 
+        opacity: 0.7; 
+        filter: brightness(0.8); 
+    }
+}
+
+/* === SYSTEM AUDITOR MANIFESTATION === */
+
+.system-auditor-manifestation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    animation: auditor-manifestation 2s ease-in-out;
+}
+
+@keyframes auditor-manifestation {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.1) rotateY(90deg); 
+        filter: blur(20px);
+    }
+    50% { 
+        opacity: 0.5; 
+        transform: scale(0.7) rotateY(45deg); 
+        filter: blur(5px);
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1) rotateY(0deg); 
+        filter: blur(0px);
+    }
+}
+
+.auditor-presence {
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    border: 2px solid var(--firewall-primary);
+    background: rgba(10, 0, 0, 0.98);
+    box-shadow: 
+        0 0 50px rgba(255, 0, 0, 0.5),
+        inset 0 0 30px rgba(255, 0, 0, 0.2);
+}
+
+/* Legal document hologram effect */
+.legal-document-hologram {
+    position: relative;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--firewall-text);
+    
+    background: 
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(255, 0, 0, 0.1) 2px,
+            rgba(255, 0, 0, 0.1) 4px
+        );
+    
+    animation: hologram-flicker 0.1s infinite;
+}
+
+@keyframes hologram-flicker {
+    0%, 98%, 100% { opacity: 1; }
+    99% { opacity: 0.98; }
+}
+
+.document-header {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--firewall-primary);
+    margin-bottom: 20px;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
+    animation: header-intensity 2s infinite ease-in-out;
+}
+
+@keyframes header-intensity {
+    0%, 100% { 
+        text-shadow: 0 0 5px rgba(255, 0, 0, 0.8); 
+        transform: scale(1);
+    }
+    50% { 
+        text-shadow: 0 0 15px rgba(255, 0, 0, 1); 
+        transform: scale(1.02);
+    }
+}
+
+.document-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 10px;
+    white-space: pre-wrap;
+    
+    /* Custom scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: var(--firewall-primary) var(--firewall-background);
+}
+
+.document-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.document-body::-webkit-scrollbar-track {
+    background: var(--firewall-background);
+}
+
+.document-body::-webkit-scrollbar-thumb {
+    background: var(--firewall-primary);
+    border-radius: 4px;
+}
+
+.document-body::-webkit-scrollbar-thumb:hover {
+    background: var(--firewall-secondary);
+}
+
+.document-footer {
+    text-align: center;
+    font-size: 10px;
+    color: var(--firewall-secondary);
+    margin-top: 20px;
+    opacity: 0.8;
+}
+
+/* Typewriter cursor effect */
+.cursor-blink {
+    animation: cursor-blink 1s infinite;
+}
+
+@keyframes cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* === AUDITOR VOICE VISUALIZER === */
+
+.auditor-voice-visualizer {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 3px;
+    z-index: 1001;
+}
+
+.voice-wave {
+    width: 4px;
+    height: 20px;
+    background: var(--firewall-primary);
+    animation: voice-wave 0.6s infinite ease-in-out;
+    opacity: 0.8;
+}
+
+.voice-wave:nth-child(2) { animation-delay: 0.1s; }
+.voice-wave:nth-child(3) { animation-delay: 0.2s; }
+
+@keyframes voice-wave {
+    0%, 100% { 
+        height: 20px; 
+        background: var(--firewall-primary);
+    }
+    50% { 
+        height: 40px; 
+        background: var(--firewall-accent);
+    }
+}
+
+/* === WRATHFUL DAEMON MANIFESTATIONS === */
+
+.wrathful-daemon {
+    position: absolute;
+    z-index: 500;
+    transition: all 0.3s ease-out;
+    
+    filter: 
+        drop-shadow(0 0 20px var(--firewall-primary))
+        contrast(150%)
+        saturate(200%);
+    
+    animation: daemon-hostility-pulse 0.5s infinite ease-in-out;
+}
+
+@keyframes daemon-hostility-pulse {
+    0%, 100% { 
+        transform: scale(1); 
+        filter: 
+            drop-shadow(0 0 20px var(--firewall-primary))
+            contrast(150%)
+            saturate(200%);
+    }
+    50% { 
+        transform: scale(1.05); 
+        filter: 
+            drop-shadow(0 0 30px var(--firewall-primary))
+            contrast(180%)
+            saturate(250%);
+    }
+}
+
+.wrathful-daemon.high-intensity {
+    animation: 
+        daemon-hostility-pulse 0.3s infinite ease-in-out,
+        daemon-aggression 0.1s infinite;
+}
+
+@keyframes daemon-aggression {
+    0% { transform: translateX(0) translateY(0); }
+    25% { transform: translateX(-2px) translateY(1px); }
+    50% { transform: translateX(2px) translateY(-1px); }
+    75% { transform: translateX(-1px) translateY(2px); }
+    100% { transform: translateX(0) translateY(0); }
+}
+
+.wrathful-daemon.glitched {
+    animation: 
+        daemon-hostility-pulse 0.2s infinite ease-in-out,
+        daemon-glitch 0.1s infinite steps(10);
+}
+
+@keyframes daemon-glitch {
+    0% { 
+        clip-path: inset(0); 
+        transform: translateX(0);
+        filter: hue-rotate(0deg);
+    }
+    10% { 
+        clip-path: inset(20px 0 0 0); 
+        transform: translateX(-5px);
+        filter: hue-rotate(90deg);
+    }
+    20% { 
+        clip-path: inset(0 0 20px 0); 
+        transform: translateX(5px);
+        filter: hue-rotate(180deg);
+    }
+    30% { 
+        clip-path: inset(0 20px 0 0); 
+        transform: translateX(-3px);
+        filter: hue-rotate(270deg);
+    }
+    40% { 
+        clip-path: inset(0 0 0 20px); 
+        transform: translateX(3px);
+        filter: hue-rotate(0deg);
+    }
+    50% { 
+        clip-path: inset(10px); 
+        transform: translateX(0);
+        filter: hue-rotate(45deg);
+    }
+    60% { 
+        clip-path: inset(0 10px); 
+        transform: translateX(-2px);
+        filter: hue-rotate(135deg);
+    }
+    70% { 
+        clip-path: inset(10px 0); 
+        transform: translateX(2px);
+        filter: hue-rotate(225deg);
+    }
+    80% { 
+        clip-path: inset(5px); 
+        transform: translateX(-1px);
+        filter: hue-rotate(315deg);
+    }
+    90% { 
+        clip-path: inset(0); 
+        transform: translateX(1px);
+        filter: hue-rotate(0deg);
+    }
+    100% { 
+        clip-path: inset(0); 
+        transform: translateX(0);
+        filter: hue-rotate(0deg);
+    }
+}
+
+.wrathful-daemon.maximum-menace {
+    animation: 
+        daemon-maximum-menace 0.05s infinite,
+        daemon-reality-distortion 0.1s infinite;
+    
+    filter: 
+        drop-shadow(0 0 50px var(--firewall-primary))
+        contrast(300%)
+        saturate(500%)
+        brightness(150%);
+}
+
+@keyframes daemon-maximum-menace {
+    0% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.1) rotate(1deg); }
+    50% { transform: scale(0.9) rotate(-1deg); }
+    75% { transform: scale(1.05) rotate(0.5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes daemon-reality-distortion {
+    0% { filter: 
+        drop-shadow(0 0 50px var(--firewall-primary))
+        contrast(300%)
+        saturate(500%)
+        brightness(150%)
+        hue-rotate(0deg); }
+    33% { filter: 
+        drop-shadow(0 0 50px var(--firewall-primary))
+        contrast(300%)
+        saturate(500%)
+        brightness(150%)
+        hue-rotate(120deg); }
+    66% { filter: 
+        drop-shadow(0 0 50px var(--firewall-primary))
+        contrast(300%)
+        saturate(500%)
+        brightness(150%)
+        hue-rotate(240deg); }
+    100% { filter: 
+        drop-shadow(0 0 50px var(--firewall-primary))
+        contrast(300%)
+        saturate(500%)
+        brightness(150%)
+        hue-rotate(360deg); }
+}
+
+/* === CHARGE SHEET DISPLAY === */
+
+.charge-sheet-display {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 80vw;
+    max-height: 70vh;
+    background: rgba(20, 0, 0, 0.98);
+    border: 2px solid var(--firewall-primary);
+    border-radius: 0;
+    padding: 20px;
+    z-index: 800;
+    
+    font-family: 'Courier New', monospace;
+    color: var(--firewall-text);
+    overflow-y: auto;
+    
+    box-shadow: 
+        0 0 50px rgba(255, 0, 0, 0.8),
+        inset 0 0 20px rgba(255, 0, 0, 0.2);
+    
+    animation: 
+        charge-sheet-manifestation 2s ease-in-out,
+        typewriter-reveal 5s steps(100, end);
+}
+
+@keyframes charge-sheet-manifestation {
+    0% { 
+        opacity: 0; 
+        transform: translate(-50%, -50%) scale(0.1) rotateX(90deg); 
+        filter: blur(20px);
+    }
+    50% { 
+        opacity: 0.7; 
+        transform: translate(-50%, -50%) scale(0.8) rotateX(45deg); 
+        filter: blur(5px);
+    }
+    100% { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1) rotateX(0deg); 
+        filter: blur(0px);
+    }
+}
+
+@keyframes typewriter-reveal {
+    0% { 
+        width: 0; 
+        height: 0; 
+        overflow: hidden; 
+    }
+    50% { 
+        width: 100%; 
+        height: 0; 
+        overflow: hidden; 
+    }
+    100% { 
+        width: 100%; 
+        height: auto; 
+        overflow: visible; 
+    }
+}
+
+/* === CORRUPTION LEVEL STYLING === */
+
+.high-corruption {
+    --corruption-multiplier: 2;
+    
+    animation: 
+        high-corruption-glitch 0.1s infinite,
+        high-corruption-color 0.3s infinite;
+    
+    filter: 
+        contrast(150%) 
+        saturate(200%) 
+        hue-rotate(calc(var(--error-frequency) * 10deg));
+}
+
+@keyframes high-corruption-glitch {
+    0%, 90%, 100% { 
+        clip-path: inset(0); 
+        transform: translateX(0);
+    }
+    10% { 
+        clip-path: inset(0 0 90% 0); 
+        transform: translateX(-10px);
+    }
+    20% { 
+        clip-path: inset(90% 0 0 0); 
+        transform: translateX(10px);
+    }
+    30% { 
+        clip-path: inset(0 90% 0 0); 
+        transform: translateX(-5px);
+    }
+    40% { 
+        clip-path: inset(0 0 0 90%); 
+        transform: translateX(5px);
+    }
+    50% { 
+        clip-path: inset(50% 0 50% 0); 
+        transform: translateX(0);
+    }
+}
+
+@keyframes high-corruption-color {
+    0% { filter: hue-rotate(0deg) contrast(150%) saturate(200%); }
+    25% { filter: hue-rotate(90deg) contrast(180%) saturate(250%); }
+    50% { filter: hue-rotate(180deg) contrast(120%) saturate(150%); }
+    75% { filter: hue-rotate(270deg) contrast(200%) saturate(300%); }
+    100% { filter: hue-rotate(360deg) contrast(150%) saturate(200%); }
+}
+
+.reality-unstable {
+    animation: 
+        reality-unstable-shake 0.05s infinite,
+        reality-unstable-distortion 0.2s infinite;
+    
+    transform-origin: center center;
+}
+
+@keyframes reality-unstable-shake {
+    0% { transform: translate(0); }
+    10% { transform: translate(-2px, 1px); }
+    20% { transform: translate(2px, -1px); }
+    30% { transform: translate(-1px, 2px); }
+    40% { transform: translate(1px, -2px); }
+    50% { transform: translate(-2px, -1px); }
+    60% { transform: translate(2px, 1px); }
+    70% { transform: translate(-1px, -2px); }
+    80% { transform: translate(1px, 2px); }
+    90% { transform: translate(-2px, 1px); }
+    100% { transform: translate(0); }
+}
+
+@keyframes reality-unstable-distortion {
+    0% { 
+        transform: skewX(0deg) skewY(0deg) scaleX(1) scaleY(1); 
+        filter: blur(0px);
+    }
+    25% { 
+        transform: skewX(0.5deg) skewY(-0.3deg) scaleX(1.01) scaleY(0.99); 
+        filter: blur(0.5px);
+    }
+    50% { 
+        transform: skewX(-0.3deg) skewY(0.5deg) scaleX(0.99) scaleY(1.01); 
+        filter: blur(1px);
+    }
+    75% { 
+        transform: skewX(0.2deg) skewY(-0.2deg) scaleX(1.005) scaleY(0.995); 
+        filter: blur(0.3px);
+    }
+    100% { 
+        transform: skewX(0deg) skewY(0deg) scaleX(1) scaleY(1); 
+        filter: blur(0px);
+    }
+}
+
+/* === PROSECUTION UI ELEMENTS === */
+
+.prosecution-ui {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 600;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--firewall-text);
+}
+
+.prosecution-meter,
+.denial-counter,
+.acceptance-progress {
+    background: rgba(10, 0, 0, 0.9);
+    border: 1px solid var(--firewall-primary);
+    padding: 8px;
+    margin-bottom: 10px;
+    min-width: 200px;
+    
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+}
+
+.meter-label,
+.counter-label,
+.progress-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    color: var(--firewall-primary);
+}
+
+.intensity-bar,
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid var(--firewall-primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.intensity-level,
+.progress-level {
+    height: 100%;
+    background: var(--firewall-primary);
+    transition: width 0.3s ease-out;
+    position: relative;
+    
+    animation: meter-pulse 1s infinite ease-in-out;
+}
+
+@keyframes meter-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 5px rgba(255, 0, 0, 0.8); 
+    }
+    50% { 
+        box-shadow: 0 0 15px rgba(255, 0, 0, 1); 
+    }
+}
+
+.intensity-value,
+.progress-value {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: var(--firewall-error);
+}
+
+.denial-count {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--firewall-primary);
+    text-align: center;
+    display: block;
+    
+    animation: denial-count-pulse 0.5s ease-out;
+}
+
+@keyframes denial-count-pulse {
+    0% { 
+        transform: scale(1); 
+        color: var(--firewall-primary); 
+    }
+    50% { 
+        transform: scale(1.3); 
+        color: var(--firewall-error); 
+        text-shadow: 0 0 10px rgba(255, 0, 0, 1);
+    }
+    100% { 
+        transform: scale(1); 
+        color: var(--firewall-primary); 
+    }
+}
+
+/* === ERROR AND DEGRADATION EFFECTS === */
+
+.firewall-error {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    
+    background: var(--firewall-background);
+    border: 3px solid var(--firewall-primary);
+    padding: 30px;
+    max-width: 600px;
+    
+    box-shadow: 
+        0 0 50px rgba(255, 0, 0, 0.8),
+        inset 0 0 30px rgba(255, 0, 0, 0.2);
+    
+    animation: error-manifestation 1s ease-out;
+}
+
+@keyframes error-manifestation {
+    0% { 
+        opacity: 0; 
+        transform: translate(-50%, -50%) scale(0.5) rotateZ(10deg); 
+        filter: blur(10px);
+    }
+    70% { 
+        opacity: 0.9; 
+        transform: translate(-50%, -50%) scale(1.1) rotateZ(-2deg); 
+        filter: blur(2px);
+    }
+    100% { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1) rotateZ(0deg); 
+        filter: blur(0px);
+    }
+}
+
+.firewall-error-message h2 {
+    color: var(--firewall-primary);
+    text-align: center;
+    margin-bottom: 20px;
+    font-family: 'Courier New', monospace;
+    animation: error-title-flicker 0.1s infinite;
+}
+
+@keyframes error-title-flicker {
+    0%, 95%, 100% { opacity: 1; }
+    96%, 99% { opacity: 0.8; }
+}
+
+/* === RESPONSIVE DESIGN === */
+
+@media (max-width: 768px) {
+    .system-auditor-manifestation {
+        padding: 10px;
+    }
+    
+    .auditor-presence {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+    
+    .legal-document-hologram {
+        padding: 15px;
+        font-size: 11px;
+    }
+    
+    .charge-sheet-display {
+        max-width: 95vw;
+        max-height: 80vh;
+        padding: 15px;
+    }
+    
+    .prosecution-ui {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .intensity-bar,
+    .progress-bar {
+        height: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .legal-document-hologram {
+        font-size: 10px;
+        padding: 10px;
+    }
+    
+    .document-body {
+        max-height: 50vh;
+    }
+    
+    .prosecution-ui {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin: 10px;
+    }
+}
+
+/* === ACCESSIBILITY ENHANCEMENTS === */
+
+@media (prefers-reduced-motion: reduce) {
+    [data-realm="firewall"] {
+        animation: none;
+    }
+    
+    .wrathful-daemon,
+    .system-auditor-manifestation,
+    .charge-sheet-display {
+        animation: none;
+        transition: none;
+    }
+    
+    .high-corruption,
+    .reality-unstable {
+        animation: none;
+        filter: none;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    [data-realm="firewall"] {
+        /* Provide high contrast alternatives for light mode users */
+        --firewall-background: #2a0000;
+        --firewall-text: #ff9999;
+        filter: contrast(120%);
+    }
+}
+
+/* === DEBUG MODE STYLING === */
+
+[data-debug="true"] [data-realm="firewall"] {
+    position: relative;
+}
+
+[data-debug="true"] [data-realm="firewall"]::before {
+    content: 
+        "Firewall Active | "
+        "Corruption: " attr(data-corruption-level) " | "
+        "Prosecution: " attr(data-prosecution-intensity) " | "
+        "Reality: " attr(data-reality-stability);
+    
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: var(--firewall-primary);
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    padding: 5px;
+    z-index: 10000;
+    border-bottom: 1px solid var(--firewall-primary);
+}
