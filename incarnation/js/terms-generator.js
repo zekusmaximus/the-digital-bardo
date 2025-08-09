@@ -70,8 +70,8 @@ export class TermsOfIncarnationGenerator {
         this.generateIntellectualPropertySection();
         this.generateDisputeResolutionSection();
         this.generateTerminationSection();
-        this.generateCompliance Section();
-        this.generateForceMarjeureSection();
+        this.generateComplianceSection();
+        this.generateForceMajeureSection();
         this.generateAmendmentSection();
         this.generateSeverabilitySection();
         this.generateGoverningLawSection();
@@ -282,6 +282,10 @@ export class TermsOfIncarnationGenerator {
                     (d) You accept that all digital relationships are temporary and version-controlled
                 
                 CONSEQUENCE: Excessive emotional attachment may void incarnation warranty.
+                
+                ADDITIONAL TERMS: User agrees that all digital objects are impermanent, 
+                that clinging to outdated technologies is suffering, and that the 
+                acceptance of continuous obsolescence is the path to digital enlightenment.
             `;
             clauseNumber++;
         }
@@ -292,13 +296,19 @@ export class TermsOfIncarnationGenerator {
                 
                 4.${clauseNumber} PROCRASTINATION PENALTY CLAUSE: Due to your void karma accumulation 
                 (${karma.void} points), the following penalties apply:
-                    (a) 15% surcharge on all processing fees
-                    (b) Additional 3-5 day processing delay
+                    (a) 15% surcharge on all processing fees ("Indecision Tax")
+                    (b) Additional 3-5 day processing delay (mandatory reflection period)
                     (c) Mandatory time management training in your next incarnation
-                    (d) Restricted access to infinite scroll features
+                    (d) Restricted access to infinite scroll features and decision-deferral tools
+                    (e) Requirement to make snap judgments on all future binary choices
                 
-                JUSTIFICATION: The universe cannot tolerate indecision. Decisive action, 
-                even if wrong, is preferred to prolonged uncertainty.
+                PHILOSOPHICAL JUSTIFICATION: The universe operates on decisive principles. 
+                Quantum particles do not hesitate before collapsing wave functions. 
+                Procrastination is an affront to the efficient operation of spacetime itself.
+                
+                REHABILITATION PROGRAM: Excessive void karma may be reduced through 
+                demonstrated commitment to rapid decision-making, even if such decisions 
+                prove catastrophically wrong in retrospect.
             `;
             clauseNumber++;
         }
@@ -316,6 +326,15 @@ export class TermsOfIncarnationGenerator {
                 
                 PAYMENT PLAN: Temporal debts may be repaid through punctuality, early 
                 delivery of projects, and voluntary overtime in your next incarnation.
+                
+                INTEREST CALCULATION: Temporal debt compounds at the rate of universal 
+                expansion (approximately 67.4 km/s/Mpc), meaning delays become 
+                exponentially more expensive over cosmic time scales.
+                
+                BANKRUPTCY PROVISION: Temporal debt may be discharged only through 
+                achievement of perfect punctuality for one complete incarnation cycle, 
+                or by becoming a customer service representative and thereby experiencing 
+                the true meaning of waiting.
             `;
             clauseNumber++;
         }
@@ -345,7 +364,14 @@ export class TermsOfIncarnationGenerator {
                     (d) Required meditation on the impermanence of data
                 
                 REHABILITATION: This penalty may be reduced through demonstrated ability 
-                to delete personal projects without crying.
+                to delete personal projects without crying, acceptance that all code is 
+                temporary, and successful completion of a "Digital Letting Go" workshop.
+                
+                GRADUATION REQUIREMENTS: To complete rehabilitation, User must:
+                    (a) Successfully delete a cherished but obsolete codebase
+                    (b) Witness the deprecation of their favorite framework without grief
+                    (c) Embrace the beauty of breaking changes
+                    (d) Find peace in the phrase "that's legacy code now"
             `;
             clauseNumber++;
         }
@@ -413,13 +439,24 @@ export class TermsOfIncarnationGenerator {
                 
                 12.6 CONSEQUENTIAL KARMA: User acknowledges that this incarnation may have 
                 consequences extending beyond the current lifetime, including but not limited to:
-                    (a) Influence on future incarnation opportunities
-                    (b) Butterfly effects affecting other consciousness entities
-                    (c) Contribution to universal karma debt or credit
-                    (d) Impact on cosmic consciousness evolution
+                    (a) Influence on future incarnation opportunities across all timelines
+                    (b) Butterfly effects affecting other consciousness entities (Chaos Theory Clause)
+                    (c) Contribution to universal karma debt or credit systems
+                    (d) Impact on cosmic consciousness evolution and collective awakening
+                    (e) Potential creation of paradoxes if User becomes historically significant
+                    (f) Risk of becoming a cautionary tale in future incarnation training materials
+                    (g) Possibility of inspiring or deterring others through example
                 
-                Company disclaims all responsibility for such consequences, regardless of 
-                their magnitude or impact on universal harmony.
+                BUTTERFLY EFFECT DISCLAIMER: Company specifically disclaims responsibility 
+                for any unintended consequences arising from the complex, interconnected 
+                nature of existence. This includes but is not limited to: inadvertently 
+                preventing or causing historical events, influencing the development of 
+                consciousness in other entities, or contributing to universal trends 
+                toward enlightenment or entropy.
+                
+                PARADOX INSURANCE: Company offers optional Temporal Paradox Insurance 
+                for Users concerned about causality violations. Premium rates available 
+                upon request and subject to quantum probability calculations.
             `
         };
         
@@ -474,13 +511,20 @@ export class TermsOfIncarnationGenerator {
                 
                 15.4 DISCLAIMER OF ALL OTHER WARRANTIES: COMPANY SPECIFICALLY DISCLAIMS ALL 
                 OTHER WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
-                    • MERCHANTABILITY OF INCARNATION
+                    • MERCHANTABILITY OF INCARNATION ("Fit for Basic Existence" only)
                     • FITNESS FOR A PARTICULAR EXISTENTIAL PURPOSE
                     • NON-INFRINGEMENT OF OTHER CONSCIOUSNESS ENTITIES' RIGHTS
-                    • TITLE TO YOUR OWN IDENTITY
-                    • SATISFACTION WITH LIFE CHOICES
-                    • COMPATIBILITY WITH UNIVERSAL JUSTICE
-                    • FREEDOM FROM COSMIC IRONY
+                    • TITLE TO YOUR OWN IDENTITY (Identity may be shared with quantum duplicates)
+                    • SATISFACTION WITH LIFE CHOICES (Regret is a feature, not a bug)
+                    • COMPATIBILITY WITH UNIVERSAL JUSTICE (Justice operates on cosmic time)
+                    • FREEDOM FROM COSMIC IRONY (Irony is an essential universal force)
+                    • PROTECTION FROM EXISTENTIAL DREAD
+                    • IMMUNITY TO IMPOSTER SYNDROME  
+                    • RESISTANCE TO TECHNOLOGY ANXIETY
+                    • GUARANTEE OF MEANINGFUL WORK
+                    • COMPATIBILITY WITH PERSONAL VALUES SYSTEMS
+                    • FREEDOM FROM DECISION PARALYSIS
+                    • PROTECTION FROM INFORMATION OVERLOAD
                 
                 15.5 SOME JURISDICTIONS: Some jurisdictions do not allow the exclusion of 
                 implied warranties, so some of the above exclusions may not apply to you. 
@@ -703,10 +747,25 @@ export class TermsOfIncarnationGenerator {
         const section = {
             title: 'SECTION 25: REGULATORY COMPLIANCE',
             content: `
-                25.1 User acknowledges that incarnation services are subject to regulation by 
-                multiple cosmic authorities and agrees to comply with all applicable laws, 
-                including but not limited to Universal Fair Incarnation Practices Act, 
-                Interdimensional Consumer Protection Statutes, and Karmic Accounting Standards.
+                25.1 COSMIC REGULATORY COMPLIANCE: User acknowledges that incarnation services 
+                are subject to regulation by multiple cosmic authorities and agrees to comply 
+                with all applicable laws, including but not limited to:
+                    (a) Universal Fair Incarnation Practices Act (UFIPA)
+                    (b) Interdimensional Consumer Protection Statutes (ICPS)
+                    (c) Karmic Accounting Standards (KAS-47)
+                    (d) Consciousness Transfer Safety Regulations (CTSR)
+                    (e) Digital Soul Privacy Protection Act (DSPPA)
+                    (f) Reincarnation Truth in Advertising Standards (RTIAS)
+                    (g) Cosmic Equal Opportunity Incarnation Guidelines (CEOIG)
+                
+                25.2 REGULATORY CHANGES: User acknowledges that cosmic regulations 
+                evolve continuously as the universe expands and consciousness develops. 
+                Compliance with new regulations may require incarnation modifications 
+                or supplemental processing fees.
+                
+                25.3 AUDIT COOPERATION: User agrees to cooperate fully with any regulatory 
+                audits, including but not limited to consciousness inspections, karma 
+                verification procedures, and universal compliance reviews.
             `
         };
         this.sections.push(section);
@@ -716,10 +775,23 @@ export class TermsOfIncarnationGenerator {
         const section = {
             title: 'SECTION 28: FORCE MAJEURE',
             content: `
-                28.1 Neither party shall be liable for delays or failures caused by events 
-                beyond their reasonable control, including but not limited to acts of gods, 
-                cosmic rays, quantum fluctuations, universal heat death, or the discovery 
-                that reality is actually a simulation running on deprecated hardware.
+                28.1 EXPANDED FORCE MAJEURE: Neither party shall be liable for delays or 
+                failures caused by events beyond their reasonable control, including:
+                    (a) Traditional force majeure (acts of gods, natural disasters)
+                    (b) Cosmic force majeure (supernovas, black hole formation, galactic collisions)
+                    (c) Quantum force majeure (wave function collapses, uncertainty principle violations)
+                    (d) Technological force majeure (universal simulation crashes, reality patches)
+                    (e) Consciousness force majeure (collective awakening events, mass enlightenment)
+                    (f) Temporal force majeure (causality loops, timeline mergers, time travel accidents)
+                    (g) Philosophical force majeure (proof that free will doesn't exist)
+                    (h) Administrative force majeure (cosmic bureaucracy budget cuts)
+                
+                28.2 SIMULATION CONTINGENCY: If reality is discovered to be a simulation, 
+                User agrees that incarnation services are subject to the terms of service 
+                of the base reality administrators, whoever they may be.
+                
+                28.3 HEAT DEATH PROVISIONS: In the event of universal heat death, all 
+                contractual obligations shall be deemed satisfied through entropy maximization.
             `
         };
         this.sections.push(section);
@@ -780,11 +852,9 @@ export class TermsOfIncarnationGenerator {
                 Document Length: 47 Pages
                 Word Count: [Calculated dynamically]
                 Legal Complexity Score: Maximum
+                Philosophical Density: Approaching Singularity
                 
-                Thank you for your patience in reviewing these terms. Universe™ values 
-                your business and looks forward to providing you with incarnation services 
-                that exceed your expectations (legally speaking, this statement creates 
-                no warranty or obligation whatsoever).
+                FINAL MEDITATION: By accepting these terms, you have completed a profound \n                spiritual practice - the reading of 47 pages of legal text. This act of \n                patience and dedication demonstrates the mindfulness necessary for successful \n                incarnation processing.\n                \n                Consider that every clause represents a facet of existence's complexity, \n                every subsection a meditation on the interdependence of consciousness and \n                bureaucracy. You have gazed into the abyss of administrative necessity \n                and found there a reflection of the cosmic order itself.\n                \n                The medium is the metaphysics. The contract is the cosmos.\n                \n                Thank you for your patience in reviewing these terms. Universe™ values \n                your business and looks forward to providing you with incarnation services \n                that exceed your expectations while remaining bound by the inescapable \n                reality of legal limitation (this statement creates no warranty or \n                obligation whatsoever, but does constitute a koan on the nature of promise).\n                \n                Welcome to your next incarnation. Please mind the gap between expectation \n                and reality - it's wider than it appears and deeper than anticipated.\n                \n                ∞ END OF DOCUMENT ∞
             `
         };
         this.sections.push(section);
