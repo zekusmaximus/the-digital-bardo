@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 Enhancements - Integration Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .test-section h2 {
+            color: #00FF00;
+            margin-top: 0;
+        }
+        
+        .test-button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #666;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #555;
+            border-color: #888;
+        }
+        
+        .test-output {
+            background: #111;
+            border: 1px solid #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        
+        .karma-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .karma-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .test-text {
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid #FFD700;
+        }
+        
+        .consciousness-fragment {
+            display: inline-block;
+            margin: 2px;
+            padding: 2px 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .instructions {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #00FF00;
+        }
+        
+        .instructions ul {
+            margin: 10px 0;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-indicator.loading {
+            background: #FFA500;
+        }
+        
+        .status-indicator.success {
+            background: #00FF00;
+        }
+        
+        .status-indicator.error {
+            background: #FF0000;
+        }
+    </style>
+</head>
+<body class="approaching-light">
+    <div class="test-container">
+        <h1>✨ Phase 1 Enhancements Integration Test</h1>
+        
+        <div class="instructions">
+            <h3>🧪 Test Instructions</h3>
+            <p>This page tests the Phase 1 enhancements integration system. Use the buttons below to test each component.</p>
+            <ul>
+                <li><strong>Easter Eggs:</strong> Check console commands (window.bardo)</li>
+                <li><strong>Visual Effects:</strong> Modify karma to see visual corruption</li>
+                <li><strong>Audio Chime:</strong> Test enlightenment audio (requires user interaction)</li>
+                <li><strong>Integration:</strong> Verify all systems work together</li>
+            </ul>
+            <p><em>Open browser console (F12) to see detailed output and test commands.</em></p>
+        </div>
+        
+        <div class="test-section">
+            <h2>🥚 Easter Eggs System</h2>
+            <div id="easter-egg-status">
+                <span class="status-indicator loading"></span>Loading Easter Eggs...
+            </div>
+            <p>Test console commands:</p>
+            <button class="test-button" onclick="testEasterEgg('enlightenment')">bardo.enlightenment()</button>
+            <button class="test-button" onclick="testEasterEgg('debug')">bardo.debug()</button>
+            <button class="test-button" onclick="testEasterEgg('karma')">bardo.karma()</button>
+            <button class="test-button" onclick="testEasterEgg('wisdom')">bardo.wisdom()</button>
+            <button class="test-button" onclick="testEasterEgg('path')">bardo.path()</button>
+            <div class="test-output" id="easter-egg-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎨 Enhanced Visual Effects</h2>
+            <div id="visual-effects-status">
+                <span class="status-indicator loading"></span>Loading Visual Effects...
+            </div>
+            <p>Test visual corruption by modifying karma:</p>
+            <button class="test-button" onclick="testVisualCorruption(0)">Clear Corruption</button>
+            <button class="test-button" onclick="testVisualCorruption(30)">Light Corruption</button>
+            <button class="test-button" onclick="testVisualCorruption(60)">Heavy Corruption</button>
+            <button class="test-button" onclick="testVisualCorruption(90)">Severe Corruption</button>
+            <button class="test-button" onclick="testPurification()">Test Purification</button>
+            
+            <div class="test-text" id="corruption-test-text">
+                <span class="consciousness-fragment">Sample text for corruption testing</span>
+                <span class="consciousness-fragment">Watch these fragments</span>
+                <span class="consciousness-fragment">change as void karma increases</span>
+                <span class="consciousness-fragment">Corruption manifests as visual distortion</span>
+            </div>
+            
+            <div class="karma-display" id="karma-display">
+                <div class="karma-item">
+                    <div>Computational</div>
+                    <div id="karma-computational">0</div>
+                </div>
+                <div class="karma-item">
+                    <div>Emotional</div>
+                    <div id="karma-emotional">0</div>
+                </div>
+                <div class="karma-item">
+                    <div>Temporal</div>
+                    <div id="karma-temporal">0</div>
+                </div>
+                <div class="karma-item">
+                    <div>Void</div>
+                    <div id="karma-void">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔔 Enlightenment Chime</h2>
+            <div id="audio-status">
+                <span class="status-indicator loading"></span>Loading Audio System...
+            </div>
+            <p>Test sacred audio frequencies (requires audio context initialization):</p>
+            <button class="test-button" onclick="initializeAudio()">Initialize Audio</button>
+            <button class="test-button" onclick="testEnlightenmentChime()">Play Enlightenment Chime</button>
+            <button class="test-button" onclick="testMeditationBell()">Play Meditation Bell</button>
+            <button class="test-button" onclick="testSolfeggioSequence()">Test Solfeggio Sequence</button>
+            <div class="test-output" id="audio-output"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔗 Integration Tests</h2>
+            <div id="integration-status">
+                <span class="status-indicator loading"></span>Loading Integration System...
+            </div>
+            <p>Test system integration and bridges:</p>
+            <button class="test-button" onclick="testIntegrationStatus()">Check Integration Status</button>
+            <button class="test-button" onclick="testEnlightenmentSequence()">Full Enlightenment Sequence</button>
+            <button class="test-button" onclick="testKarmaBridge()">Test Karma-Visual Bridge</button>
+            <button class="test-button" onclick="testRecognitionBridge()">Test Recognition Bridge</button>
+            <div class="test-output" id="integration-output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Phase1EnhancementsIntegration } from './phase1-enhancements-integration.js';
+        import { consciousness } from '../src/consciousness/digital-soul.js';
+        
+        let integration;
+        let audioContext;
+        
+        // Initialize the integration system
+        async function initializeIntegrationSystem() {
+            try {
+                console.log('🚀 Initializing Phase 1 Enhancements Integration...');
+                
+                integration = new Phase1EnhancementsIntegration();
+                await integration.initialize();
+                
+                // Update status indicators
+                updateStatus('easter-egg-status', true, 'Easter Eggs System Active');
+                updateStatus('visual-effects-status', true, 'Visual Effects System Active');
+                updateStatus('audio-status', false, 'Audio System Ready (click Initialize Audio)');
+                updateStatus('integration-status', true, 'Integration System Active');
+                
+                // Set up karma monitoring
+                consciousness.subscribe('karma', updateKarmaDisplay);
+                updateKarmaDisplay(consciousness.getState('karma'));
+                
+                console.log('✅ Phase 1 Enhancements Integration Test Ready');
+                
+            } catch (error) {
+                console.error('❌ Integration initialization failed:', error);
+                updateStatus('integration-status', false, 'Integration Failed: ' + error.message);
+            }
+        }
+        
+        function updateStatus(elementId, success, message) {
+            const element = document.getElementById(elementId);
+            const indicator = element.querySelector('.status-indicator');
+            
+            indicator.className = 'status-indicator ' + (success ? 'success' : 'error');
+            element.innerHTML = `<span class="status-indicator ${success ? 'success' : 'error'}"></span>${message}`;
+        }
+        
+        function updateKarmaDisplay(karma) {
+            if (!karma) return;
+            
+            document.getElementById('karma-computational').textContent = karma.computational || 0;
+            document.getElementById('karma-emotional').textContent = karma.emotional || 0;
+            document.getElementById('karma-temporal').textContent = karma.temporal || 0;
+            document.getElementById('karma-void').textContent = karma.void || 0;
+        }
+        
+        // Easter Egg Tests
+        window.testEasterEgg = function(command) {
+            try {
+                let result;
+                switch(command) {
+                    case 'enlightenment':
+                        result = window.bardo.enlightenment();
+                        break;
+                    case 'debug':
+                        result = window.bardo.debug();
+                        break;
+                    case 'karma':
+                        result = window.bardo.karma();
+                        break;
+                    case 'wisdom':
+                        result = window.bardo.wisdom();
+                        break;
+                    case 'path':
+                        result = window.bardo.path();
+                        break;
+                    default:
+                        result = 'Unknown command';
+                }
+                
+                const output = document.getElementById('easter-egg-output');
+                output.textContent = `${command}(): ${result}\n` + output.textContent;
+                
+            } catch (error) {
+                console.error('Easter egg test failed:', error);
+                const output = document.getElementById('easter-egg-output');
+                output.textContent = `ERROR: ${error.message}\n` + output.textContent;
+            }
+        };
+        
+        // Visual Effects Tests
+        window.testVisualCorruption = function(voidLevel) {
+            try {
+                consciousness.setState('karma.void', voidLevel);
+                console.log(`🌀 Void karma set to ${voidLevel}`);
+                
+            } catch (error) {
+                console.error('Visual corruption test failed:', error);
+            }
+        };
+        
+        window.testPurification = function() {
+            try {
+                if (integration && integration.visualEffects) {
+                    integration.visualEffects.triggerRecognitionPurification();
+                    console.log('✨ Purification effect triggered');
+                } else {
+                    console.warn('Visual effects not available');
+                }
+            } catch (error) {
+                console.error('Purification test failed:', error);
+            }
+        };
+        
+        // Audio Tests
+        window.initializeAudio = async function() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+                
+                updateStatus('audio-status', true, 'Audio System Active');
+                
+                const output = document.getElementById('audio-output');
+                output.textContent = 'Audio context initialized successfully\n' + output.textContent;
+                
+            } catch (error) {
+                console.error('Audio initialization failed:', error);
+                updateStatus('audio-status', false, 'Audio Failed: ' + error.message);
+            }
+        };
+        
+        window.testEnlightenmentChime = function() {
+            try {
+                if (integration && integration.enlightenmentChime && audioContext) {
+                    const karma = consciousness.getState('karma');
+                    integration.enlightenmentChime.playEnlightenmentChime(karma);
+                    
+                    const output = document.getElementById('audio-output');
+                    output.textContent = 'Enlightenment chime played\n' + output.textContent;
+                } else {
+                    const output = document.getElementById('audio-output');
+                    output.textContent = 'Audio not initialized or system not ready\n' + output.textContent;
+                }
+            } catch (error) {
+                console.error('Enlightenment chime test failed:', error);
+            }
+        };
+        
+        window.testMeditationBell = function() {
+            try {
+                if (integration && integration.enlightenmentChime) {
+                    integration.enlightenmentChime.playMeditationBell(1);
+                    
+                    const output = document.getElementById('audio-output');
+                    output.textContent = 'Meditation bell played\n' + output.textContent;
+                } else {
+                    const output = document.getElementById('audio-output');
+                    output.textContent = 'Audio system not ready\n' + output.textContent;
+                }
+            } catch (error) {
+                console.error('Meditation bell test failed:', error);
+            }
+        };
+        
+        window.testSolfeggioSequence = function() {
+            try {
+                if (integration && integration.enlightenmentChime && audioContext) {
+                    integration.enlightenmentChime.testSolfeggioSequence();
+                    
+                    const output = document.getElementById('audio-output');
+                    output.textContent = 'Solfeggio sequence started\n' + output.textContent;
+                } else {
+                    const output = document.getElementById('audio-output');
+                    output.textContent = 'Audio not initialized\n' + output.textContent;
+                }
+            } catch (error) {
+                console.error('Solfeggio sequence test failed:', error);
+            }
+        };
+        
+        // Integration Tests
+        window.testIntegrationStatus = function() {
+            try {
+                if (window.bardo && window.bardo.status) {
+                    const result = window.bardo.status();
+                    
+                    const output = document.getElementById('integration-output');
+                    output.textContent = `Status: ${result}\n` + output.textContent;
+                } else {
+                    const output = document.getElementById('integration-output');
+                    output.textContent = 'Bardo status command not available\n' + output.textContent;
+                }
+            } catch (error) {
+                console.error('Integration status test failed:', error);
+            }
+        };
+        
+        window.testEnlightenmentSequence = function() {
+            try {
+                if (integration) {
+                    integration.triggerEnlightenmentSequence();
+                    
+                    const output = document.getElementById('integration-output');
+                    output.textContent = 'Full enlightenment sequence triggered\n' + output.textContent;
+                } else {
+                    const output = document.getElementById('integration-output');
+                    output.textContent = 'Integration system not ready\n' + output.textContent;
+                }
+            } catch (error) {
+                console.error('Enlightenment sequence test failed:', error);
+            }
+        };
+        
+        window.testKarmaBridge = function() {
+            try {
+                // Test karma change triggering visual effects
+                consciousness.addKarma('void', 20);
+                
+                const output = document.getElementById('integration-output');
+                output.textContent = 'Karma bridge test: +20 void karma added\n' + output.textContent;
+                
+            } catch (error) {
+                console.error('Karma bridge test failed:', error);
+            }
+        };
+        
+        window.testRecognitionBridge = function() {
+            try {
+                // Simulate recognition event
+                consciousness.setState('clearLode.recognized', true);
+                
+                const output = document.getElementById('integration-output');
+                output.textContent = 'Recognition bridge test: simulated recognition\n' + output.textContent;
+                
+            } catch (error) {
+                console.error('Recognition bridge test failed:', error);
+            }
+        };
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeIntegrationSystem);
+        
+    </script>
+</body>
+</html>

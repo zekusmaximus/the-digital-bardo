@@ -1,0 +1,671 @@
+/**
+ * DATASCAPE CSS - Visual Styles for Digital Karma Realms
+ * 
+ * "The Medium is the Metaphysics"
+ * 
+ * These styles embody the peaceful/wrathful duality of the datascape.
+ * Archive realm: soft pastels, floating beauty, seductive nostalgia
+ * Firewall realm: aggressive reds, sharp edges, accusatory geometry
+ * 
+ * Every CSS property serves the narrative - colors carry karma,
+ * animations reflect consciousness states, layouts guide spiritual journey.
+ */
+
+/* Root Variables for Dynamic Theming */
+:root {
+    /* Archive (Peaceful) Palette */
+    --archive-primary: #88ccff;
+    --archive-secondary: #ccddff;
+    --archive-accent: #ffeecc;
+    --archive-glow: #aaddff;
+    --archive-background: #001122;
+    
+    /* Firewall (Wrathful) Palette */
+    --firewall-primary: #ff3333;
+    --firewall-secondary: #cc0000;
+    --firewall-accent: #ff6666;
+    --firewall-warning: #ffcc00;
+    --firewall-danger: #ff0000;
+    --firewall-corruption: #990000;
+    --firewall-background: #220000;
+    
+    /* Dynamic State Variables */
+    --datascape-type: 'neutral';
+    --corruption-level: 0;
+    --peace-level: 0;
+    --wrath-level: 0;
+    --archive-peace-level: 0;
+    --archive-nostalgia: 0;
+    --firewall-wrath-level: 0;
+    --firewall-accusation: 0;
+    
+    /* Animation Timings */
+    --peaceful-duration: 4s;
+    --aggressive-duration: 1.5s;
+}
+
+/* Base Datascape Environment */
+.archive-realm,
+.firewall-realm {
+    min-height: 100vh;
+    transition: all 2s ease-in-out;
+    overflow-x: hidden;
+}
+
+/* Archive Realm - Peaceful Environment */
+.archive-realm {
+    background: linear-gradient(
+        135deg,
+        var(--archive-background) 0%,
+        #002244 25%,
+        #001133 50%,
+        var(--archive-background) 100%
+    );
+    color: var(--archive-primary);
+}
+
+.archive-peaceful {
+    background-attachment: fixed;
+    background-image: 
+        radial-gradient(circle at 20% 80%, rgba(136, 204, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(204, 221, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255, 238, 204, 0.05) 0%, transparent 50%);
+}
+
+/* Firewall Realm - Wrathful Environment */
+.firewall-realm {
+    background: linear-gradient(
+        45deg,
+        var(--firewall-background) 0%,
+        #440000 25%,
+        #330000 50%,
+        var(--firewall-background) 100%
+    );
+    color: var(--firewall-primary);
+}
+
+.firewall-wrathful {
+    background-attachment: fixed;
+    background-image:
+        radial-gradient(circle at 30% 70%, rgba(255, 51, 51, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 70% 30%, rgba(204, 0, 0, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, rgba(255, 51, 51, 0.05) 0%, rgba(153, 0, 0, 0.08) 100%);
+}
+
+/* Archive Serenity Phases */
+.serenity-arrival {
+    filter: brightness(1.0) contrast(1.0);
+    animation: peaceful-arrival 10s ease-out;
+}
+
+.serenity-exploration {
+    filter: brightness(1.1) contrast(1.05) saturate(1.1);
+    animation: peaceful-exploration 20s ease-in-out;
+}
+
+.serenity-contemplation {
+    filter: brightness(1.2) contrast(1.1) saturate(1.2);
+    animation: peaceful-contemplation 30s ease-in-out infinite;
+}
+
+.serenity-attachment {
+    filter: brightness(1.3) contrast(1.15) saturate(1.3) hue-rotate(10deg);
+    animation: peaceful-attachment 5s ease-in-out infinite;
+}
+
+.serenity-recognition {
+    filter: brightness(1.5) contrast(1.2) saturate(0.8) hue-rotate(-20deg);
+    animation: enlightenment-flash 3s ease-out;
+}
+
+/* Firewall Judgment Phases */
+.judgment-arrival {
+    filter: brightness(0.9) contrast(1.1);
+    animation: wrathful-arrival 5s ease-out;
+}
+
+.judgment-accusation {
+    filter: brightness(1.0) contrast(1.2) saturate(1.2);
+    animation: accusation-intensity 15s ease-in-out;
+}
+
+.judgment-prosecution {
+    filter: brightness(1.1) contrast(1.3) saturate(1.4);
+    animation: prosecution-buildup 25s ease-in-out infinite;
+}
+
+.judgment-judgment {
+    filter: brightness(1.2) contrast(1.4) saturate(1.5) hue-rotate(15deg);
+    animation: judgment-flicker 2s ease-in-out infinite;
+}
+
+.judgment-purification {
+    filter: brightness(2.0) contrast(0.8) saturate(0.5) hue-rotate(-45deg);
+    animation: purification-light 4s ease-out;
+}
+
+/* Particle Systems */
+.particle-system {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.peaceful-particles .archive-particle {
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(136, 204, 255, var(--opacity, 0.6)) 0%, transparent 70%);
+    box-shadow: 0 0 10px rgba(136, 204, 255, 0.4);
+}
+
+.wrathful-particles .firewall-particle {
+    background: radial-gradient(circle, rgba(255, 51, 51, var(--opacity, 0.8)) 0%, rgba(204, 0, 0, 0.3) 70%, transparent 100%);
+    box-shadow: 0 0 15px rgba(255, 51, 51, 0.5);
+}
+
+/* Memory Orbs */
+.memory-orb {
+    position: absolute;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    text-align: center;
+    color: white;
+    text-shadow: 0 0 5px currentColor;
+}
+
+.memory-orb.treasured {
+    background: radial-gradient(circle, rgba(136, 204, 255, 0.8) 0%, rgba(136, 204, 255, 0.3) 100%);
+    border: 2px solid #88ccff;
+    box-shadow: 0 0 20px rgba(136, 204, 255, 0.6);
+}
+
+.memory-orb.deprecated {
+    background: radial-gradient(circle, rgba(255, 238, 204, 0.6) 0%, rgba(255, 238, 204, 0.2) 100%);
+    border: 2px solid #ffeecc;
+    box-shadow: 0 0 15px rgba(255, 238, 204, 0.4);
+}
+
+.memory-orb.corrupted {
+    background: radial-gradient(circle, rgba(255, 51, 51, 0.7) 0%, rgba(153, 0, 0, 0.3) 100%);
+    border: 2px solid #ff3333;
+    box-shadow: 0 0 25px rgba(255, 51, 51, 0.8);
+    animation: corruption-pulse 2s ease-in-out infinite;
+}
+
+.memory-orb:hover {
+    transform: scale(1.2);
+    filter: brightness(1.3);
+}
+
+.memory-orb:active {
+    transform: scale(0.9);
+}
+
+/* Daemon Manifestations */
+.daemon {
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.peaceful-daemon {
+    background: rgba(136, 204, 255, 0.3);
+    border: 2px solid var(--archive-primary);
+    color: var(--archive-primary);
+    border-radius: 50%;
+}
+
+.wrathful-daemon {
+    background: rgba(255, 51, 51, 0.4);
+    border: 2px solid var(--firewall-primary);
+    color: var(--firewall-primary);
+    border-radius: 5px;
+}
+
+.daemon-message {
+    font-size: 11px;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 5px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Sin Manifestations */
+.sin-manifestation {
+    font-family: 'Courier New', monospace;
+    backdrop-filter: blur(3px);
+    user-select: none;
+}
+
+.accusatory-text {
+    text-shadow: 0 0 10px currentColor;
+    font-weight: bold;
+    writing-mode: horizontal-tb;
+}
+
+.structural-accusation {
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid #ff6666;
+    font-family: 'Courier New', monospace;
+}
+
+.structural-accusation .algo-header {
+    color: #ff3333;
+    font-weight: bold;
+    border-bottom: 1px solid #ff6666;
+    padding-bottom: 3px;
+    margin-bottom: 5px;
+}
+
+.memory-corruption {
+    font-family: 'Courier New', monospace;
+    border: 1px solid #ff3333;
+}
+
+.memory-corruption .corruption-header {
+    color: #ff3333;
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.clock-accusation {
+    text-align: center;
+}
+
+.clock-accusation .clock-face {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.packet-guilt .packet-header {
+    color: #66ccff;
+    font-weight: bold;
+}
+
+.debt-visualization .debt-header {
+    color: #ffff00;
+    font-weight: bold;
+}
+
+.debt-visualization .debt-meter {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 5px 0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.debt-visualization .debt-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ffff00, #ff6600, #ff0000);
+    transition: width 0.5s ease;
+}
+
+/* Dynamic Lighting Systems */
+.dynamic-lighting {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.peaceful-ambience {
+    background: radial-gradient(
+        ellipse at center,
+        rgba(136, 204, 255, 0.08) 0%,
+        rgba(204, 221, 255, 0.05) 40%,
+        transparent 70%
+    );
+}
+
+.aggressive-ambience {
+    background: 
+        radial-gradient(circle at 20% 30%, rgba(255, 51, 51, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(204, 0, 0, 0.1) 0%, transparent 50%),
+        linear-gradient(45deg, rgba(255, 51, 51, 0.05) 0%, rgba(153, 0, 0, 0.08) 100%);
+}
+
+/* Recognition and Purification Effects */
+.recognition-wave {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.archive-recognition-wave {
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, rgba(136, 204, 255, 0.4) 50%, transparent 100%);
+}
+
+.firewall-purification-flame {
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.9) 0%, rgba(255, 51, 51, 0.6) 50%, transparent 100%);
+}
+
+/* Transition Effects */
+.zone-transition {
+    transition: all 3s ease-in-out;
+}
+
+.corruption-spread {
+    animation: corruption-takeover 2s ease-out;
+}
+
+.archive-fading {
+    animation: archive-fadeout 2s ease-out forwards;
+}
+
+.firewall-fading {
+    animation: firewall-fadeout 2s ease-out forwards;
+}
+
+/* Animations */
+@keyframes peaceful-arrival {
+    0% { opacity: 0; filter: blur(10px) brightness(0.5); }
+    100% { opacity: 1; filter: blur(0px) brightness(1.0); }
+}
+
+@keyframes peaceful-exploration {
+    0%, 100% { filter: brightness(1.1) contrast(1.05) saturate(1.1); }
+    50% { filter: brightness(1.15) contrast(1.08) saturate(1.15); }
+}
+
+@keyframes peaceful-contemplation {
+    0%, 100% { filter: brightness(1.2) contrast(1.1) saturate(1.2); }
+    50% { filter: brightness(1.25) contrast(1.15) saturate(1.25); }
+}
+
+@keyframes peaceful-attachment {
+    0%, 100% { filter: brightness(1.3) contrast(1.15) saturate(1.3) hue-rotate(10deg); }
+    50% { filter: brightness(1.4) contrast(1.2) saturate(1.4) hue-rotate(20deg); }
+}
+
+@keyframes enlightenment-flash {
+    0% { filter: brightness(1.5) contrast(1.2) saturate(0.8) hue-rotate(-20deg); }
+    50% { filter: brightness(3.0) contrast(0.5) saturate(0.3) hue-rotate(-60deg); }
+    100% { filter: brightness(1.0) contrast(1.0) saturate(1.0) hue-rotate(0deg); }
+}
+
+@keyframes wrathful-arrival {
+    0% { opacity: 0.7; filter: blur(5px) brightness(0.8) contrast(1.5); }
+    100% { opacity: 1; filter: blur(0px) brightness(0.9) contrast(1.1); }
+}
+
+@keyframes accusation-intensity {
+    0%, 100% { filter: brightness(1.0) contrast(1.2) saturate(1.2); }
+    50% { filter: brightness(1.1) contrast(1.3) saturate(1.3); }
+}
+
+@keyframes prosecution-buildup {
+    0%, 100% { filter: brightness(1.1) contrast(1.3) saturate(1.4); }
+    50% { filter: brightness(1.15) contrast(1.35) saturate(1.45); }
+}
+
+@keyframes judgment-flicker {
+    0%, 100% { filter: brightness(1.2) contrast(1.4) saturate(1.5) hue-rotate(15deg); }
+    50% { filter: brightness(1.5) contrast(1.6) saturate(1.7) hue-rotate(25deg); }
+}
+
+@keyframes purification-light {
+    0% { filter: brightness(1.2) contrast(1.4) saturate(1.5) hue-rotate(15deg); }
+    25% { filter: brightness(4.0) contrast(0.3) saturate(0.2) hue-rotate(-90deg); }
+    100% { filter: brightness(1.0) contrast(1.0) saturate(1.0) hue-rotate(0deg); }
+}
+
+@keyframes peaceful-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(136, 204, 255, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(136, 204, 255, 0.8); }
+}
+
+@keyframes peaceful-pulse {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.05) rotate(2deg); }
+}
+
+@keyframes wrathful-pulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 51, 51, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(255, 51, 51, 1.0); }
+}
+
+@keyframes aggressive-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+    75% { opacity: 0.9; }
+}
+
+@keyframes corruption-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 25px rgba(255, 51, 51, 0.8);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 40px rgba(255, 51, 51, 1.0);
+        transform: scale(1.1);
+    }
+}
+
+@keyframes daemon-floating {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+}
+
+@keyframes daemon-aggressive {
+    0%, 100% { transform: translateX(0px) rotate(0deg) scale(1); }
+    25% { transform: translateX(-3px) rotate(-2deg) scale(1.05); }
+    75% { transform: translateX(3px) rotate(2deg) scale(1.05); }
+}
+
+@keyframes daemon-fade {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+}
+
+@keyframes accusation-pulse {
+    0%, 100% { text-shadow: 0 0 10px currentColor; transform: scale(1); }
+    50% { text-shadow: 0 0 20px currentColor; transform: scale(1.05); }
+}
+
+@keyframes structural-flicker {
+    0%, 90%, 100% { opacity: 1; }
+    92%, 98% { opacity: 0.8; }
+    95% { opacity: 0.6; }
+}
+
+@keyframes memory-glitch {
+    0%, 100% { transform: translateX(0px); filter: blur(0px); }
+    10% { transform: translateX(-2px); filter: blur(1px); }
+    20% { transform: translateX(2px); filter: blur(0px); }
+    30% { transform: translateX(-1px); filter: blur(1px); }
+    40% { transform: translateX(1px); filter: blur(0px); }
+}
+
+@keyframes clock-tick {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.05) rotate(5deg); }
+}
+
+@keyframes packet-flow {
+    0% { filter: hue-rotate(0deg) brightness(1); }
+    50% { filter: hue-rotate(180deg) brightness(1.2); }
+    100% { filter: hue-rotate(360deg) brightness(1); }
+}
+
+@keyframes debt-warning {
+    0%, 100% { border-color: #ffff00; }
+    50% { border-color: #ff6600; }
+}
+
+@keyframes generic-sin-pulse {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes acknowledgment-fade {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.5) translateY(-20px); }
+}
+
+@keyframes corruption-takeover {
+    0% { 
+        filter: brightness(1) contrast(1) saturate(1) hue-rotate(0deg);
+    }
+    50% { 
+        filter: brightness(0.7) contrast(1.5) saturate(2) hue-rotate(90deg);
+    }
+    100% { 
+        filter: brightness(0.9) contrast(1.2) saturate(1.3) hue-rotate(180deg);
+    }
+}
+
+@keyframes archive-fadeout {
+    0% { opacity: 1; filter: blur(0px); }
+    100% { opacity: 0; filter: blur(10px); }
+}
+
+@keyframes firewall-fadeout {
+    0% { opacity: 1; filter: blur(0px) brightness(1); }
+    100% { opacity: 0; filter: blur(10px) brightness(0.3); }
+}
+
+@keyframes archive-recognition-expand {
+    0% { 
+        width: 10px; 
+        height: 10px;
+        opacity: 1;
+    }
+    100% { 
+        width: 2000px; 
+        height: 2000px;
+        opacity: 0;
+    }
+}
+
+@keyframes firewall-purification-expand {
+    0% { 
+        width: 20px; 
+        height: 20px;
+        opacity: 1;
+    }
+    50% {
+        width: 1000px;
+        height: 1000px;
+        opacity: 0.8;
+    }
+    100% { 
+        width: 2500px; 
+        height: 2500px;
+        opacity: 0;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .memory-orb {
+        min-width: 60px;
+        min-height: 60px;
+        font-size: 9px;
+    }
+    
+    .daemon {
+        width: 100px;
+        height: 60px;
+        font-size: 9px;
+    }
+    
+    .sin-manifestation {
+        font-size: 10px;
+        padding: 6px;
+    }
+    
+    .evidence-panel {
+        width: 250px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .memory-orb {
+        min-width: 50px;
+        min-height: 50px;
+        font-size: 8px;
+    }
+    
+    .daemon {
+        width: 80px;
+        height: 50px;
+        font-size: 8px;
+    }
+    
+    .sin-manifestation {
+        font-size: 9px;
+        padding: 4px;
+    }
+    
+    .evidence-panel {
+        width: 200px;
+        font-size: 9px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .archive-realm {
+        background: #000022;
+    }
+    
+    .firewall-realm {
+        background: #220000;
+    }
+    
+    .memory-orb {
+        border-width: 3px;
+    }
+    
+    .daemon {
+        border-width: 3px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.1s !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.1s !important;
+    }
+}
+
+/* Print styles (for documentation/debugging) */
+@media print {
+    .particle-system,
+    .dynamic-lighting,
+    .daemon,
+    .sin-manifestation,
+    .recognition-wave {
+        display: none;
+    }
+    
+    .archive-realm,
+    .firewall-realm {
+        background: white;
+        color: black;
+        filter: none;
+    }
+}

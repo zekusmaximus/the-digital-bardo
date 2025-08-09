@@ -4,7 +4,10 @@
       "Bash(npm run dev:*)",
       "WebFetch(domain:localhost)",
       "Bash(curl:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(node:*)",
+      "Bash(timeout:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Digital Bardo - Datascape Archive</title>
+    <title>The Datascape - Digital Bardo Phase 2</title>
     
     <!-- Preload critical resources -->
     <link rel="preload" href="../src/consciousness/digital-soul.js" as="script" crossorigin>
-    <link rel="preload" href="./archive-controller.js" as="script" crossorigin>
+    <link rel="preload" href="./js/datascape-controller.js" as="script" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" as="script" crossorigin>
     
     <!-- Critical CSS -->
@@ -155,8 +155,8 @@
         }
     </style>
     
-    <!-- Archive-specific styles -->
-    <link rel="stylesheet" href="./styles/archive.css">
+    <!-- Datascape-specific styles -->
+    <link rel="stylesheet" href="./styles/datascape.css">
     
     <!-- Meta tags for spiritual context -->
     <meta name="description" content="The Digital Bardo Datascape - Confront your digital attachments in the Archive of forgotten memories">
@@ -169,11 +169,11 @@
 <body data-phase="datascape" data-realm="archive">
     <!-- Loading Screen -->
     <div id="loading-screen" class="loading-screen">
-        <h1 class="loading-title">The Archive</h1>
+        <h1 class="loading-title">The Datascape</h1>
         <p class="loading-subtitle">
-            A crystalline repository where deleted data dreams.<br>
-            Every memory floats like a luminous orb,<br>
-            waiting to teach the lesson of letting go.
+            Where consciousness encounters projections of its digital karma.<br>
+            Archive or Firewall awaits, based on your computational vs emotional balance.<br>
+            Every interaction shapes the path to digital liberation.
         </p>
         <div class="loading-progress">
             <div id="loading-bar" class="loading-bar"></div>
@@ -196,8 +196,8 @@
         </div>
     </div>
     
-    <!-- Archive Experience Container (populated by JavaScript) -->
-    <div id="archive-root"></div>
+    <!-- Datascape Experience Container (populated by JavaScript) -->
+    <div id="datascape-container"></div>
     
     <!-- Debug Panel (hidden by default) -->
     <div id="debug-panel" style="display: none; position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #88ccff; padding: 10px; font-size: 12px; z-index: 999; border: 1px solid #88ccff;">
@@ -218,7 +218,7 @@
          */
         
         // Global state for debugging and error handling
-        window.archiveDebug = {
+        window.datascapeDebug = {
             isDebugMode: window.location.search.includes('debug'),
             loadingSteps: [],
             errors: [],
@@ -229,11 +229,11 @@
         const loadingProgress = {
             steps: [
                 'Initializing consciousness',
-                'Loading memory crystals',
-                'Manifesting orb field',
-                'Preparing daemon realm',
-                'Establishing attachment system',
-                'Finalizing archive'
+                'Analyzing karmic balance',
+                'Routing to appropriate realm',
+                'Manifesting memory orbs',
+                'Spawning karmic daemons',
+                'Finalizing datascape'
             ],
             currentStep: 0,
             
@@ -252,16 +252,16 @@
                     barElement.style.width = `${Math.min(percentage, 100)}%`;
                 }
                 
-                if (window.archiveDebug.isDebugMode) {
-                    console.log(`[Archive Loading] Step ${this.currentStep + 1}/${this.steps.length}: ${this.steps[this.currentStep]}`);
+                if (window.datascapeDebug.isDebugMode) {
+                    console.log(`[Datascape Loading] Step ${this.currentStep + 1}/${this.steps.length}: ${this.steps[this.currentStep]}`);
                 }
             }
         };
         
         // Error handling system
-        function handleArchiveError(error, context = 'Unknown') {
-            console.error(`[Archive Error] ${context}:`, error);
-            window.archiveDebug.errors.push({ error, context, timestamp: Date.now() });
+        function handleDatascapeError(error, context = 'Unknown') {
+            console.error(`[Datascape Error] ${context}:`, error);
+            window.datascapeDebug.errors.push({ error, context, timestamp: Date.now() });
             
             const errorScreen = document.getElementById('error-screen');
             const errorMessage = document.getElementById('error-message');
@@ -286,10 +286,10 @@
             const debugInfo = document.getElementById('debug-info');
             
             const info = `
-                <strong>Archive Debug Information:</strong><br>
-                Load Time: ${(performance.now() - window.archiveDebug.startTime).toFixed(2)}ms<br>
+                <strong>Datascape Debug Information:</strong><br>
+                Load Time: ${(performance.now() - window.datascapeDebug.startTime).toFixed(2)}ms<br>
                 Current Step: ${loadingProgress.currentStep + 1}/${loadingProgress.steps.length}<br>
-                Errors: ${window.archiveDebug.errors.length}<br>
+                Errors: ${window.datascapeDebug.errors.length}<br>
                 User Agent: ${navigator.userAgent.substring(0, 50)}...<br>
                 Screen: ${window.innerWidth}x${window.innerHeight}<br>
                 Memory: ${navigator.deviceMemory || 'Unknown'} GB<br>
@@ -297,7 +297,7 @@
                 Connection: ${navigator.connection?.effectiveType || 'Unknown'}<br>
                 <br>
                 <strong>Recent Errors:</strong><br>
-                ${window.archiveDebug.errors.slice(-3).map(e => 
+                ${window.datascapeDebug.errors.slice(-3).map(e => 
                     `${e.context}: ${e.error.message || e.error}`
                 ).join('<br>')}
             `;
@@ -311,7 +311,7 @@
         };
         
         // Progressive loading system
-        async function initializeArchive() {
+        async function initializeDatascape() {
             try {
                 // Step 1: Initialize consciousness
                 loadingProgress.updateProgress(0);
@@ -322,30 +322,28 @@
                     throw new Error('Failed to initialize consciousness system');
                 }
                 
-                // Step 2: Load memory crystals (wait for Three.js)
+                // Step 2: Analyze karmic balance
                 loadingProgress.updateProgress(1);
-                await ensureThreeJSLoaded();
+                const karma = consciousness.getState('karma');
+                console.log('[Datascape] Karmic analysis complete:', karma);
                 
-                // Step 3: Load archive controller
+                // Step 3: Load datascape controller and route to appropriate realm
                 loadingProgress.updateProgress(2);
-                const { ArchiveController } = await import('./archive-controller.js');
+                const { DatascapeController } = await import('./js/datascape-controller.js');
                 
-                // Step 4: Prepare daemon realm
+                // Step 4: Initialize memory orbs and daemon systems
                 loadingProgress.updateProgress(3);
                 await new Promise(resolve => setTimeout(resolve, 300));
                 
-                // Step 5: Initialize the complete archive system
+                // Step 5: Initialize the complete datascape system
                 loadingProgress.updateProgress(4);
-                const archiveController = new ArchiveController();
+                const datascapeController = new DatascapeController();
                 
                 // Store global reference for debugging
-                if (window.archiveDebug.isDebugMode) {
-                    window.archiveController = archiveController;
-                    console.log('[Archive Debug] Controller accessible via window.archiveController');
+                if (window.datascapeDebug.isDebugMode) {
+                    window.datascapeController = datascapeController;
+                    console.log('[Datascape Debug] Controller accessible via window.datascapeController');
                 }
-                
-                // Initialize the archive experience
-                await archiveController.init();
                 
                 // Step 6: Finalize
                 loadingProgress.updateProgress(5, 100);
@@ -361,15 +359,16 @@
                 }
                 
                 // Record successful initialization
-                consciousness.recordEvent('archive_initialized_successfully', {
-                    loadTime: performance.now() - window.archiveDebug.startTime,
+                consciousness.recordEvent('datascape_initialized_successfully', {
+                    loadTime: performance.now() - window.datascapeDebug.startTime,
+                    currentZone: datascapeController.currentZone,
                     timestamp: Date.now()
                 });
                 
-                console.log('[Archive] Initialization complete. Welcome to the Archive.');
+                console.log('[Datascape] Initialization complete. Welcome to the Datascape.');
                 
             } catch (error) {
-                handleArchiveError(error, 'Archive Initialization');
+                handleDatascapeError(error, 'Datascape Initialization');
             }
         }
         
@@ -395,11 +394,11 @@
         
         // Handle uncaught errors gracefully
         window.addEventListener('error', (event) => {
-            handleArchiveError(event.error, 'Uncaught Error');
+            handleDatascapeError(event.error, 'Uncaught Error');
         });
         
         window.addEventListener('unhandledrejection', (event) => {
-            handleArchiveError(event.reason, 'Unhandled Promise Rejection');
+            handleDatascapeError(event.reason, 'Unhandled Promise Rejection');
         });
         
         // Integration verification function
@@ -437,19 +436,19 @@
         };
 
         // Initialize debug mode if requested
-        if (window.archiveDebug.isDebugMode) {
-            console.log('%c=. Archive Debug Mode Active =.', 
+        if (window.datascapeDebug.isDebugMode) {
+            console.log('%c=. Datascape Debug Mode Active =.', 
                 'color: #88ccff; font-size: 16px; font-weight: bold;');
-            console.log('Debug information available via window.archiveDebug');
+            console.log('Debug information available via window.datascapeDebug');
             console.log('Use showDebugInfo() to display diagnostic panel');
             console.log('Use runIntegrationVerification() to verify all systems');
             console.log('Use runSystemsPolish() to polish rough edges');
         }
         
-        // Begin the Archive initialization
+        // Begin the Datascape initialization
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('[Archive] DOM loaded. Beginning initialization...');
-            initializeArchive();
+            console.log('[Datascape] DOM loaded. Beginning initialization...');
+            initializeDatascape();
         });
         
         // Consciousness integration warning (for production)
@@ -479,7 +478,7 @@
         window.addEventListener('load', () => {
             if ('performance' in window) {
                 const perfData = performance.getEntriesByType('navigation')[0];
-                console.log(`[Archive Performance] Load time: ${perfData.loadEventEnd - perfData.fetchStart}ms`);
+                console.log(`[Datascape Performance] Load time: ${perfData.loadEventEnd - perfData.fetchStart}ms`);
             }
         });
     </script>
@@ -488,9 +487,9 @@
     <script>
         if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
             navigator.serviceWorker.register('/sw.js').then(registration => {
-                console.log('[Archive] Service Worker registered for offline archive access');
+                console.log('[Datascape] Service Worker registered for offline datascape access');
             }).catch(error => {
-                console.log('[Archive] Service Worker registration failed:', error);
+                console.log('[Datascape] Service Worker registration failed:', error);
             });
         }
     </script>

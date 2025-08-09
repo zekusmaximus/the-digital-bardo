@@ -385,6 +385,28 @@ export class DigitalConsciousness {
     }
     
     /**
+     * Convenience method to add karma of a specific type
+     * @param {string} type - The karma type ('computational', 'emotional', 'temporal', 'void')
+     * @param {number} amount - The amount to add (can be negative)
+     */
+    addKarma(type, amount) {
+        if (!this.state.karma.hasOwnProperty(type)) {
+            console.warn(`[DigitalConsciousness] Unknown karma type: ${type}`);
+            return;
+        }
+        
+        const impact = {
+            computational: 0,
+            emotional: 0,
+            temporal: 0,
+            void: 0
+        };
+        
+        impact[type] = amount;
+        this.updateKarma(impact);
+    }
+    
+    /**
      * Updates visual effects based on karma changes
      * @private
      */
@@ -687,10 +709,49 @@ if (!isBrowser) {
     // On the server, we can export a mock or a non-functional version.
     // This prevents errors during server-side rendering or build processes.
     consciousness = {
-        state: { incarnation_seed: 'server-init' },
-        getState: () => ({}),
-        setState: () => {},
+        state: { 
+            incarnation_seed: 'server-init',
+            karma: {
+                computational: 0,
+                emotional: 0,
+                temporal: 0,
+                void: 0
+            }
+        },
+        getState: (path) => {
+            if (!path) return consciousness.state;
+            if (path === 'karma') return consciousness.state.karma;
+            return consciousness.state[path] || {};
+        },
+        setState: (path, value) => {
+            if (path === 'karma.void') {
+                consciousness.state.karma.void = value;
+            } else if (path.startsWith('karma.')) {
+                const karmaType = path.split('.')[1];
+                if (consciousness.state.karma[karmaType] !== undefined) {
+                    consciousness.state.karma[karmaType] = value;
+                }
+            }
+            // Mock implementation for testing
+        },
         subscribe: () => (() => {}), // Return an empty unsubscribe function
+        addKarma: (type, amount) => {
+            if (consciousness.state.karma[type] !== undefined) {
+                consciousness.state.karma[type] += amount;
+            }
+        },
+        recordEvent: (eventType, data = {}) => {
+            // Mock implementation for testing
+            console.log(`[MockConsciousness] Event recorded: ${eventType}`, data);
+        },
+        reset: () => {
+            consciousness.state.karma = {
+                computational: 0,
+                emotional: 0,
+                temporal: 0,
+                void: 0
+            };
+        }
         // Add any other methods that might be called during initialization
         // to prevent 'is not a function' errors.
     };

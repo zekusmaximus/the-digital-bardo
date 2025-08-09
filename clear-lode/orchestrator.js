@@ -28,6 +28,9 @@ import { consciousness } from '../src/consciousness/digital-soul.js';
 import { KarmicEngine } from '../src/consciousness/karmic-engine.js';
 import { ResourceGuardian } from '../src/consciousness/resource-guardian.js';
 
+// Phase 1 Enhancements Integration
+import { Phase1EnhancementsIntegration } from './phase1-enhancements-integration.js';
+
 // Configuration
 import { CLEAR_LODE_CONFIG } from './config.js';
 
@@ -113,6 +116,9 @@ export class ClearLodeOrchestrator {
         };
         this.synchronizedDegradation = new SynchronizedDegradationController(syncDependencies);
 
+        // Initialize Phase 1 Enhancements Integration
+        this.phase1Enhancements = new Phase1EnhancementsIntegration();
+
         // Register subsystems for cleanup
         this.guardian.registerCleanup(() => this.stateManager.destroy());
         this.guardian.registerCleanup(() => this.transitionController.destroy());
@@ -125,6 +131,7 @@ export class ClearLodeOrchestrator {
         this.guardian.registerCleanup(() => this.fragmentPositionManager.destroy());
         this.guardian.registerCleanup(() => this.fragmentSpeedController.destroy());
         this.guardian.registerCleanup(() => this.fragmentPerformanceOptimizer.destroy());
+        this.guardian.registerCleanup(() => this.phase1Enhancements.destroy());
     }
 
     /**
@@ -147,6 +154,9 @@ export class ClearLodeOrchestrator {
             this.degradation.init();
             this.audio.init();
             this.synchronizedDegradation.init();
+            
+            // Initialize Phase 1 Enhancements (Easter eggs, visual effects, enlightenment chime)
+            await this.phase1Enhancements.initialize();
             
             // Initialize positioning and speed control systems
             // These systems integrate with fragment generation and provide enhanced UX
@@ -643,6 +653,7 @@ export class ClearLodeOrchestrator {
         this.fragmentPositionManager = null;
         this.fragmentSpeedController = null;
         this.karmicEngine = null;
+        this.phase1Enhancements = null;
         this.guardian = null;
 
         console.log('[Orchestrator] All subsystems destroyed and references released.');
